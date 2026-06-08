@@ -1,0 +1,49 @@
+window.ResearchMethodologyPanel = () => {
+    return (
+        <div className="panel flex-shrink-0 min-w-0" style={{ height: 'auto', minHeight: '110px' }}>
+            <div className="panel-header border-b border-[#334155] bg-[#090d16]/80 flex justify-between">
+                <div className="flex items-center gap-2 text-[#89ceff]">
+                    <span className="material-symbols-outlined text-[16px]">school</span>
+                    RESEARCH FRAMEWORK OVERVIEW
+                </div>
+                <div className="text-[10px] font-mono text-[#94a3b8] tracking-widest">
+                    THESIS OBJECTIVES
+                </div>
+            </div>
+            <div className="flex-1 flex flex-col lg:flex-row gap-4 px-6 py-4 bg-[#0b1326]/50">
+                {/* Research Questions */}
+                <div className="flex-[2] flex flex-col gap-2 border-r border-[#334155]/50 pr-4">
+                    <div className="text-[10px] font-bold text-[#c084fc] tracking-widest uppercase mb-1">Research Questions</div>
+                    <div className="flex items-start gap-2">
+                        <span className="text-[#c084fc] font-bold text-[11px] font-mono mt-0.5 w-[25px]">RQ1:</span>
+                        <span className="text-[#e2e8f0] text-[12px] italic">Can RE artifacts be automatically mapped to ATT&CK?</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                        <span className="text-[#c084fc] font-bold text-[11px] font-mono mt-0.5 w-[25px]">RQ2:</span>
+                        <span className="text-[#e2e8f0] text-[12px] italic">Can Enterprise ATT&CK be translated into ICS ATT&CK?</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                        <span className="text-[#c084fc] font-bold text-[11px] font-mono mt-0.5 w-[25px]">RQ3:</span>
+                        <span className="text-[#e2e8f0] text-[12px] italic">Can the framework quantify operational impact on a drone fleet?</span>
+                    </div>
+                </div>
+
+                {/* Hypothesis */}
+                <div className="flex-1 flex flex-col gap-2 border-r border-[#334155]/50 px-2">
+                    <div className="text-[10px] font-bold text-[#34d399] tracking-widest uppercase mb-1">Core Hypothesis</div>
+                    <div className="text-[#94a3b8] text-[11px] leading-relaxed">
+                        A structured, rule-based reasoning engine can bridge the semantic gap between <span className="text-[#e2e8f0] font-bold">low-level reverse engineering artifacts</span> and <span className="text-[#e2e8f0] font-bold">high-level ICS operational impacts</span>, outperforming static mapping lookups.
+                    </div>
+                </div>
+
+                {/* Expected Outcome */}
+                <div className="flex-1 flex flex-col gap-2 pl-2">
+                    <div className="text-[10px] font-bold text-[#f97316] tracking-widest uppercase mb-1">Expected Outcome</div>
+                    <div className="text-[#94a3b8] text-[11px] leading-relaxed">
+                        An <strong className="text-[#e2e8f0]">Explainable AI (XAI)</strong> powered framework that provides transparent mapping validation, reproducible research datasets, and actionable mitigation intelligence.
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};

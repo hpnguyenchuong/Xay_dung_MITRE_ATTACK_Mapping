@@ -1,0 +1,51 @@
+window.ICSImpactMatrixPanel = () => {
+    const [matrix, setMatrix] = React.useState([]);
+
+    React.useEffect(() => {
+        const fetchMatrix = () => {
+            fetch('/api/ics_matrix')
+                .then(res => res.json())
+                .then(data => setMatrix(data.matrix || []))
+                .catch(err => console.error(err));
+        };
+        fetchMatrix();
+        const interval = setInterval(fetchMatrix, 3000);
+        return () => clearInterval(interval);
+    }, []);
+
+    return (
+        <div className="panel h-full flex flex-col">
+            <div className="panel-header">
+                <span className="material-symbols-outlined text-[16px]">transform</span>
+                <span>ICS IMPACT MATRIX</span>
+            </div>
+            <div className="p-3 flex-1 overflow-y-auto custom-scrollbar">
+                <table className="w-full text-left text-[11px] font-mono border-collapse">
+                    <thead className="sticky top-0 bg-[#334155] text-[#94a3b8]">
+                        <tr>
+                            <th className="p-2 border-b border-[#1e293b] font-normal uppercase text-[10px]">Artifact</th>
+                            <th className="p-2 border-b border-[#1e293b] font-normal uppercase text-[10px]">Enterprise</th>
+                            <th className="p-2 border-b border-[#1e293b] font-normal uppercase text-[10px]">ICS</th>
+                            <th className="p-2 border-b border-[#1e293b] font-normal uppercase text-[10px]">Operational Effect</th>
+                        </tr>
+                    </thead>
+                    <tbody className="text-[#f8fafc]">
+                        {matrix.map((row, idx) => (
+                            <tr key={idx} className="border-b border-[#1e293b] hover:bg-[#334155]/30 transition-colors">
+                                <td className="p-2 text-[#a855f7]">{row.artifact}</td>
+                                <td className="p-2 text-[#38bdf8] font-bold">{row.enterprise_technique}</td>
+                                <td className="p-2 text-[#f43f5e] font-bold">{row.ics_technique}</td>
+                                <td className="p-2 text-white">{row.operational_effect}</td>
+                            </tr>
+                        ))}
+                        {matrix.length === 0 && (
+                            <tr>
+                                <td colSpan="4" className="p-4 text-center text-[#94a3b8]">Waiting for ICS mapping...</td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+};

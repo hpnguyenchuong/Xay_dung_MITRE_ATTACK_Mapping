@@ -1,0 +1,58 @@
+[
+  {
+    "artifact": "DF_MUTEX_01",
+    "expected": "T1547.001"
+  },
+  {
+    "artifact": "c2.dronefleet.net",
+    "expected": "T1071"
+  },
+  {
+    "artifact": "encoded_payload",
+    "expected": "T1027"
+  },
+  {
+    "artifact": "FLEET_COMMAND_PUSH",
+    "expected": "T1563"
+  },
+  {
+    "artifact": "waypoint_override",
+    "expected": "T1005"
+  },
+  {
+    "artifact": "DF_REG_RUN",
+    "expected": "T1547.001"
+  },
+  {
+    "artifact": "DF_STARTUP_CFG",
+    "expected": "T1547.001"
+  },
+  {
+    "artifact": "beacon_30s",
+    "expected": "T1071"
+  },
+  {
+    "artifact": "custom_protocol_v1",
+    "expected": "T1090"
+  },
+  {
+    "artifact": "LEADER_NODE_COMPROMISED",
+    "expected": "T1059"
+  },
+  {
+    "artifact": "MEMBER_NODE_CONTROLLED",
+    "expected": "T1563"
+  },
+  {
+    "artifact": "navigation_drift",
+    "expected": "T1005"
+  },
+  {
+    "artifact": "gps_offset_120m",
+    "expected": "T1005"
+  },
+  {
+    "artifact": "FLEET_SYNC",
+    "expected": "T1563"
+  }
+]

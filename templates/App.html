@@ -1,0 +1,287 @@
+        const { useState, useEffect, useRef } = React;
+
+        const App = () => {
+            const [drones, setDrones] = useState([]);
+            const [selectedDrone, setSelectedDrone] = useState(null);
+            const [selectedArtifact, setSelectedArtifact] = useState(null);
+            const [fleetHealth, setFleetHealth] = useState(100);
+            const [attackStates, setAttackStates] = useState({});
+            const [demoMode, setDemoMode] = useState(false);
+            const demoModeRef = useRef(false);
+            
+            const [radarAngle, setRadarAngle] = useState(0);
+            const [radarBlips, setRadarBlips] = useState([]);
+            
+            const logsEndRef = useRef(null);
+            
+            const selectedDroneRef = useRef(null);
+            useEffect(() => {
+                selectedDroneRef.current = selectedDrone;
+            }, [selectedDrone]);
+
+            useEffect(() => {
+                let r = 0;
+                const intv = setInterval(() => {
+                    r = (r + 5) % 360;
+                    setRadarAngle(r);
+                    const currentSelected = selectedDroneRef.current;
+                    if (!currentSelected || !currentSelected.is_hardware_asset) {
+                        if (Math.random() > 0.8) {
+                            setRadarBlips(prev => [...prev, { a: Math.random()*360, d: Math.random()*40 + 10, t: Date.now() }].filter(b => Date.now() - b.t < 2000));
+                        }
+                    }
+                }, 50);
+                return () => clearInterval(intv);
+            }, []);
+
+            useEffect(() => {
+                window.loadScenarioCase = (caseId) => {
+                    setDemoMode(true);
+                    demoModeRef.current = true;
+                    
+                    let mockDrones = [];
+                    let health = 100;
+                    
+                    const baseDrone = { drone_id: 'DRONE-07', status: 'ACTIVE', battery: 100, altitude: 200, speed: 50, gps: '10.841,106.654', network_speed: 200, signal_strength: -55, temp: 40, satellites: 12, threat_score: 0, campaign: 'Unknown' };
+                    
+                    if (caseId === 'clean') {
+                        mockDrones = [{ ...baseDrone, threat_score: 0, campaign: 'Clean' }];
+                        health = 100;
+                    } else if (caseId === 'droneflood') {
+                        mockDrones = [{ ...baseDrone, threat_score: 85, campaign: 'DroneFlood', battery: 60, network_speed: 15, signal_strength: -80, temp: 55 }];
+                        health = 60;
+                    } else if (caseId === 'gps_spoof') {
+                        mockDrones = [{ ...baseDrone, threat_score: 95, campaign: 'DroneFlood', speed: 450, gps: '40.7128,-74.0060', satellites: 2, altitude: 15 }];
+                        health = 40;
+                    } else if (caseId === 'dos') {
+                        mockDrones = [{ ...baseDrone, threat_score: 90, campaign: 'DroneFlood', network_speed: 0, signal_strength: -99, status: 'OFFLINE' }];
+                        health = 30;
+                    } else if (caseId === 'mission_disruption') {
+                        mockDrones = [{ ...baseDrone, threat_score: 100, campaign: 'DroneFlood', battery: 0, speed: 0, altitude: 0, temp: 95, satellites: 0, status: 'OFFLINE' }];
+                        health = 10;
+                    }
+                    
+                    // Add some background drones
+                    for(let i=1; i<=9; i++) {
+                        if (i !== 7) {
+                            mockDrones.push({
+                                ...baseDrone,
+                                drone_id: `DRONE-0${i}`,
+                                threat_score: caseId === 'clean' ? 0 : (caseId === 'mission_disruption' ? 80 : 30),
+                                status: caseId === 'mission_disruption' && i%2===0 ? 'OFFLINE' : 'ACTIVE'
+                            });
+                        }
+                    }
+                    
+                    setDrones(mockDrones);
+                    setSelectedDrone(mockDrones.find(d => d.drone_id === 'DRONE-07') || mockDrones[0]);
+                    setFleetHealth(health);
+                    setAttackStates(prev => ({
+                        ...prev,
+                        'DRONE-07': { terminalOutput: `Analysis Engine Terminal Ready...\n>_ LOADED STATIC CASE: ${caseId.toUpperCase()}` }
+                    }));
+                };
+            }, []);
+
+            useEffect(() => {
+                const fetchDrones = () => {
+                    if (demoModeRef.current) return;
+                    fetch('/api/drones')
+                        .then(r => r.json())
+                        .then(data => {
+                            if(data.fleet && !demoModeRef.current) {
+                                const fleetArr = Object.values(data.fleet);
+                                setDrones(fleetArr);
+                                setSelectedDrone(prev => {
+                                    if (!prev && fleetArr.length > 0) return fleetArr[0];
+                                    return fleetArr.find(d => d.drone_id === (prev && prev.drone_id)) || prev;
+                                });
+                            }
+                        }).catch(e => console.log('API Error: drones', e));
+                        
+                    fetch('/api/fleet_health').then(r => r.json()).then(data => {
+                        if (!demoModeRef.current) setFleetHealth(data.health_score || 100);
+                    }).catch(e => console.log('API Error: fleet_health', e));
+                };
+                
+                fetchDrones();
+                const interval = setInterval(fetchDrones, 1000);
+                return () => clearInterval(interval);
+            }, []);
+
+            const activeDronesList = drones.filter(d => d.status === 'ACTIVE');
+            const activeCount = activeDronesList.length;
+            const offlineCount = drones.length - activeCount;
+            const criticalCount = drones.filter(d => d.battery < 20).length;
+
+            const safeSelectedDrone = selectedDrone && selectedDrone.status === 'ACTIVE' ? selectedDrone : (activeDronesList[0] || { drone_id: 'UNKNOWN', battery: 0, altitude: 0, speed: 0, signal_strength: 0, network_speed: 0 });
+            const droneId = safeSelectedDrone.drone_id;
+            
+            const appendTerminal = (text) => {
+                setAttackStates(prev => {
+                    const st = prev[droneId] || { terminalOutput: "Analysis Engine Terminal Ready...\n" };
+                    return { ...prev, [droneId]: { ...st, terminalOutput: st.terminalOutput + text } };
+                });
+            };
+            
+            const updateState = (updates) => {
+                setAttackStates(prev => {
+                    const currentState = prev[droneId] || { terminalOutput: "Analysis Engine Terminal Ready...\n" };
+                    return { ...prev, [droneId]: { ...currentState, ...updates } };
+                });
+            };
+            
+            const currentState = attackStates[droneId] || { terminalOutput: "Analysis Engine Terminal Ready...\n" };
+
+            useEffect(() => {
+                if (logsEndRef.current) {
+                    logsEndRef.current.scrollTop = logsEndRef.current.scrollHeight;
+                }
+            }, [currentState.terminalOutput]);
+
+            const handleCommand = (cmd, targetId = droneId) => {
+                const getTime = () => {
+                    const d = new Date();
+                    return `[${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}]`;
+                };
+                
+                appendTerminal(`\n${getTime()} >_ DISPATCHING: ${cmd} to ${targetId}`);
+                
+                if (cmd === 'GENERATE_REPORT') {
+                    if (droneId !== 'UNKNOWN') {
+                        fetch(`/api/generate_report?drone_id=${droneId}`)
+                            .then(res => res.json())
+                            .then(data => {
+                                appendTerminal(`\n${getTime()} >_ REPORT GENERATED: ${data.file}`);
+                                window.open(`/${data.file}`, '_blank');
+                            }).catch(e => {
+                                appendTerminal(`\n${getTime()} >_ ERROR: Failed to generate report`);
+                            });
+                    }
+                    return;
+                }
+                
+                if (cmd === 'RESET_MATRIX') {
+                    fetch(`/api/reset`)
+                        .then(res => res.json())
+                        .then(data => {
+                            appendTerminal(`\n${getTime()} >_ MATRIX RESET SUCCESS`);
+                            setTimeout(() => window.location.reload(), 1000);
+                        }).catch(e => {
+                            appendTerminal(`\n${getTime()} >_ ERROR: Failed to reset matrix`);
+                        });
+                    return;
+                }
+                
+                fetch('/api/command', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cmd: cmd.toLowerCase(), drone_id: targetId })
+                }).then(r => r.json()).then(data => {
+                    if (['initial_access', 'execution', 'evasion', 'hardware', 'spoof', 'impact'].includes(cmd)) {
+                        setTimeout(() => appendTerminal(`\n${getTime()} >_ [*] Authenticating with target...`), 300);
+                        setTimeout(() => appendTerminal(`\n${getTime()} >_ [*] Exploiting vulnerabilities...`), 800);
+                        setTimeout(() => appendTerminal(`\n${getTime()} >_ [*] Injecting payload [${cmd.toUpperCase()}]...`), 1400);
+                        setTimeout(() => appendTerminal(`\n${getTime()} >_ [+] SUCCESS: ${cmd} executed on ${targetId}`), 2000);
+                    } else if (['ISOLATE NODE', 'stop_gps_spoof'].includes(cmd)) {
+                        setTimeout(() => appendTerminal(`\n${getTime()} >_ [*] Initializing defense protocol...`), 300);
+                        setTimeout(() => appendTerminal(`\n${getTime()} >_ [*] Applying security policies...`), 800);
+                        setTimeout(() => appendTerminal(`\n${getTime()} >_ [+] SUCCESS: ${cmd} enforced on ${targetId}`), 1400);
+                    } else {
+                        setTimeout(() => appendTerminal(`\n${getTime()} >_ SUCCESS: Command transmitted to ${targetId}`), 500);
+                    }
+                }).catch(e => {
+                    setTimeout(() => appendTerminal(`\n${getTime()} >_ ERROR: Transmission failed`), 500);
+                });
+            };
+
+            const [malwareTab, setMalwareTab] = useState('PROFILE');
+
+            // FAKE THREAT SCORE AND MOCK DATA FOR THE DEMO VIEW
+            const isT0832 = true; 
+            const isT0885 = true;
+            const showCriticalOverlay = drones.some(d => d.drone_id === (selectedDrone && selectedDrone.drone_id) && d.speed > 300);
+
+            // Mock Data for New Panels
+            const findings = currentState === 'infected' ? [{ type: 'C2', indicator: 'drones-c2.net', severity: 'CRITICAL' }] : [];
+            const correlations = [];
+            const verdict = null;
+            const campaigns = [];
+
+            const { Sidebar, ResearchMethodologyPanel, EvidenceChainPanel, GroundTruthPanel, CampaignSummaryCard, ICSImpactMatrixPanel, MappingTrendPanel, ResearchQuestionsPanel, AcademicConclusionPanel, ArtifactProvenancePanel, EvidenceCorrelationPanel, ComparativeAnalysisPanel, MappingValidationPanel, TranslationEnginePanel, FleetInfectionPanel, ArtifactDrawer, C2MonitorPanel } = window;
+
+            return (
+                <div className="flex flex-col h-full w-full">
+                    <div className="flex h-full w-full gap-3">
+                        <Sidebar />
+
+                        <div className="flex-1 flex flex-col min-w-0">
+                            {/* TOP METHODOLOGY BANNER */}
+                            <ResearchMethodologyPanel />
+                            
+                            <div className="bento-grid mt-3">
+                                {/* ROW 1: Khởi tạo */}
+                                <div className="bento-row bento-row-1">
+                                    <div className="flex-[1.2] flex min-w-0"><EvidenceChainPanel /></div>
+                                    <div className="flex-[1.0] flex min-w-0"><CampaignSummaryCard /></div>
+                                    <div className="flex-[0.8] flex min-w-0"><GroundTruthPanel /></div>
+                                </div>
+
+                                {/* ROW 2: Động cơ cốt lõi (Lớn nhất) */}
+                                <div className="bento-row bento-row-2">
+                                    <div className="flex-[1.2] flex min-w-0"><MappingValidationPanel onArtifactClick={(art) => setSelectedArtifact(art)} /></div>
+                                    <div className="flex-[1.0] flex min-w-0"><TranslationEnginePanel /></div>
+                                    <div className="flex-[0.8] flex min-w-0"><FleetInfectionPanel 
+                                        drones={drones} 
+                                        selectedDrone={selectedDrone} 
+                                        onDroneSelect={(d) => setSelectedDrone(d)} 
+                                    /></div>
+                                </div>
+
+                                {/* ROW 3: Hậu quả & Kết luận */}
+                                <div className="bento-row bento-row-3">
+                                    <div className="flex-[1.2] flex min-w-0"><ICSImpactMatrixPanel /></div>
+                                    <div className="flex-[1.0] flex min-w-0"><MappingTrendPanel /></div>
+                                    <div className="flex-[0.8] flex min-w-0"><AcademicConclusionPanel /></div>
+                                </div>
+                            </div>
+                            
+                            {/* BOTTOM STRIP: Đánh giá & Export */}
+                            <div className="bottom-bonus mt-3 h-[180px] flex gap-3">
+                                <div className="flex-[0.3] min-w-0"><ResearchQuestionsPanel /></div>
+                                <div className="flex-[0.7] min-w-0"><C2MonitorPanel 
+                                    droneId={droneId} 
+                                    logsEndRef={logsEndRef} 
+                                    currentState={currentState} 
+                                    handleCommand={handleCommand} 
+                                /></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* CRITICAL ALERT OVERLAY */}
+                    {showCriticalOverlay && (
+                        <div className="fixed top-20 right-10 z-50 bg-[#090d16] border-2 border-[#f43f5e] p-4 rounded-lg shadow-[0_0_30px_rgba(244,63,94,0.5)] animate-pulse-slow max-w-sm pointer-events-none">
+                            <div className="text-[#f43f5e] font-mono font-bold text-center border-b border-[#f43f5e] pb-2 mb-3 tracking-widest">
+                                ═════ CRITICAL ICS ALERT ═════
+                            </div>
+                            <div className="flex flex-col gap-2 font-mono text-sm">
+                                <div className="flex justify-between"><span className="text-[#94a3b8]">Drone:</span> <span className="text-white font-bold">DRONE-07</span></div>
+                                <div className="flex justify-between"><span className="text-[#94a3b8]">Technique:</span> <span className="text-[#f43f5e] font-bold bg-[#f43f5e]/20 px-1 rounded">T0832</span></div>
+                                <div className="flex justify-between"><span className="text-[#94a3b8]">Severity:</span> <span className="text-[#f43f5e] font-bold">HIGH</span></div>
+                                <div className="mt-2 text-center text-white bg-[#f43f5e]/20 p-2 rounded border border-[#f43f5e]/50">
+                                    Flight Telemetry Manipulation
+                                </div>
+                            </div>
+                            <div className="text-[#f43f5e] font-mono font-bold text-center border-t border-[#f43f5e] pt-2 mt-3 tracking-widest">
+                                ══════════════════════════════
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* ARTIFACT DRILL-DOWN DRAWER */}
+                    <ArtifactDrawer artifact={selectedArtifact} onClose={() => setSelectedArtifact(null)} />
+                </div>
+            );
+        };
+

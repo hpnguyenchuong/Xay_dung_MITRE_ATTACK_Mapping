@@ -1,0 +1,36 @@
+window.C2MonitorPanel = ({ drones, droneId, setSelectedDrone, logsEndRef, currentState, handleCommand }) => (
+    <div className="panel flex-1 min-h-0 flex flex-col">
+        <div className="panel-header">
+            <span className="material-symbols-outlined text-[16px]">terminal</span>
+            C2 LIVE MONITOR
+        </div>
+        <div className="flex-1 flex min-h-0 p-2 gap-2">
+            <div className="w-[120px] border border-[#334155] bg-[#090d16] rounded flex flex-col overflow-y-auto custom-scrollbar p-1">
+                <div className="text-[9px] font-bold text-[#34d399] px-1 py-1 border-b border-[#334155] mb-1">● ONLINE</div>
+                {drones.map(d => (
+                    <div key={d.drone_id} className={`flex items-center gap-2 p-1 rounded cursor-pointer ${droneId === d.drone_id ? 'bg-[#334155]' : 'hover:bg-[#1e293b]'}`} onClick={() => setSelectedDrone(d)}>
+                        <div className={`w-2 h-2 rounded-full ${d.battery < 20 ? 'bg-[#f43f5e] animate-pulse' : 'bg-[#34d399]'}`}></div>
+                        <span className="text-[9px] font-mono">{d.drone_id.substring(0,8)}</span>
+                    </div>
+                ))}
+            </div>
+            <div className="flex-1 border border-[#334155] bg-[#090d16] rounded overflow-y-auto custom-scrollbar p-2 font-mono text-[10px] whitespace-pre-wrap text-[#34d399]" ref={logsEndRef}>
+                {currentState.terminalOutput}
+            </div>
+        </div>
+        <div className="p-2 pt-0 grid grid-cols-4 gap-2">
+            <button onClick={() => handleCommand('PING', droneId)} className="bg-[#34d399]/10 hover:bg-[#34d399]/30 border border-[#34d399]/50 text-[#34d399] py-1 text-[9px] font-bold font-mono rounded transition-colors">PING</button>
+            <button onClick={() => handleCommand('GET_STATUS', droneId)} className="bg-[#34d399]/10 hover:bg-[#34d399]/30 border border-[#34d399]/50 text-[#34d399] py-1 text-[9px] font-bold font-mono rounded transition-colors">STATUS</button>
+            <button onClick={() => handleCommand('GET_CONFIG', droneId)} className="bg-[#34d399]/10 hover:bg-[#34d399]/30 border border-[#34d399]/50 text-[#34d399] py-1 text-[9px] font-bold font-mono rounded transition-colors">CONFIG</button>
+            <button onClick={() => handleCommand('manipulate_control', droneId)} className="bg-[#f43f5e]/20 hover:bg-[#f43f5e]/40 border border-[#f43f5e]/50 text-[#f43f5e] py-1 text-[9px] font-bold font-mono rounded transition-colors">T0831 TEST</button>
+            <button onClick={() => handleCommand('gps_spoof', 'ALL_DRONES')} className="bg-[#f43f5e]/30 hover:bg-[#f43f5e]/50 border border-[#f43f5e] text-white py-1 text-[9px] font-bold font-mono rounded transition-colors shadow-[0_0_8px_rgba(244,63,94,0.5)]">GPS_SPOOF_ATTACK</button>
+            
+            <button onClick={() => handleCommand('GET_IOC', droneId)} className="bg-[#fbbf24]/10 hover:bg-[#fbbf24]/30 border border-[#fbbf24]/50 text-[#fbbf24] py-1 text-[9px] font-bold font-mono rounded transition-colors">GET IOC</button>
+            <button onClick={() => handleCommand('ISOLATE NODE', droneId)} className="bg-[#f43f5e]/10 hover:bg-[#f43f5e]/30 border border-[#f43f5e]/50 text-[#f43f5e] py-1 text-[9px] font-bold font-mono rounded transition-colors">ISOLATE</button>
+            <button onClick={() => handleCommand('GENERATE_REPORT', droneId)} className="bg-[#c084fc]/10 hover:bg-[#c084fc]/30 border border-[#c084fc]/50 text-[#c084fc] py-1 text-[9px] font-bold font-mono rounded transition-colors shadow-[0_0_5px_rgba(192,132,252,0.3)]">REPORT</button>
+            <button onClick={() => handleCommand('restore_control', droneId)} className="bg-[#34d399]/20 hover:bg-[#34d399]/40 border border-[#34d399]/50 text-[#34d399] py-1 text-[9px] font-bold font-mono rounded transition-colors">RESTORE</button>
+            <button onClick={() => handleCommand('stop_gps_spoof', 'ALL_DRONES')} className="bg-[#38bdf8]/20 hover:bg-[#38bdf8]/40 border border-[#38bdf8]/50 text-[#38bdf8] py-1 text-[9px] font-bold font-mono rounded transition-colors">STOP_GPS</button>
+            <button onClick={() => handleCommand('physical_damage', 'ALL_DRONES')} className="bg-[#fbbf24]/20 hover:bg-[#fbbf24]/40 border border-[#fbbf24]/50 text-[#fbbf24] py-1 text-[9px] font-bold font-mono rounded transition-colors col-span-2 shadow-[0_0_8px_rgba(251,191,36,0.5)] animate-pulse">BATTERY_DRAIN</button>
+        </div>
+    </div>
+);

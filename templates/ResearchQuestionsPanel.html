@@ -1,0 +1,45 @@
+window.ResearchQuestionsPanel = () => {
+    return (
+        <div className="panel h-full flex flex-col">
+            <div className="panel-header bg-[#38bdf8]/20 border-b border-[#38bdf8]/50">
+                <span className="material-symbols-outlined text-[16px] text-[#38bdf8]">task_alt</span>
+                <span className="text-[#38bdf8]">RESEARCH QUESTIONS VALIDATION</span>
+            </div>
+            <div className="p-3 flex-1 flex flex-col gap-2 min-h-0 overflow-y-auto custom-scrollbar">
+                
+                <div className="bg-[#0f172a] p-2 rounded border border-[#1e293b] flex justify-between items-center">
+                    <div className="flex flex-col">
+                        <span className="text-[#38bdf8] text-[10px] font-bold">RQ1: Can RE Findings be mapped to ATT&CK?</span>
+                        <span className="text-[#94a3b8] text-[10px]">Status: Solved</span>
+                    </div>
+                    <div className="bg-green-500/20 text-green-400 font-bold px-2 py-1 rounded text-[10px] border border-green-500/50">SOLVED</div>
+                </div>
+                
+                <div className="bg-[#0f172a] p-2 rounded border border-[#1e293b] flex justify-between items-center">
+                    <div className="flex flex-col">
+                        <span className="text-[#38bdf8] text-[10px] font-bold">RQ2: Can Custom C2 behaviors be identified?</span>
+                        <span className="text-[#94a3b8] text-[10px]">Status: Validated</span>
+                    </div>
+                    <div className="bg-blue-500/20 text-blue-400 font-bold px-2 py-1 rounded text-[10px] border border-blue-500/50">VALIDATED</div>
+                </div>
+                
+                <div className="bg-[#0f172a] p-2 rounded border border-[#1e293b] flex justify-between items-center">
+                    <div className="flex flex-col">
+                        <span className="text-[#38bdf8] text-[10px] font-bold">RQ3: Can Enterprise techniques translate to ICS?</span>
+                        <span className="text-[#94a3b8] text-[10px]">Status: Demonstrated</span>
+                    </div>
+                    <div className="bg-purple-500/20 text-purple-400 font-bold px-2 py-1 rounded text-[10px] border border-purple-500/50">DEMONSTRATED</div>
+                </div>
+                
+                <div className="bg-[#0f172a] p-2 rounded border border-[#1e293b] flex justify-between items-center">
+                    <div className="flex flex-col">
+                        <span className="text-[#38bdf8] text-[10px] font-bold">RQ4: Can mapping quality be evaluated?</span>
+                        <span className="text-[#94a3b8] text-[10px]">Status: Evaluated</span>
+                    </div>
+                    <div className="bg-yellow-500/20 text-yellow-400 font-bold px-2 py-1 rounded text-[10px] border border-yellow-500/50">EVALUATED</div>
+                </div>
+
+            </div>
+        </div>
+    );
+};

@@ -1,0 +1,149 @@
+window.FleetInfectionPanel = ({ drones = [], selectedDrone, onDroneSelect }) => {
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [currentTime, setCurrentTime] = useState(-1);
+
+    const timelineEvents = [
+        { t: 0, label: "T+00m", title: "Malware loaded", color: "#89ceff" },
+        { t: 15, label: "T+15m", title: "Mutex created", color: "#38bdf8" },
+        { t: 32, label: "T+32m", title: "Persistence established", color: "#c084fc" },
+        { t: 45, label: "T+45m", title: "C2 communication detected", color: "#f97316" },
+        { t: 55, label: "T+55m", title: "GPS manipulation observed", color: "#fbbf24" },
+        { t: 60, label: "T+60m", title: "Mission failure predicted", color: "#f43f5e" }
+    ];
+
+    useEffect(() => {
+        let timer;
+        if (isPlaying) {
+            timer = setInterval(() => {
+                setCurrentTime(prev => {
+                    if (prev >= timelineEvents.length - 1) {
+                        setIsPlaying(false);
+                        return timelineEvents.length - 1;
+                    }
+                    return prev + 1;
+                });
+            }, 1000); // 1 giây mỗi bước để demo
+        }
+        return () => clearInterval(timer);
+    }, [isPlaying]);
+
+    const handlePlay = () => {
+        setCurrentTime(-1);
+        setIsPlaying(true);
+    };
+
+        const totalDrones = drones.length || 10;
+        const affectedDrones = drones.filter(d => d.status === 'OFFLINE' || (d.status && d.status.drone_state !== 'NORMAL')).length || 7;
+        const compromiseRate = Math.round((affectedDrones / totalDrones) * 100);
+        
+        let missionCompletion = 100;
+        if (selectedDrone && selectedDrone.status && selectedDrone.status.mission_context) {
+            const ctx = selectedDrone.status.mission_context;
+            if (ctx.mission_phase === 'OFF_ROUTE') {
+                missionCompletion = 35; // Dropped heavily during GPS drift
+            } else {
+                missionCompletion = Math.round((ctx.current_waypoint / ctx.waypoints) * 100);
+            }
+        }
+
+    return (
+        <div className="panel flex-1 min-w-0 min-h-0 flex flex-col">
+            <div className="panel-header text-[#f43f5e] flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[14px]">device_hub</span>
+                    FLEET IMPACT STATISTICS
+                </div>
+                {/* Nút PLAY Demo */}
+                <button 
+                    onClick={handlePlay}
+                    disabled={isPlaying}
+                    className={`flex items-center gap-1 px-2 py-0.5 rounded border transition-colors ${
+                        isPlaying 
+                            ? 'bg-[#34d399]/20 border-[#34d399] text-[#34d399] cursor-not-allowed' 
+                            : 'bg-[#1e293b] border-[#334155] text-[#e2e8f0] hover:border-[#89ceff] hover:text-[#89ceff]'
+                    }`}
+                >
+                    <span className="material-symbols-outlined text-[12px]">play_arrow</span>
+                    {isPlaying ? 'PLAYING...' : 'REPLAY'}
+                </button>
+            </div>
+            
+            <div className="flex-1 flex flex-col min-w-0 min-h-0 p-3 gap-2 overflow-y-auto custom-scrollbar">
+                
+                {/* 1. Fleet Impact Metrics */}
+                <div className="flex justify-between items-end mb-1">
+                    <div className="text-[10px] font-bold text-[#94a3b8]">FLEET SUMMARY</div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2 mb-2">
+                    <div className="bg-[#1e293b] p-2 rounded border border-[#334155] flex flex-col items-center justify-center">
+                        <span className="text-[10px] text-[#94a3b8] font-mono">FLEET SIZE</span>
+                        <span className="text-[18px] font-bold text-[#e2e8f0]">{totalDrones}</span>
+                    </div>
+                    <div className="bg-[#1e293b] p-2 rounded border border-[#f43f5e]/30 flex flex-col items-center justify-center shadow-[0_0_10px_rgba(244,63,94,0.1)]">
+                        <span className="text-[10px] text-[#f43f5e] font-mono font-bold">AFFECTED</span>
+                        <span className="text-[18px] font-bold text-[#f43f5e]">{affectedDrones}</span>
+                    </div>
+                </div>
+
+                <div className="bg-[#090d16] p-2 rounded border border-[#334155] mb-2 flex flex-col gap-1.5">
+                    <div className="flex justify-between items-center text-[11px] font-mono">
+                        <span className="text-[#94a3b8]">Compromise Rate:</span>
+                        <span className="font-bold text-[#f43f5e]">{compromiseRate}%</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-[#1e293b] rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-[#fbbf24] to-[#f43f5e]" style={{ width: `${compromiseRate}%` }}></div>
+                    </div>
+                </div>
+
+                <div className="bg-[#090d16] p-2 rounded border border-[#334155] mb-2 flex flex-col gap-1.5">
+                    <div className="flex justify-between items-center text-[11px] font-mono">
+                        <span className="text-[#94a3b8]">Mission Completion Rate (Estimated):</span>
+                        <span className={`font-bold ${missionCompletion < 50 ? 'text-[#f43f5e]' : 'text-[#10b981]'}`}>{missionCompletion}%</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-[#1e293b] rounded-full overflow-hidden">
+                        <div className={`h-full ${missionCompletion < 50 ? 'bg-[#f43f5e]' : 'bg-[#10b981]'}`} style={{ width: `${missionCompletion}%` }}></div>
+                    </div>
+                    {missionCompletion < 50 && (
+                        <div className="mt-1 text-[9px] text-[#f43f5e] italic border-l-2 border-[#f43f5e] pl-2">
+                            Conclusion: Mission capability was significantly degraded due to cyber-physical impact.
+                        </div>
+                    )}
+                </div>
+
+                <div className="bg-[#f43f5e]/10 border border-[#f43f5e] p-2 rounded flex items-center justify-between shadow-[0_0_15px_rgba(244,63,94,0.2)] mb-3">
+                    <span className="text-[11px] font-bold text-[#f43f5e] tracking-widest">OVERALL MISSION RISK</span>
+                    <span className="text-[14px] font-black text-white bg-[#f43f5e] px-2 py-0.5 rounded">HIGH</span>
+                </div>
+
+                {/* 2. Threat Storyline */}
+                <div className="text-[12px] font-bold text-[#f97316] mt-1 mb-1 tracking-widest">THREAT STORYLINE</div>
+                <div className="relative border-l border-[#334155] ml-2 pl-4 py-1 flex flex-col gap-3">
+                    {timelineEvents.map((ev, i) => {
+                        const isHighlighted = currentTime >= i;
+                        return (
+                            <div key={i} className={`relative transition-opacity duration-500 ${isHighlighted ? 'opacity-100' : 'opacity-30'}`}>
+                                <div 
+                                    className={`absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full transition-colors duration-500`}
+                                    style={{ 
+                                        backgroundColor: isHighlighted ? ev.color : '#334155',
+                                        boxShadow: isHighlighted ? `0 0 10px ${ev.color}` : 'none'
+                                    }}
+                                ></div>
+                                <div className="flex gap-2 items-center">
+                                    <span 
+                                        className="text-[12px] font-mono font-bold"
+                                        style={{ color: isHighlighted ? ev.color : '#94a3b8' }}
+                                    >
+                                        {ev.label}
+                                    </span>
+                                    <span className="text-[12px] text-[#e2e8f0] font-bold">{ev.title}</span>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        </div>
+    );
+};

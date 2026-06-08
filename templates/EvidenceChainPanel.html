@@ -1,0 +1,58 @@
+window.EvidenceChainPanel = () => {
+    const [chain, setChain] = React.useState([]);
+
+    React.useEffect(() => {
+        const fetchChain = () => {
+            fetch('/api/evidence_chain')
+                .then(res => res.json())
+                .then(data => setChain(data.evidence_chain || []))
+                .catch(err => console.error(err));
+        };
+        fetchChain();
+        const interval = setInterval(fetchChain, 3000);
+        return () => clearInterval(interval);
+    }, []);
+
+    return (
+        <div className="panel h-full flex flex-col">
+            <div className="panel-header">
+                <span className="material-symbols-outlined text-[16px]">account_tree</span>
+                <span>EVIDENCE CHAIN</span>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
+                {chain.map((item, idx) => (
+                    <div key={idx} className="mb-6 border-l-2 border-[#334155] pl-4 relative">
+                        <div className="absolute w-2 h-2 bg-[#38bdf8] rounded-full -left-[5px] top-1"></div>
+                        <div className="flex flex-col gap-2">
+                            <div className="bg-[#0f172a] p-2 rounded text-xs border border-[#1e293b]">
+                                <span className="text-[#94a3b8] block text-[9px] uppercase">1. RE Artifact</span>
+                                <span className="text-[#a855f7] font-mono">{item.artifact}</span>
+                            </div>
+                            <div className="text-center text-[#475569] text-xs">↓</div>
+                            <div className="bg-[#0f172a] p-2 rounded text-xs border border-[#1e293b]">
+                                <span className="text-[#94a3b8] block text-[9px] uppercase">2. Behavior Analysis</span>
+                                <span className="text-[#f8fafc]">{item.behavior}</span>
+                            </div>
+                            <div className="text-center text-[#475569] text-xs">↓</div>
+                            <div className="bg-[#0f172a] p-2 rounded text-xs border border-[#1e293b] flex justify-between">
+                                <div>
+                                    <span className="text-[#94a3b8] block text-[9px] uppercase">3. Enterprise ATT&CK</span>
+                                    <span className="text-[#38bdf8] font-mono font-bold">{item.enterprise_technique}</span>
+                                </div>
+                                <div className="text-right">
+                                    <span className="text-[#94a3b8] block text-[9px] uppercase">4. ICS ATT&CK</span>
+                                    <span className="text-[#f43f5e] font-mono font-bold">{item.ics_technique || 'N/A'}</span>
+                                </div>
+                            </div>
+                            <div className="text-center text-[#475569] text-xs">↓</div>
+                            <div className="bg-[#1e293b] p-2 rounded text-xs border border-[#f43f5e]/30">
+                                <span className="text-[#f43f5e] block text-[9px] uppercase">5. Operational Effect</span>
+                                <span className="text-white font-bold">{item.operational_effect || 'Mission Degradation'}</span>
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
