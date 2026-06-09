@@ -308,6 +308,15 @@ def init_forensic_db():
                 WHERE rule_id='RULE_004'
             """)
 
+            cursor.execute("""
+                UPDATE mapping_rules
+                SET behavior='Service Execution',
+                    enterprise_technique='T1569.002',
+                    ics_technique=NULL,
+                    reference='MITRE ATT&CK Enterprise'
+                WHERE rule_id='RULE_005'
+            """)
+
             # Populate Ground Truth
             cursor.execute("SELECT COUNT(*) as count FROM ground_truth_mapping")
             if cursor.fetchone()["count"] == 0:
@@ -654,13 +663,13 @@ class MITREMappingEngine:
                         cursor.execute("INSERT INTO attack_mapping (drone_id, tactic, tactic_name, technique_id, name, timestamp) VALUES (?, ?, ?, ?, ?, ?)", (drone_id, "TA0111", "Command and Control", tech, f"Candidate {tech} detected", t_str))
 
             # Check Beacon Abuse (T1071) based on telemetry interval
-            status_obj = packet.get("status", {})
-            interval = packet.get("beacon_interval") or status_obj.get("beacon_interval", 5.0)
-            if interval:
-                if interval > 0 and interval < 1.0: # Phát hiện tần suất xả gói tin áp đảo điện tử dưới 1s
+            interval = packet.get("beacon_interval", packet.get("status", {}).get("beacon_interval", 5.0))
+            if interval > 0 and interval < 1.0: # Phát hiện tần suất xả gói tin áp đảo điện tử dưới 1s
                     # Automated Active Defense (CLO7)
                     flood_counter[drone_id] = flood_counter.get(drone_id, 0) + 1
-                    if flood_counter[drone_id] >= 10:
+            else:
+                    flood_counter[drone_id] = 0
+            if flood_counter.get(drone_id, 0) >= 10:
                         # Rule-Based Automated Containment
                         payload = json.dumps({"cmd": "stop_attack"})
                         obfuscated = TransportObfuscationLayer.obfuscate(payload) + b"\n"
@@ -859,7 +868,7 @@ def db_worker():
                             packet.get("speed", 0), packet.get("gps", "0,0"), p_hash, t_now,
                             packet.get("network_speed", 100), packet.get("signal_strength", -50),
                             packet.get("max_altitude", 300), packet.get("codename", "Unknown"),
-                            packet.get("temp", 40), packet.get("satellites", 10), packet.get("beacon_interval", 5.0)
+                            packet.get("temp", 40), packet.get("satellites", 10), packet.get("beacon_interval", packet.get("status", {}).get("beacon_interval", 5.0))
                         ))
                         db_conn.commit()
                     except Exception as e:
@@ -1140,6 +1149,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     found_patterns = [r["finding"] for r in cursor.fetchall()]
                     fn = sum(1 for gt in gt_patterns if gt not in found_patterns)
                     
+                    insufficient_data = (tp + fp + fn) == 0
+
                     precision = tp / (tp + fp) if (tp + fp) > 0 else 0
                     recall = tp / (tp + fn) if (tp + fn) > 0 else 0
                     f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
@@ -1150,7 +1161,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         "precision": round(precision, 2),
                         "recall": round(recall, 2),
                         "f1": round(f1, 2),
-                        "accuracy": round(accuracy, 2)
+                        "accuracy": round(accuracy, 2),
+                        "insufficient_data": insufficient_data
                     })
 
                 elif endpoint == "dataset_provenance":
