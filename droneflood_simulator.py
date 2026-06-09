@@ -499,12 +499,9 @@ def main():
         print(f" {C_GREEN}[+] Found {num_drones} active drones. Adapting payload to hijack them...{C_END}")
         
     for repeat_idx in range(args.repeat):
-        box_width = 80
-        print(f"\n {C_BLUE}╔" + "═"*box_width + "╗" + C_END)
-        title = f"🚀 LAUNCHING BOTNET SWARM ITERATION {repeat_idx + 1}/{args.repeat} (Targets: {num_drones})"
-        padding = box_width - len(title) - 1
-        print(f" {C_BLUE}║ {C_RED}{C_BOLD}{title}{C_END}" + " "*padding + f"{C_BLUE}║{C_END}")
-        print(f" {C_BLUE}╠" + "═"*box_width + "╣" + C_END)
+        print(f"\n {C_RED}{C_BOLD}================================================================================{C_END}")
+        print(f" {C_RED}{C_BOLD}🚀 LAUNCHING BOTNET SWARM ITERATION {repeat_idx + 1}/{args.repeat} (Targets: {num_drones}){C_END}")
+        print(f" {C_RED}{C_BOLD}================================================================================{C_END}")
         
         # Pre-generate drone IDs so we can print them cleanly
         swarm_drones = [f"DRONE-{random.randint(100,999)}" for _ in range(num_drones)]
@@ -512,11 +509,9 @@ def main():
         for drone_id in swarm_drones:
             codename_list = ["Specter-Alpha", "Valkyrie-X1", "ShadowHawk-V", "Predator-C2", "Horizon-Zero", "SkyRanger-M9"]
             codename = codename_list[hash(drone_id) % len(codename_list)]
-            agent_msg = f"[+] Hooking stream for: {drone_id} (Codename: {codename})"
-            agent_padding = box_width - len(agent_msg) - 1
-            print(f" {C_BLUE}║{C_END} {C_GREEN}{agent_msg}{C_END}" + " "*agent_padding + f"{C_BLUE}║{C_END}")
+            print(f" {C_GREEN}[+] Hooking stream for: {drone_id} (Codename: {codename}){C_END}")
             
-        print(f" {C_BLUE}╚" + "═"*box_width + "╝" + C_END + "\n")
+        print(f" {C_RED}{C_BOLD}================================================================================{C_END}\n")
         
         threads = []
         for drone_id in swarm_drones:
