@@ -152,30 +152,83 @@ def fetch_active_drones(c2_ip, web_port=9000):
         with urllib.request.urlopen(url, timeout=2) as res:
             data = json.loads(res.read().decode("utf-8"))
             return data.get("fleet", {})
-    except Exception as e:
-        print(f" {C_YELLOW}[!] Could not fetch active drones from C2 REST API: {e}{C_END}")
-        return {}
+    except Exception:
+        return None
 
 def active_drones_monitor(c2_ip, web_port=9000):
+    global args
+    start_time = time.time()
+    
     while True:
         fleet = fetch_active_drones(c2_ip, web_port)
         
-        output = f"\n {C_BLUE}{C_BOLD}========== ACTIVE C2 DRONES FROM SERVER =========={C_END}\n"
-        output += f" {C_CYAN}Total Active:{C_END} {len(fleet)}\n"
+        ubuntu_clients = []
+        simulator_bots = []
         
-        for drone_id, d in fleet.items():
-            output += (
-                f" {C_GREEN}{drone_id}{C_END} | IP: {d.get('ip')} | "
-                f"Batt: {d.get('battery')}% | Alt: {d.get('altitude')}m | "
-                f"Speed: {d.get('speed')} | GPS: {d.get('gps')} | "
-                f"Status: {d.get('status', 'ACTIVE')}\n"
-            )
-        output += f" {C_BLUE}{C_BOLD}=================================================={C_END}\n"
-        
-        with print_lock:
-            print(output, flush=True)
+        api_failed = False
+        if fleet is None:
+            api_failed = True
+            fleet = {}
             
-        time.sleep(3)
+        for drone_id, d in fleet.items():
+            if d.get("profile_type") == "CLIENT":
+                ubuntu_clients.append((drone_id, d))
+            else:
+                simulator_bots.append((drone_id, d))
+                
+        uptime_sec = int(time.time() - start_time)
+        mins, secs = divmod(uptime_sec, 60)
+        runtime_str = f"{mins:02d}:{secs:02d}"
+        
+        stage = getattr(args, 'scenario', 'Unknown').title()
+        if stage == 'Full_Campaign': stage = 'Full Campaign'
+        if stage == 'Custom_C2': stage = 'Custom C2'
+        if stage == 'Fleet_Takeover': stage = 'Fleet Takeover'
+        if stage == 'Gps_Drift': stage = 'GPS Drift'
+        if stage == 'Mission_Failure': stage = 'Mission Failure'
+        
+        output = []
+        if not getattr(args, 'verbose', False):
+            output.append("\033[2J\033[H") # Clear screen and move cursor to home
+            
+        output.append("╔════════════════════════════════════════════════════════════════════╗")
+        output.append("║              DRONEFLOOD SWARM SIMULATOR STATUS BOARD               ║")
+        output.append("╠════════════════════════════════════════════════════════════════════╣")
+        output.append(f"║ Scenario: {stage:<17} Stage: {stage:<16} Runtime: {runtime_str:<5} ║")
+        output.append(f"║ Ubuntu Clients: {len(ubuntu_clients):<11} Simulator Bots: {len(simulator_bots):<7} Total: {len(fleet):<7} ║")
+        output.append("╚════════════════════════════════════════════════════════════════════╝\n")
+        
+        if api_failed:
+            output.append(f" {C_RED}[!] WARNING: Could not fetch active drones from C2 REST API.{C_END}\n")
+        
+        if ubuntu_clients:
+            output.append(f"{C_CYAN}ACTIVE UBUNTU CLIENTS{C_END}")
+            output.append(f"{C_CYAN}{'ID':<10} {'IP':<15} {'BATT':<6} {'ALT':<6} {'SPEED':<7} {'GPS':<18}{C_END}")
+            for d_id, d in ubuntu_clients:
+                batt = f"{d.get('battery', 0)}%"
+                alt = f"{d.get('altitude', 0)}m"
+                speed = str(d.get('speed', 0))
+                gps = str(d.get('gps', 'Unknown'))[:18]
+                ip = str(d.get('ip', 'Unknown'))
+                output.append(f"{C_GREEN}{d_id:<10}{C_END} {ip:<15} {batt:<6} {alt:<6} {speed:<7} {gps:<18}")
+            output.append("\n")
+            
+        if simulator_bots:
+            output.append(f"{C_CYAN}ACTIVE SIMULATOR BOTS{C_END}")
+            output.append(f"{C_CYAN}{'ID':<10} {'STAGE':<14} {'ARTIFACTS':<10} {'BATT':<6} {'ALT':<6} {'GPS':<18}{C_END}")
+            for d_id, d in simulator_bots:
+                stage_val = str(d.get('campaign_stage', 'Unknown'))[:14]
+                arts = str(d.get('active_artifacts', 0))
+                batt = f"{d.get('battery', 0)}%"
+                alt = f"{d.get('altitude', 0)}m"
+                gps = str(d.get('gps', 'Unknown'))[:18]
+                output.append(f"{C_YELLOW}{d_id:<10}{C_END} {stage_val:<14} {arts:<10} {batt:<6} {alt:<6} {gps:<18}")
+            output.append("\n")
+            
+        with print_lock:
+            print("\n".join(output), flush=True)
+            
+        time.sleep(1)
 
 def tcp_flood_task(c2_ip):
     while beacon_mode == "ABUSE":
@@ -492,6 +545,7 @@ def main():
     parser.add_argument("--speed", type=str, choices=["fast", "demo", "slow"], default="demo", help="Speed of the campaign simulation")
     parser.add_argument("--pause-after", type=str, default="", help="Pause the simulation after a specific stage (e.g., 'Persistence')")
     parser.add_argument("--repeat", type=int, default=1, help="Number of times to repeat the scenario")
+    parser.add_argument("--verbose", action="store_true", help="Print detailed telemetry logs")
     args = parser.parse_args()
     
     speed_map = {"fast": 1, "demo": 5, "slow": 10}
