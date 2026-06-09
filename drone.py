@@ -904,7 +904,6 @@ def handle_client(client, addr):
                                 clients[drone_id].close()
                             except: pass
                         clients[drone_id] = client
-                    print(f"\n{C_GREEN}[+]{C_END} Distributed Node Active: {C_BOLD}{drone_id}{C_END} bound from {client_ip}")
                 
                 # Queue the processing
                 t_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -2051,19 +2050,8 @@ def terminal_dashboard_thread():
                 if d_id not in active_drones: continue
                 if row["battery"] <= 0: continue
                 
-                seq = row["id"]
-                batt = row["battery"]
-                alt = row["altitude"]
-                net_speed = row["network_speed"]
-                gps = row["gps"]
-                timestamp = row["timestamp"]
-                
-                log_str = f"{C_CYAN}┌──[ BOT: {d_id} ]────[ C2 CONNECTION: ACTIVE ]────[ SEQ: {seq} ]{C_END}\n"
-                log_str += f"{C_CYAN}↳{C_END} Batt: {batt}% | Alt: {alt}m | Net: {net_speed}Mbps | GPS: {gps}\n"
-                log_str += f"{C_YELLOW}[*] Last Synced: {timestamp}{C_END}"
-                
-                output_lines.append(log_str)
-                output_lines.append("")
+                client_ip = row["ip"]
+                output_lines.append(f" {C_GREEN}[+]{C_END} Distributed Node Active: {C_BOLD}{d_id}{C_END} bound from {client_ip}")
                 printed += 1
                 
             if printed > 0:
