@@ -11,6 +11,9 @@ import argparse
 
 C_GREEN, C_RED, C_YELLOW, C_BLUE, C_CYAN, C_BOLD, C_END = ("\033[92m", "\033[91m", "\033[93m", "\033[94m", "\033[96m", "\033[1m", "\033[0m")
 
+shared_telemetry_buffer = {}
+print_lock = threading.Lock()
+
 class TransportObfuscationLayer:
     @staticmethod
     def obfuscate(data_str: str) -> bytes:
@@ -405,9 +408,12 @@ def run_drone_agent(c2_ip, port, drone_id, scenario, delay_seconds=5):
                 sock.sendall(TransportObfuscationLayer.obfuscate(json.dumps(telemetry_packet)) + b"\n")
                 
                 uptime = int(current_time - start_time)
-                print(f"\n{C_CYAN}┌──[ BOT: {drone_id} ]────[ UPTIME: {uptime}s ]────[ SEQ: {seq} ]{C_END}")
-                print(f"{C_CYAN}↳{C_END} Batt: {battery}% | Alt: {alt}m | Net: {net_speed}Mbps | GPS: {lat_base:.4f},{lng_base:.4f}")
-                print(f"{C_YELLOW}[*] Campaign Stage: {C_BOLD}{campaign_stage}{C_END} | Active Artifacts: {len(active_findings)}")
+                log_str = f"{C_CYAN}┌──[ BOT: {drone_id} ]────[ UPTIME: {uptime}s ]────[ SEQ: {seq} ]{C_END}\n"
+                log_str += f"{C_CYAN}↳{C_END} Batt: {battery}% | Alt: {alt}m | Net: {net_speed}Mbps | GPS: {lat_base:.4f},{lng_base:.4f}\n"
+                log_str += f"{C_YELLOW}[*] Campaign Stage: {C_BOLD}{campaign_stage}{C_END} | Active Artifacts: {len(active_findings)}"
+                
+                with print_lock:
+                    shared_telemetry_buffer[drone_id] = log_str
                 
                 if args.pause_after.lower() == campaign_stage.lower():
                     print(f"\n{C_RED}[!] PAUSED AFTER {campaign_stage.upper()}. Press [ENTER] to continue...{C_END}")
@@ -519,9 +525,18 @@ def main():
             threads.append(t)
             time.sleep(0.5)
             
-        # Wait for all threads in this iteration to finish
-        for t in threads:
-            t.join()
+        # Monitor threads and print telemetry buffer
+        while any(t.is_alive() for t in threads):
+            time.sleep(1)
+            with print_lock:
+                if shared_telemetry_buffer:
+                    # Clear screen conceptually (or just print the frame)
+                    print(f"\n {C_BLUE}================================================================================{C_END}")
+                    for d_id, log in shared_telemetry_buffer.items():
+                        print(log)
+                        print("") # Blank line between drone logs for readability
+                    print(f" {C_BLUE}================================================================================{C_END}")
+                    shared_telemetry_buffer.clear()
             
         if repeat_idx < args.repeat - 1:
             print(f" {C_CYAN}[i] Waiting 5 seconds before next iteration...{C_END}")
