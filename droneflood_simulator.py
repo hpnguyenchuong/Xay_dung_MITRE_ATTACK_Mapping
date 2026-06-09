@@ -309,6 +309,7 @@ def run_drone_agent(c2_ip, port, drone_id, scenario, delay_seconds=5):
             
             reg_packet = {
                 "type": "register", 
+                "profile_type": "SIMULATOR",
                 "drone_id": drone_id,
                 "session_id": session_id,
                 "profile": profile,

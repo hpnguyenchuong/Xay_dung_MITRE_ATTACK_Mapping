@@ -928,7 +928,12 @@ def handle_client(client, addr):
                                 clients[drone_id].close()
                             except: pass
                         clients[drone_id] = client
-                        client_metadata[drone_id] = {"ip": client_ip, "connected_at": time.time(), "last_seen": time.time()}
+                        client_metadata[drone_id] = {
+                            "ip": client_ip, 
+                            "connected_at": time.time(), 
+                            "last_seen": time.time(),
+                            "profile_type": packet.get("profile_type", "UNKNOWN")
+                        }
                 else:
                     with clients_lock:
                         if drone_id and drone_id in client_metadata:
@@ -940,6 +945,17 @@ def handle_client(client, addr):
                     batt = packet.get("battery", 0)
                     if batt < 10:
                         print(f"\n{C_RED}{C_BOLD}[CRITICAL WARNING] DRONE {drone_id} BATTERY LEVEL CRITICAL: {batt}%! IMMEDIATE RTB REQUIRED!{C_END}\n")
+                    
+                    with clients_lock:
+                        if drone_id in client_metadata:
+                            client_metadata[drone_id].update({
+                                "battery": batt,
+                                "altitude": packet.get("altitude", 0),
+                                "gps": packet.get("gps", "Unknown"),
+                                "speed": packet.get("speed", 0),
+                                "campaign_stage": packet.get("campaign_stage", "Unknown"),
+                                "active_artifacts": len(packet.get("re_findings", []))
+                            })
                 
                 db_queue.put((drone_id, client_ip, p_hash, packet, packet_type, t_now))
 
@@ -2062,21 +2078,22 @@ def terminal_dashboard_thread():
     while True:
         time.sleep(1) # Refresh every second
         
-        output_lines = []
-        output_lines.append(f"\n {C_BLUE}{'='*60}{C_END}")
-        
         current_time = time.time()
         
-        # Cleanup zombies and build active list
+        clients_only = []
+        simulator_only = []
+        
         with clients_lock:
-            active_drones = []
             drones_to_remove = []
             
             for drone_id, metadata in client_metadata.items():
                 if current_time - metadata.get("last_seen", current_time) > 15:
                     drones_to_remove.append(drone_id)
                 else:
-                    active_drones.append((drone_id, metadata))
+                    if metadata.get("profile_type") == "CLIENT":
+                        clients_only.append((drone_id, metadata))
+                    else:
+                        simulator_only.append((drone_id, metadata))
             
             for drone_id in drones_to_remove:
                 if drone_id in clients:
@@ -2086,23 +2103,43 @@ def terminal_dashboard_thread():
                     del clients[drone_id]
                 del client_metadata[drone_id]
         
-        output_lines.append(f" {C_BOLD}Active Drones: {len(active_drones)}{C_END}")
-        output_lines.append(f" {C_BLUE}{'-'*60}{C_END}")
-        
-        if active_drones:
-            for drone_id, metadata in active_drones:
-                client_ip = metadata.get("ip", "Unknown")
-                last_seen_sec = int(current_time - metadata.get("last_seen", current_time))
-                conn_duration = int(current_time - metadata.get("connected_at", current_time))
-                
-                output_lines.append(f" {C_GREEN}[+]{C_END} Node: {C_BOLD}{drone_id}{C_END} | IP: {client_ip} | Last Seen: {last_seen_sec}s ago | Uptime: {conn_duration}s")
-        else:
-            output_lines.append(f" {C_YELLOW}[*] No active drones connected to C2 Server.{C_END}")
-            
-        output_lines.append(f" {C_BLUE}{'='*60}{C_END}")
-        
         # Clear screen before printing
         os.system('cls' if os.name == 'nt' else 'clear')
+        
+        output_lines = []
+        output_lines.append(f"\n {C_BLUE}{'='*60}{C_END}")
+        output_lines.append(f" {C_CYAN}{C_BOLD}UBUNTU DRONE CLIENTS : {len(clients_only)}{C_END}")
+        output_lines.append(f" {C_CYAN}{C_BOLD}SIMULATOR BOTS       : {len(simulator_only)}{C_END}")
+        output_lines.append(f" {C_CYAN}{C_BOLD}TOTAL ACTIVE DRONES  : {len(clients_only) + len(simulator_only)}{C_END}")
+        output_lines.append(f" {C_BLUE}{'='*60}{C_END}")
+        
+        if clients_only:
+            output_lines.append(f"\n {C_GREEN}{C_BOLD}ACTIVE UBUNTU CLIENTS{C_END}")
+            output_lines.append(f" {C_GREEN}{'-'*60}{C_END}")
+            for drone_id, metadata in clients_only:
+                client_ip = metadata.get("ip", "Unknown")
+                conn_duration = int(current_time - metadata.get("connected_at", current_time))
+                batt = metadata.get("battery", "N/A")
+                alt = metadata.get("altitude", "N/A")
+                gps = metadata.get("gps", "N/A")
+                
+                output_lines.append(f" {C_GREEN}[+]{C_END} {C_BOLD}{drone_id}{C_END} | IP: {client_ip} | Batt: {batt}% | Alt: {alt}m | GPS: {gps} | Uptime: {conn_duration}s")
+                
+        if simulator_only:
+            output_lines.append(f"\n {C_YELLOW}{C_BOLD}ACTIVE SIMULATOR BOTS{C_END}")
+            output_lines.append(f" {C_YELLOW}{'-'*60}{C_END}")
+            for drone_id, metadata in simulator_only:
+                conn_duration = int(current_time - metadata.get("connected_at", current_time))
+                stage = metadata.get("campaign_stage", "Unknown")
+                artifacts = metadata.get("active_artifacts", 0)
+                
+                output_lines.append(f" {C_YELLOW}[*]{C_END} {C_BOLD}{drone_id}{C_END} | Stage: {stage} | Artifacts: {artifacts} | Uptime: {conn_duration}s")
+                
+        if not clients_only and not simulator_only:
+            output_lines.append(f"\n {C_YELLOW}[*] No active drones connected to C2 Server.{C_END}")
+            
+        output_lines.append(f"\n {C_BLUE}{'='*60}{C_END}\n")
+        
         for line in output_lines:
             print(line)
 

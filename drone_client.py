@@ -64,6 +64,7 @@ def main():
     # Registration Request
     reg_payload = {
         "type": "register",
+        "profile_type": "CLIENT",
         "drone_id": drone_id,
         "fleet_id": "fleet_alpha",
         "fleet_role": fleet_role,
