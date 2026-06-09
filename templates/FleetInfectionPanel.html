@@ -3,28 +3,40 @@ window.FleetInfectionPanel = ({ drones = [], selectedDrone, onDroneSelect }) => 
     const [currentTime, setCurrentTime] = useState(-1);
 
     const timelineEvents = [
-        { t: 0, label: "T+00m", title: "Malware loaded", color: "#89ceff", icon: "download", desc: "Inject Initial Payload" },
-        { t: 15, label: "T+15m", title: "Persistence established", color: "#c084fc", icon: "vpn_key", desc: "Ensure Survivability" },
-        { t: 30, label: "T+30m", title: "Custom C2 channel", color: "#f97316", icon: "settings_ethernet", desc: "Establish Comm Link" },
-        { t: 45, label: "T+45m", title: "Fleet Takeover (P2P)", color: "#f43f5e", icon: "hub", desc: "Infect Swarm Neighbors" },
-        { t: 55, label: "T+55m", title: "GPS Drift manipulation", color: "#fbbf24", icon: "gps_off", desc: "Alter Navigation Path" },
-        { t: 60, label: "T+60m", title: "Mission failure", color: "#ef4444", icon: "warning", desc: "Trigger Physical Damage" }
+        { t: 0, label: "T+00m", title: "Malware loaded", color: "#89ceff", icon: "download", desc: "Inject Initial Payload", backendCmd: "get_profile" },
+        { t: 15, label: "T+15m", title: "Persistence established", color: "#c084fc", icon: "vpn_key", desc: "Ensure Survivability", backendCmd: "get_config" },
+        { t: 30, label: "T+30m", title: "Custom C2 channel", color: "#f97316", icon: "settings_ethernet", desc: "Establish Comm Link", backendCmd: "get_ioc" },
+        { t: 45, label: "T+45m", title: "Fleet Takeover (P2P)", color: "#f43f5e", icon: "hub", desc: "Infect Swarm Neighbors", backendCmd: "tcp_flood" },
+        { t: 55, label: "T+55m", title: "GPS Drift manipulation", color: "#fbbf24", icon: "gps_off", desc: "Alter Navigation Path", backendCmd: "gps_spoof" },
+        { t: 60, label: "T+60m", title: "Mission failure", color: "#ef4444", icon: "warning", desc: "Trigger Physical Damage", backendCmd: "physical_damage" }
     ];
 
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+    const triggerReplayCommand = (cmd) => {
+        fetch('/api/command', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cmd: cmd, drone_id: 'ALL' })
+        }).catch(e => console.error("Replay command failed", e));
+    };
 
     useEffect(() => {
         let timer;
         if (isPlaying) {
             timer = setInterval(() => {
                 setCurrentTime(prev => {
-                    if (prev >= timelineEvents.length - 1) {
+                    const nextTime = prev + 1;
+                    if (nextTime < timelineEvents.length) {
+                        triggerReplayCommand(timelineEvents[nextTime].backendCmd);
+                    }
+                    if (nextTime >= timelineEvents.length - 1) {
                         setIsPlaying(false);
                         return timelineEvents.length - 1;
                     }
-                    return prev + 1;
+                    return nextTime;
                 });
-            }, 1000); // 1 giây mỗi bước để demo
+            }, 1500); // Tăng lên 1.5s để terminal kịp in ra đẹp mắt
         }
         return () => clearInterval(timer);
     }, [isPlaying]);
@@ -109,7 +121,12 @@ window.FleetInfectionPanel = ({ drones = [], selectedDrone, onDroneSelect }) => 
                                 {timelineEvents.map((ev, i) => (
                                     <button 
                                         key={i}
-                                        onClick={() => { setCurrentTime(i); setIsPlaying(false); setIsMenuOpen(false); }}
+                                        onClick={() => { 
+                                            setCurrentTime(i); 
+                                            setIsPlaying(false); 
+                                            setIsMenuOpen(false); 
+                                            triggerReplayCommand(ev.backendCmd);
+                                        }}
                                         className="flex items-center gap-3 px-2 py-1.5 text-left text-slate-300 hover:text-white hover:bg-[#c084fc]/20 hover:shadow-[inset_0_0_10px_rgba(192,132,252,0.3)] border border-transparent hover:border-[#c084fc]/50 transition-all rounded group"
                                     >
                                         <span 
