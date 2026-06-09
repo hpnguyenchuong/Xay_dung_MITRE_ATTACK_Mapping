@@ -221,7 +221,6 @@ def run_drone_agent(c2_ip, port, drone_id, scenario, delay_seconds=5):
     max_alt = random.choice([300, 350, 400, 450, 500])
     
     session_id = uuid.uuid4().hex[:8].upper()
-    print(f" {C_GREEN}[+]{C_END} Hooking communication stream pipeline for: {C_BOLD}{drone_id}{C_END} (Codename: {codename}) | Scenario: {scenario}")
     
     start_time = time.time()
     battery = 100
@@ -500,16 +499,27 @@ def main():
         print(f" {C_GREEN}[+] Found {num_drones} active drones. Adapting payload to hijack them...{C_END}")
         
     for repeat_idx in range(args.repeat):
-        if args.repeat > 1:
-            print(f"\n{C_YELLOW}{C_BOLD}=== CAMPAIGN ITERATION {repeat_idx + 1} / {args.repeat} ==={C_END}")
+        box_width = 80
+        print(f"\n {C_BLUE}╔" + "═"*box_width + "╗" + C_END)
+        title = f"🚀 LAUNCHING BOTNET SWARM ITERATION {repeat_idx + 1}/{args.repeat} (Targets: {num_drones})"
+        padding = box_width - len(title) - 1
+        print(f" {C_BLUE}║ {C_RED}{C_BOLD}{title}{C_END}" + " "*padding + f"{C_BLUE}║{C_END}")
+        print(f" {C_BLUE}╠" + "═"*box_width + "╣" + C_END)
+        
+        # Pre-generate drone IDs so we can print them cleanly
+        swarm_drones = [f"DRONE-{random.randint(100,999)}" for _ in range(num_drones)]
+        
+        for drone_id in swarm_drones:
+            codename_list = ["Specter-Alpha", "Valkyrie-X1", "ShadowHawk-V", "Predator-C2", "Horizon-Zero", "SkyRanger-M9"]
+            codename = codename_list[hash(drone_id) % len(codename_list)]
+            agent_msg = f"[+] Hooking stream for: {drone_id} (Codename: {codename})"
+            agent_padding = box_width - len(agent_msg) - 1
+            print(f" {C_BLUE}║{C_END} {C_GREEN}{agent_msg}{C_END}" + " "*agent_padding + f"{C_BLUE}║{C_END}")
             
-        print(f" {C_RED}[!] LAUNCHING MULTIPLE BOTNET AGENTS (Count: {num_drones})...{C_END}\n")
+        print(f" {C_BLUE}╚" + "═"*box_width + "╝" + C_END + "\n")
         
         threads = []
-        for i in range(num_drones):
-            # Pick a random drone_id
-            drone_id = f"DRONE-{random.randint(100,999)}"
-                
+        for drone_id in swarm_drones:
             t = threading.Thread(target=run_drone_agent, args=(c2_ip, port, drone_id, selected_scenario, delay_seconds), daemon=True)
             t.start()
             threads.append(t)
