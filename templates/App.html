@@ -261,15 +261,22 @@ Date.now() - b.t < 2000)); } } }, 50); return ()=> clearInterval(intv);
                                 </div>
                             </div>
 
-                            {/* ROW 4: Research & Limitations */}
+                            {/* ROW 4: Research & Drone History */}
                             <div className="bento-row">
                                 <div className="flex-[1.0] flex min-w-0">
                                     <MappingTrendPanel />
                                 </div>
+                                <div className="flex-[1.2] flex min-w-0">
+                                    <DroneHistoryPanel />
+                                </div>
                                 <div className="flex-[1.0] flex min-w-0">
                                     <ThreatCoverageHeatmapPanel />
                                 </div>
-                                <div className="flex-[1.2] flex min-w-0">
+                            </div>
+
+                            {/* ROW 4.5: Limitations */}
+                            <div className="bento-row">
+                                <div className="flex-1 flex min-w-0">
                                     <LimitationsPanel />
                                 </div>
                             </div>
