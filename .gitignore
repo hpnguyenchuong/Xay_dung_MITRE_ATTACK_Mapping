@@ -6,3 +6,20 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+
+# SQLite databases (Không nên đẩy database thật lên Github)
+*.db
+*.sqlite3
+
+# Thư mục logs của dự án
+logs/
+reports/
+navigator_exports/

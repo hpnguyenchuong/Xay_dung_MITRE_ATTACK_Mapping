@@ -3,22 +3,22 @@ window.ArtifactDrawer = ({ artifact, onClose }) => {
 
     return (
         <div className="fixed top-0 right-0 w-[450px] h-full bg-[#090d16] border-l border-[#334155] shadow-[-10px_0_30px_rgba(0,0,0,0.8)] z-50 flex flex-col transform transition-transform duration-300 ease-in-out">
-            <div className="flex justify-between items-center p-4 border-b border-[#334155] bg-[#1e293b]">
+            <div className="flex justify-between items-center p-2 border-b border-[#334155] bg-[#1e293b]">
                 <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-[#89ceff]">data_object</span>
-                    <span className="font-bold text-[#e2e8f0] tracking-widest text-[12px]">EVIDENCE DRILL-DOWN</span>
+                    <span className="font-bold text-[#e2e8f0] tracking-widest text-[15px]">EVIDENCE DRILL-DOWN</span>
                 </div>
                 <button onClick={onClose} className="text-[#94a3b8] hover:text-[#f43f5e] transition-colors">
                     <span className="material-symbols-outlined">close</span>
                 </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 flex flex-col gap-5">
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-2 flex flex-col gap-5">
                 
                 {/* 1. Basic Information */}
                 <div>
-                    <h3 className="text-[#89ceff] text-[10px] font-bold uppercase mb-2 border-b border-[#334155] pb-1">1. Forensic Details</h3>
-                    <div className="grid grid-cols-2 gap-2 text-[10px]">
+                    <h3 className="text-[#89ceff] text-[16px] font-bold uppercase mb-2 border-b border-[#334155] pb-1">1. Forensic Details</h3>
+                    <div className="grid grid-cols-2 gap-2 text-[16px]">
                         <div className="text-[#94a3b8]">Artifact Name:</div>
                         <div className="text-[#e2e8f0] font-mono font-bold bg-[#1e293b] px-1 rounded">{artifact.artifact || "DF_MUTEX_01"}</div>
                         
@@ -35,13 +35,13 @@ window.ArtifactDrawer = ({ artifact, onClose }) => {
 
                 {/* 2. ATT&CK Graph Explorer (SVG Flow) */}
                 <div>
-                    <h3 className="text-[#89ceff] text-[10px] font-bold uppercase mb-2 border-b border-[#334155] pb-1">2. Mapping Evidence Chain</h3>
-                    <div className="bg-[#0f172a] p-4 rounded border border-[#334155] flex flex-col items-center gap-2">
+                    <h3 className="text-[#89ceff] text-[16px] font-bold uppercase mb-2 border-b border-[#334155] pb-1">2. Mapping Evidence Chain</h3>
+                    <div className="bg-[#0f172a] p-2 rounded border border-[#334155] flex flex-col items-center gap-2">
                         
                         {/* Node 1: Artifact */}
                         <div className="flex flex-col items-center w-full">
                             <span className="text-[8px] text-[#94a3b8] font-bold uppercase mb-1">Artifact</span>
-                            <div className="bg-[#1e293b] border border-[#89ceff] text-[#89ceff] px-4 py-2 rounded text-[10px] font-mono w-full text-center shadow-[0_0_10px_rgba(137,206,255,0.1)]">
+                            <div className="bg-[#1e293b] border border-[#89ceff] text-[#89ceff] px-4 py-2 rounded text-[16px] font-mono w-full text-center shadow-[0_0_10px_rgba(137,206,255,0.1)]">
                                 {artifact.artifact || "DF_MUTEX_01"}
                             </div>
                         </div>
@@ -54,7 +54,7 @@ window.ArtifactDrawer = ({ artifact, onClose }) => {
                         {/* Node 2: Observation */}
                         <div className="flex flex-col items-center w-full">
                             <span className="text-[8px] text-[#94a3b8] font-bold uppercase mb-1">Observation (RE Finding)</span>
-                            <div className="bg-[#1e293b] border border-[#fbbf24] text-[#fbbf24] px-4 py-2 rounded text-[10px] font-bold w-full text-center relative group cursor-help">
+                            <div className="bg-[#1e293b] border border-[#fbbf24] text-[#fbbf24] px-4 py-2 rounded text-[16px] font-bold w-full text-center relative group cursor-help">
                                 Mutex tồn tại sau reboot
                                 <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[300px] bg-[#1e293b] border border-[#fbbf24] p-2 text-[8px] rounded hidden group-hover:block z-[60] text-left text-[#e2e8f0] font-normal shadow-xl">
                                     Static analysis reveals Mutex creation, and dynamic analysis confirms it survives system restarts.
@@ -70,7 +70,7 @@ window.ArtifactDrawer = ({ artifact, onClose }) => {
                         {/* Node 3: Behavior */}
                         <div className="flex flex-col items-center w-full">
                             <span className="text-[8px] text-[#94a3b8] font-bold uppercase mb-1">Behavior</span>
-                            <div className="bg-[#1e293b] border border-[#c084fc] text-[#c084fc] px-4 py-2 rounded text-[10px] font-bold w-full text-center relative group cursor-help">
+                            <div className="bg-[#1e293b] border border-[#c084fc] text-[#c084fc] px-4 py-2 rounded text-[16px] font-bold w-full text-center relative group cursor-help">
                                 Persistence Mechanism
                             </div>
                         </div>
@@ -84,10 +84,10 @@ window.ArtifactDrawer = ({ artifact, onClose }) => {
                         <div className="flex flex-col items-center w-full">
                             <span className="text-[8px] text-[#94a3b8] font-bold uppercase mb-1">Mapped Techniques</span>
                             <div className="flex gap-2 w-full">
-                                <div className="bg-[#1e293b] border border-[#34d399] text-[#34d399] px-2 py-2 rounded text-[10px] font-bold font-mono w-1/2 text-center">
+                                <div className="bg-[#1e293b] border border-[#34d399] text-[#34d399] px-2 py-2 rounded text-[16px] font-bold font-mono w-1/2 text-center">
                                     {artifact.predicted_ent || "T1547.001"} (Ent)
                                 </div>
-                                <div className="bg-[#f97316]/20 border border-[#f97316] text-[#f97316] px-2 py-2 rounded text-[10px] font-bold font-mono w-1/2 text-center">
+                                <div className="bg-[#f97316]/20 border border-[#f97316] text-[#f97316] px-2 py-2 rounded text-[16px] font-bold font-mono w-1/2 text-center">
                                     {artifact.predicted_ics || "T0866"} (ICS)
                                 </div>
                             </div>
@@ -98,11 +98,11 @@ window.ArtifactDrawer = ({ artifact, onClose }) => {
 
                 {/* 3. Evidence Quality Assessment */}
                 <div>
-                    <h3 className="text-[#89ceff] text-[10px] font-bold uppercase mb-2 border-b border-[#334155] pb-1">3. RE Finding Quality Score</h3>
-                    <div className="bg-[#1e293b] rounded border border-[#334155] p-3 text-[10px]">
+                    <h3 className="text-[#89ceff] text-[16px] font-bold uppercase mb-2 border-b border-[#334155] pb-1">3. RE Finding Quality Score</h3>
+                    <div className="bg-[#1e293b] rounded border border-[#334155] p-2 text-[16px]">
                         <div className="flex justify-between items-center mb-2">
                             <span className="text-[#94a3b8] font-bold">Overall Confidence:</span>
-                            <span className="text-[#34d399] font-mono font-bold text-[14px]">95%</span>
+                            <span className="text-[#34d399] font-mono font-bold text-[17px]">95%</span>
                         </div>
                         <table className="w-full text-left">
                             <thead>
@@ -145,22 +145,22 @@ window.ArtifactDrawer = ({ artifact, onClose }) => {
 
                 {/* 4. Reasoning Engine */}
                 <div>
-                    <h3 className="text-[#89ceff] text-[10px] font-bold uppercase mb-2 border-b border-[#334155] pb-1">4. Mapping Reasoning Engine</h3>
+                    <h3 className="text-[#89ceff] text-[16px] font-bold uppercase mb-2 border-b border-[#334155] pb-1">4. Mapping Reasoning Engine</h3>
                     <div className="flex flex-col gap-2">
                         <div className="bg-[#34d399]/10 border border-[#34d399]/50 p-2 rounded">
                             <div className="flex items-center gap-2 mb-1">
-                                <span className="material-symbols-outlined text-[12px] text-[#34d399]">check_circle</span>
-                                <span className="text-[10px] font-bold text-[#34d399] font-mono">Selected: {artifact.predicted_ent || "T1547.001"}</span>
+                                <span className="material-symbols-outlined text-[15px] text-[#34d399]">check_circle</span>
+                                <span className="text-[16px] font-bold text-[#34d399] font-mono">Selected: {artifact.predicted_ent || "T1547.001"}</span>
                             </div>
-                            <div className="text-[9px] text-[#e2e8f0]">Evidence Chain confirms persistence logic matching T1547.001.</div>
+                            <div className="text-[15px] text-[#e2e8f0]">Evidence Chain confirms persistence logic matching T1547.001.</div>
                         </div>
 
                         <div className="bg-[#f43f5e]/10 border border-[#f43f5e]/30 p-2 rounded opacity-75">
                             <div className="flex items-center gap-2 mb-1">
-                                <span className="material-symbols-outlined text-[12px] text-[#f43f5e]">cancel</span>
-                                <span className="text-[10px] font-bold text-[#f43f5e] font-mono">Rejected: T1053</span>
+                                <span className="material-symbols-outlined text-[15px] text-[#f43f5e]">cancel</span>
+                                <span className="text-[16px] font-bold text-[#f43f5e] font-mono">Rejected: T1053</span>
                             </div>
-                            <div className="text-[9px] text-[#94a3b8] italic">Reason: No Scheduled Task creation API calls observed in Dynamic Analysis.</div>
+                            <div className="text-[15px] text-[#94a3b8] italic">Reason: No Scheduled Task creation API calls observed in Dynamic Analysis.</div>
                         </div>
                     </div>
                 </div>

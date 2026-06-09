@@ -1,0 +1,69 @@
+window.ICSImpactScorePanel = ({ drones, droneId }) => {
+    // Dynamic calculation based on current drone state
+    const currentDrone = drones.find(d => d.drone_id === droneId) || drones[0] || {};
+    
+    // Simulate active effects based on drone threat score or specific parameters
+    const hasNavDrift = currentDrone.gps && currentDrone.gps !== '10.841,106.654';
+    const hasLossTelemetry = currentDrone.status === 'OFFLINE' || currentDrone.network_speed < 50;
+    const hasMissionFailure = currentDrone.status === 'OFFLINE' && currentDrone.battery <= 20;
+
+    const effects = [
+        { name: "Loss of Telemetry", active: hasLossTelemetry || currentDrone.threat_score > 30, weight: 20, severity: "Medium" },
+        { name: "Navigation Drift", active: hasNavDrift || currentDrone.threat_score > 60, weight: 30, severity: "High" },
+        { name: "Mission Failure", active: hasMissionFailure || currentDrone.threat_score > 85, weight: 50, severity: "Critical" }
+    ];
+
+    const currentScore = effects.filter(e => e.active).reduce((sum, e) => sum + e.weight, 0);
+
+    return (
+        <div className="panel flex-1 w-full min-w-0 min-h-0 flex flex-col relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[#f43f5e]/10 rounded-full blur-[40px] pointer-events-none"></div>
+            
+            <div className="panel-header">
+                <span className="material-symbols-outlined text-[16px]">warning</span>
+                <span className="panel-title">ICS IMPACT SCORE</span>
+            </div>
+            
+            <div className="flex-1 p-2 flex flex-col gap-2 overflow-y-auto custom-scrollbar relative z-10">
+                
+                {/* Score Display */}
+                <div className="flex justify-center items-center py-2">
+                    <div className="relative flex items-center justify-center w-24 h-24 rounded-full border-4 border-[#1e293b] shadow-[0_0_15px_rgba(0,0,0,0.5)]">
+                        <svg className="absolute w-full h-full -rotate-90" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="45" fill="none" stroke="#1e293b" strokeWidth="8" />
+                            <circle cx="50" cy="50" r="45" fill="none" stroke={currentScore > 70 ? "#f43f5e" : currentScore > 40 ? "#fbbf24" : "#34d399"} strokeWidth="8" strokeDasharray="282.7" strokeDashoffset={282.7 - (282.7 * currentScore) / 100} style={{ transition: "stroke-dashoffset 1s ease-in-out" }} />
+                        </svg>
+                        <div className="flex flex-col items-center">
+                            <span className="score-value text-[32px] font-mono leading-none">{currentScore}</span>
+                            <span className="text-[16px] text-[#94a3b8] font-mono mt-1">/ 100</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Effect Breakdown */}
+                <div className="flex flex-col gap-1.5 mt-2">
+                    <div className="flex justify-between text-[15px] text-[#94a3b8] uppercase tracking-widest border-b border-[#334155] pb-1">
+                        <span>Effect</span>
+                        <span>Severity</span>
+                    </div>
+                    
+                    {effects.map((effect, idx) => (
+                        <div key={idx} className={`flex justify-between items-center p-1.5 rounded border ${effect.active ? 'bg-[#1e293b] border-[#334155]' : 'bg-[#090d16] border-transparent opacity-50'}`}>
+                            <div className="flex items-center gap-2">
+                                <span className={`w-2 h-2 rounded-full ${effect.active ? 'bg-[#38bdf8] shadow-[0_0_5px_#38bdf8]' : 'bg-[#334155]'}`}></span>
+                                <span className={`text-[17px] ${effect.active ? 'text-[#e2e8f0]' : 'text-[#64748b]'}`}>{effect.name}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className={`text-[16px] font-bold ${effect.active ? (effect.severity === 'Critical' ? 'text-[#f43f5e]' : effect.severity === 'High' ? 'text-[#f97316]' : 'text-[#fbbf24]') : 'text-[#64748b]'}`}>
+                                    {effect.severity}
+                                </span>
+                                <span className={`text-[16px] font-mono ${effect.active ? 'text-white' : 'text-[#64748b]'}`}>+{effect.weight}</span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                
+            </div>
+        </div>
+    );
+};

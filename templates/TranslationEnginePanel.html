@@ -38,47 +38,47 @@ window.TranslationEnginePanel = () => {
     return (
         <div className="panel flex-1 min-w-0 min-h-0 flex flex-col">
             <div className="panel-header text-[#f43f5e]">
-                <span className="material-symbols-outlined text-[14px]">transform</span>
+                <span className="material-symbols-outlined text-[17px]">transform</span>
                 ATT&CK TRANSLATION ENGINE & COVERAGE
             </div>
             
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-2 flex flex-col gap-3">
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-2 flex flex-col gap-2">
                 
                 <div>
-                    <div className="text-[12px] font-bold text-[#94a3b8] mb-1">ENTERPRISE → ICS TRANSLATION LAYER</div>
+                    <div className="text-[15px] font-bold text-[#94a3b8] mb-1">ENTERPRISE → ICS TRANSLATION LAYER</div>
                     <div className="grid grid-cols-1 gap-1">
                         {translationLayer.map((item, i) => (
-                            <div key={i} className="bg-[#1e293b] border border-[#334155] p-1.5 rounded flex items-center justify-between text-[12px]">
+                            <div key={i} className="bg-[#1e293b] border border-[#334155] p-1.5 rounded flex items-center justify-between text-[15px]">
                                 <div className="flex items-center gap-2">
                                     <span className="bg-[#38bdf8]/20 text-[#38bdf8] font-mono px-1 rounded font-bold">{item.ent}</span>
-                                    <span className="material-symbols-outlined text-[12px] text-[#94a3b8]">arrow_forward</span>
+                                    <span className="material-symbols-outlined text-[15px] text-[#94a3b8]">arrow_forward</span>
                                     <span className="bg-[#f43f5e]/20 text-[#f43f5e] font-mono px-1 rounded font-bold">{item.ics}</span>
                                 </div>
-                                <div className="text-[#94a3b8] truncate ml-2 text-[12px]">{item.desc}</div>
+                                <div className="text-[#94a3b8] truncate ml-2 text-[15px]">{item.desc}</div>
                             </div>
                         ))}
                     </div>
                 </div>
 
                 <div>
-                    <div className="text-[12px] font-bold text-[#94a3b8] mb-1">ATT&CK COVERAGE REPORT</div>
+                    <div className="text-[15px] font-bold text-[#94a3b8] mb-1">ATT&CK COVERAGE REPORT</div>
                     <div className="flex gap-2">
                         <div className="flex-1 bg-[#090d16] border border-[#334155] rounded p-2">
-                            <div className="text-[12px] text-[#94a3b8] mb-1 flex justify-between">
+                            <div className="text-[15px] text-[#94a3b8] mb-1 flex justify-between">
                                 <span>Enterprise Coverage</span>
                                 <span>{stats.coverage.covered} / 14</span>
                             </div>
-                            <div className="text-[#38bdf8] font-bold text-[12px] mb-1">{Math.round((stats.coverage.covered / 14) * 100)}%</div>
+                            <div className="text-[#38bdf8] font-bold text-[15px] mb-1">{Math.round((stats.coverage.covered / 14) * 100)}%</div>
                             <div className="h-1 bg-[#1e293b] rounded overflow-hidden">
                                 <div className="h-full bg-[#38bdf8]" style={{ width: `${(stats.coverage.covered / 14) * 100}%` }}></div>
                             </div>
                         </div>
                         <div className="flex-1 bg-[#090d16] border border-[#334155] rounded p-2">
-                            <div className="text-[12px] text-[#94a3b8] mb-1 flex justify-between">
+                            <div className="text-[15px] text-[#94a3b8] mb-1 flex justify-between">
                                 <span>ICS Coverage</span>
                                 <span>{stats.coverage.covered} / 16</span>
                             </div>
-                            <div className="text-[#f43f5e] font-bold text-[12px] mb-1">{Math.round((stats.coverage.covered / 16) * 100)}%</div>
+                            <div className="text-[#f43f5e] font-bold text-[15px] mb-1">{Math.round((stats.coverage.covered / 16) * 100)}%</div>
                             <div className="h-1 bg-[#1e293b] rounded overflow-hidden">
                                 <div className="h-full bg-[#f43f5e]" style={{ width: `${(stats.coverage.covered / 16) * 100}%` }}></div>
                             </div>
@@ -87,12 +87,12 @@ window.TranslationEnginePanel = () => {
                     
                     <div className="mt-2 grid grid-cols-2 gap-x-2 gap-y-1">
                         {tactics.map((t, i) => (
-                            <div key={i} className="flex justify-between items-center text-[12px] border-b border-[#334155]/30 pb-0.5">
+                            <div key={i} className="flex justify-between items-center text-[15px] border-b border-[#334155]/30 pb-0.5">
                                 <span className="text-[#e2e8f0]">{t.name}</span>
                                 {t.covered ? (
-                                    <span className="material-symbols-outlined text-[#34d399] text-[12px]">check_box</span>
+                                    <span className="material-symbols-outlined text-[#34d399] text-[15px]">check_box</span>
                                 ) : (
-                                    <span className="material-symbols-outlined text-[#334155] text-[12px]">check_box_outline_blank</span>
+                                    <span className="material-symbols-outlined text-[#334155] text-[15px]">check_box_outline_blank</span>
                                 )}
                             </div>
                         ))}

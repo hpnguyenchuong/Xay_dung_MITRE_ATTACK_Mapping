@@ -208,60 +208,62 @@
             const verdict = null;
             const campaigns = [];
 
-            const { Sidebar, ResearchMethodologyPanel, EvidenceChainPanel, GroundTruthPanel, CampaignSummaryCard, ICSImpactMatrixPanel, MappingTrendPanel, ResearchQuestionsPanel, AcademicConclusionPanel, ArtifactProvenancePanel, EvidenceCorrelationPanel, ComparativeAnalysisPanel, MappingValidationPanel, TranslationEnginePanel, FleetInfectionPanel, ArtifactDrawer, C2MonitorPanel } = window;
+            const { Sidebar, ResearchMethodologyPanel, EvidenceChainPanel, GroundTruthPanel, CampaignSummaryCard, ICSImpactMatrixPanel, MappingTrendPanel, ResearchQuestionsPanel, AcademicConclusionPanel, ArtifactProvenancePanel, EvidenceCorrelationPanel, ComparativeAnalysisPanel, MappingValidationPanel, TranslationEnginePanel, FleetInfectionPanel, ArtifactDrawer, C2MonitorPanel, DatasetStatisticsPanel, REEvidencePanel, ICSImpactScorePanel, LimitationsPanel, ResearchContributionsPanel, ResearchConclusionPanel, ThreatCoverageHeatmapPanel, DatasetProvenancePanel } = window;
 
             return (
                 <div className="flex flex-col h-full w-full">
-                    <div className="flex h-full w-full gap-3">
+                    <div className="flex h-full w-full gap-2">
                         <Sidebar />
 
                         <div className="flex-1 flex flex-col min-w-0">
-                            {/* TOP METHODOLOGY BANNER */}
-                            <ResearchMethodologyPanel />
-                            
-                            <div className="bento-grid mt-3">
-                                {/* ROW 1: Khởi tạo */}
-                                <div className="bento-row bento-row-1">
-                                    <div className="flex-[1.2] flex min-w-0"><EvidenceChainPanel /></div>
-                                    <div className="flex-[1.0] flex min-w-0"><CampaignSummaryCard /></div>
+                            <div className="bento-grid">
+                                {/* TOP METHODOLOGY BANNER */}
+                                <ResearchMethodologyPanel />
+                                {/* ROW 1: Dataset & RE Evidence */}
+                                <div className="bento-row">
+                                    <div className="flex-[0.8] flex min-w-0"><DatasetStatisticsPanel /></div>
+                                    <div className="flex-[1.0] flex min-w-0"><DatasetProvenancePanel /></div>
+                                    <div className="flex-[1.5] flex min-w-0"><REEvidencePanel /></div>
+                                </div>
+
+                                {/* ROW 2: Mapping Evaluation */}
+                                <div className="bento-row">
+                                    <div className="flex-[1.0] flex min-w-0"><EvidenceChainPanel /></div>
+                                    <div className="flex-[1.5] flex min-w-0"><MappingValidationPanel onArtifactClick={(art) => setSelectedArtifact(art)} /></div>
                                     <div className="flex-[0.8] flex min-w-0"><GroundTruthPanel /></div>
                                 </div>
 
-                                {/* ROW 2: Động cơ cốt lõi (Lớn nhất) */}
-                                <div className="bento-row bento-row-2">
-                                    <div className="flex-[1.2] flex min-w-0"><MappingValidationPanel onArtifactClick={(art) => setSelectedArtifact(art)} /></div>
-                                    <div className="flex-[1.0] flex min-w-0"><TranslationEnginePanel /></div>
-                                    <div className="flex-[0.8] flex min-w-0"><FleetInfectionPanel 
+                                {/* ROW 3: ICS Impact */}
+                                <div className="bento-row">
+                                    <div className="flex-[1.2] flex min-w-0"><ICSImpactMatrixPanel /></div>
+                                    <div className="flex-[1.0] flex min-w-0"><FleetInfectionPanel 
                                         drones={drones} 
                                         selectedDrone={selectedDrone} 
                                         onDroneSelect={(d) => setSelectedDrone(d)} 
                                     /></div>
+                                    <div className="flex-[1.0] flex min-w-0"><ICSImpactScorePanel drones={drones} droneId={droneId} /></div>
                                 </div>
 
-                                {/* ROW 3: Hậu quả & Kết luận */}
-                                <div className="bento-row bento-row-3">
-                                    <div className="flex-[1.2] flex min-w-0"><ICSImpactMatrixPanel /></div>
+                                {/* ROW 4: Research & Limitations */}
+                                <div className="bento-row">
                                     <div className="flex-[1.0] flex min-w-0"><MappingTrendPanel /></div>
-                                    <div className="flex-[0.8] flex min-w-0"><AcademicConclusionPanel /></div>
+                                    <div className="flex-[1.0] flex min-w-0"><ThreatCoverageHeatmapPanel /></div>
+                                    <div className="flex-[1.2] flex min-w-0"><LimitationsPanel /></div>
                                 </div>
-                            </div>
-                            
-                            {/* BOTTOM STRIP: Đánh giá & Export */}
-                            <div className="bottom-bonus mt-3 h-[180px] flex gap-3">
-                                <div className="flex-[0.3] min-w-0"><ResearchQuestionsPanel /></div>
-                                <div className="flex-[0.7] min-w-0"><C2MonitorPanel 
-                                    droneId={droneId} 
-                                    logsEndRef={logsEndRef} 
-                                    currentState={currentState} 
-                                    handleCommand={handleCommand} 
-                                /></div>
+                                
+                                {/* ROW 5: Contributions & Conclusion */}
+                                <div className="bento-row mb-4">
+                                    <div className="flex-[1.2] flex min-w-0"><ResearchContributionsPanel /></div>
+                                    <div className="flex-[1.0] flex min-w-0"><ResearchQuestionsPanel /></div>
+                                    <div className="flex-[1.2] flex min-w-0"><ResearchConclusionPanel /></div>
+                                </div>
                             </div>
                         </div>
                     </div>
                     
                     {/* CRITICAL ALERT OVERLAY */}
                     {showCriticalOverlay && (
-                        <div className="fixed top-20 right-10 z-50 bg-[#090d16] border-2 border-[#f43f5e] p-4 rounded-lg shadow-[0_0_30px_rgba(244,63,94,0.5)] animate-pulse-slow max-w-sm pointer-events-none">
+                        <div className="fixed top-20 right-10 z-50 bg-[#090d16] border-2 border-[#f43f5e] p-2 rounded-lg shadow-[0_0_30px_rgba(244,63,94,0.5)] animate-pulse-slow max-w-sm pointer-events-none">
                             <div className="text-[#f43f5e] font-mono font-bold text-center border-b border-[#f43f5e] pb-2 mb-3 tracking-widest">
                                 ═════ CRITICAL ICS ALERT ═════
                             </div>

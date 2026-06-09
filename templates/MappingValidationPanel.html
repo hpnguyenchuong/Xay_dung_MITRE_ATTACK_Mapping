@@ -14,7 +14,7 @@ window.MappingValidationPanel = ({ onArtifactClick }) => {
             technique_name: "Boot or Logon Autostart Execution", tactic: "Persistence",
             rejected_1: { ent: "T1053", conf: "15%", reason: "No scheduled task evidence" },
             rejected_2: { ent: "T1543", conf: "30%", reason: "No service creation API calls" },
-            confidence_breakdown: { static: 30, dynamic: 30, memory: 20, ioc: 10, analyst: 5 }
+            confidence_breakdown: { source_score: 60, validation_score: 25, artifact_quality: 10 }
         },
         {
             artifact: "c2.dronefleet.net",
@@ -24,7 +24,7 @@ window.MappingValidationPanel = ({ onArtifactClick }) => {
             technique_name: "Commonly Used Port", tactic: "Command and Control",
             rejected_1: { ent: "T1090", conf: "10%", reason: "No proxy configuration found" },
             rejected_2: { ent: "T1573", conf: "20%", reason: "Traffic is not uniquely encrypted (standard XOR)" },
-            confidence_breakdown: { static: 40, dynamic: 40, memory: 0, ioc: 10, analyst: 8 }
+            confidence_breakdown: { source_score: 60, validation_score: 25, artifact_quality: 13 }
         },
         {
             artifact: "XOR_KEY_B64",
@@ -34,7 +34,7 @@ window.MappingValidationPanel = ({ onArtifactClick }) => {
             technique_name: "Manipulation of Control", tactic: "Defense Evasion",
             rejected_1: { ent: "T1140", conf: "40%", reason: "Deobfuscation is standard base64/XOR" },
             rejected_2: { ent: "T1001", conf: "25%", reason: "No data junking observed" },
-            confidence_breakdown: { static: 50, dynamic: 15, memory: 10, ioc: 0, analyst: 10 }
+            confidence_breakdown: { source_score: 55, validation_score: 15, artifact_quality: 15 }
         }
     ];
 
@@ -45,42 +45,40 @@ window.MappingValidationPanel = ({ onArtifactClick }) => {
         <div className="panel flex-1 min-w-0 min-h-0 flex flex-col border-[#89ceff]/50 shadow-[0_0_15px_rgba(137,206,255,0.1)]">
             <div className="panel-header text-[#89ceff] flex justify-between bg-[#1a2647] shrink-0">
                 <div className="flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-[14px]">account_tree</span>
-                    <span className="text-[10px] font-bold shrink-0">EXPLAINABLE REASONING TREE</span>
+                    <span className="material-symbols-outlined text-[17px]">account_tree</span>
+                    <span className="text-[16px] font-bold shrink-0">EXPLAINABLE REASONING TREE</span>
                 </div>
                 <div className="flex gap-2">
                     {reasoningDatabase.map((item, idx) => (
-                        <button key={idx} onClick={() => { setSelectedItemIndex(idx); setShowConfidenceBreakdown(false); }} className={`text-[9px] px-2 py-0.5 rounded font-mono ${idx === selectedItemIndex ? 'bg-[#89ceff] text-[#090d16] font-bold' : 'bg-[#1e293b] text-[#94a3b8] hover:bg-[#334155]'}`}>
+                        <button key={idx} onClick={() => { setSelectedItemIndex(idx); setShowConfidenceBreakdown(false); }} className={`text-[15px] px-2 py-0.5 rounded font-mono ${idx === selectedItemIndex ? 'bg-[#89ceff] text-[#090d16] font-bold' : 'bg-[#1e293b] text-[#94a3b8] hover:bg-[#334155]'}`}>
                             {item.artifact}
                         </button>
                     ))}
                 </div>
             </div>
             
-            <div className="flex-1 flex min-w-0 min-h-0 p-3 gap-3 relative">
+            <div className="flex-1 flex min-w-0 min-h-0 p-2 gap-2 relative">
                 
                 {/* Confidence Breakdown Overlay */}
                 {showConfidenceBreakdown && (
                     <div className="absolute inset-0 bg-[#090d16]/95 z-50 flex items-center justify-center backdrop-blur-sm" onClick={() => setShowConfidenceBreakdown(false)}>
-                        <div className="panel p-4 w-[320px] bg-[#121b31] border-[#38bdf8] shadow-[0_0_20px_rgba(56,189,248,0.3)] cursor-pointer flex flex-col gap-3" onClick={(e) => e.stopPropagation()}>
-                            <div className="text-[12px] font-bold text-[#38bdf8] flex justify-between items-center border-b border-[#334155] pb-2">
+                        <div className="panel p-2 w-[320px] bg-[#121b31] border-[#38bdf8] shadow-[0_0_20px_rgba(56,189,248,0.3)] cursor-pointer flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
+                            <div className="text-[15px] font-bold text-[#38bdf8] flex justify-between items-center border-b border-[#334155] pb-2">
                                 <span>CONFIDENCE BREAKDOWN</span>
                                 <span className="material-symbols-outlined text-[16px] cursor-pointer hover:text-white" onClick={() => setShowConfidenceBreakdown(false)}>close</span>
                             </div>
                             
-                            <div className="flex flex-col gap-1.5 font-mono text-[11px]">
-                                <div className="flex justify-between text-[#e2e8f0]"><span>Static Evidence:</span> <span>{gtDemo.confidence_breakdown.static}</span></div>
-                                <div className="flex justify-between text-[#e2e8f0]"><span>Dynamic Evidence:</span> <span>{gtDemo.confidence_breakdown.dynamic}</span></div>
-                                <div className="flex justify-between text-[#e2e8f0]"><span>Memory Evidence:</span> <span>{gtDemo.confidence_breakdown.memory}</span></div>
-                                <div className="flex justify-between text-[#e2e8f0]"><span>IOC Match:</span> <span>{gtDemo.confidence_breakdown.ioc}</span></div>
-                                <div className="flex justify-between text-[#e2e8f0]"><span>Analyst Validation:</span> <span>{gtDemo.confidence_breakdown.analyst}</span></div>
+                            <div className="flex flex-col gap-1.5 font-mono text-[17px]">
+                                <div className="flex justify-between text-[#e2e8f0]"><span>Source Score:</span> <span className="text-[#38bdf8]">{gtDemo.confidence_breakdown.source_score}</span></div>
+                                <div className="flex justify-between text-[#e2e8f0]"><span>Validation Score:</span> <span className="text-[#a855f7]">{gtDemo.confidence_breakdown.validation_score}</span></div>
+                                <div className="flex justify-between text-[#e2e8f0]"><span>Artifact Quality:</span> <span className="text-[#fbbf24]">{gtDemo.confidence_breakdown.artifact_quality}</span></div>
                                 <div className="w-full h-px bg-[#334155] my-1"></div>
-                                <div className="flex justify-between font-bold text-[#34d399] text-[12px]"><span>Total Confidence:</span> <span>{gtDemo.confidence}</span></div>
+                                <div className="flex justify-between font-bold text-[#34d399] text-[15px]"><span>Evidence Strength:</span> <span>{gtDemo.confidence}</span></div>
                             </div>
 
                             <div className="bg-[#1e293b] border border-[#334155] rounded p-2 flex flex-col gap-1.5">
-                                <span className="text-[9px] font-bold text-[#c084fc] tracking-widest uppercase mb-0.5">GROUND TRUTH REFERENCE</span>
-                                <div className="flex flex-col gap-1 text-[10px] font-mono">
+                                <span className="text-[15px] font-bold text-[#c084fc] tracking-widest uppercase mb-0.5">GROUND TRUTH REFERENCE</span>
+                                <div className="flex flex-col gap-1 text-[16px] font-mono">
                                     <div className="flex justify-between text-[#e2e8f0]"><span className="text-[#94a3b8]">Validation Level:</span> <span className="font-bold text-[#fbbf24]">L3 - RE Confirmed</span></div>
                                     <div className="flex justify-between text-[#e2e8f0]"><span className="text-[#94a3b8]">Reference:</span> <span>Memory Dump #A12</span></div>
                                     <div className="flex flex-col text-[#e2e8f0] mt-1">
@@ -97,46 +95,46 @@ window.MappingValidationPanel = ({ onArtifactClick }) => {
                 <div className="flex-[1.2] flex flex-col min-w-0 relative">
                     <div className="absolute left-[20px] top-[20px] bottom-[20px] w-px bg-[#334155] z-0"></div>
                     
-                    <div className="relative z-10 flex gap-3 mb-4">
+                    <div className="relative z-10 flex gap-2 mb-4">
                         <div className="w-[40px] h-[40px] rounded-full bg-[#1e293b] border-2 border-[#89ceff] flex items-center justify-center shrink-0 shadow-[0_0_10px_rgba(137,206,255,0.2)]">
                             <span className="material-symbols-outlined text-[#89ceff] text-[18px]">bug_report</span>
                         </div>
                         <div className="flex flex-col justify-center">
-                            <span className="text-[9px] text-[#94a3b8] font-bold">ARTIFACT EXTRACTED</span>
-                            <span className="text-[12px] font-mono font-bold text-white bg-[#090d16] px-2 py-0.5 rounded border border-[#334155]">{gtDemo.artifact}</span>
+                            <span className="text-[15px] text-[#94a3b8] font-bold">ARTIFACT EXTRACTED</span>
+                            <span className="text-[15px] font-mono font-bold text-white bg-[#090d16] px-2 py-0.5 rounded border border-[#334155]">{gtDemo.artifact}</span>
                         </div>
                     </div>
 
-                    <div className="relative z-10 flex gap-3 mb-4">
+                    <div className="relative z-10 flex gap-2 mb-4">
                         <div className="w-[40px] h-[40px] rounded-full bg-[#1e293b] border-2 border-[#fbbf24] flex items-center justify-center shrink-0">
                             <span className="material-symbols-outlined text-[#fbbf24] text-[18px]">search</span>
                         </div>
                         <div className="flex flex-col justify-center">
-                            <span className="text-[9px] text-[#94a3b8] font-bold">EVIDENCE FOUND</span>
-                            <span className="text-[11px] text-[#e2e8f0]">{gtDemo.evidence_source}</span>
+                            <span className="text-[15px] text-[#94a3b8] font-bold">EVIDENCE FOUND</span>
+                            <span className="text-[17px] text-[#e2e8f0]">{gtDemo.evidence_source}</span>
                         </div>
                     </div>
 
-                    <div className="relative z-10 flex gap-3 mb-4">
+                    <div className="relative z-10 flex gap-2 mb-4">
                         <div className="w-[40px] h-[40px] rounded-full bg-[#1e293b] border-2 border-[#c084fc] flex items-center justify-center shrink-0">
                             <span className="material-symbols-outlined text-[#c084fc] text-[18px]">psychology</span>
                         </div>
                         <div className="flex flex-col justify-center">
-                            <span className="text-[9px] text-[#94a3b8] font-bold">BEHAVIOR DETECTED</span>
-                            <span className="text-[11px] text-[#e2e8f0]">{gtDemo.behavior}</span>
+                            <span className="text-[15px] text-[#94a3b8] font-bold">BEHAVIOR DETECTED</span>
+                            <span className="text-[17px] text-[#e2e8f0]">{gtDemo.behavior}</span>
                         </div>
                     </div>
 
-                    <div className="relative z-10 flex gap-3">
+                    <div className="relative z-10 flex gap-2">
                         <div className="w-[40px] h-[40px] rounded-full bg-[#1e293b] border-2 border-[#34d399] flex items-center justify-center shrink-0 shadow-[0_0_10px_rgba(52,211,153,0.2)]">
                             <span className="material-symbols-outlined text-[#34d399] text-[18px]">gavel</span>
                         </div>
                         <div className="flex flex-col justify-center">
-                            <span className="text-[9px] text-[#94a3b8] font-bold">DECISION</span>
+                            <span className="text-[15px] text-[#94a3b8] font-bold">DECISION</span>
                             <div className="flex items-center gap-2 mt-1">
-                                <span className="text-[14px] font-mono font-bold text-[#34d399]">{gtDemo.expected_ent}</span>
-                                <span className="material-symbols-outlined text-[12px] text-[#94a3b8]">arrow_forward</span>
-                                <span className="text-[14px] font-mono font-bold text-[#f43f5e]">{gtDemo.expected_ics}</span>
+                                <span className="text-[17px] font-mono font-bold text-[#34d399]">{gtDemo.expected_ent}</span>
+                                <span className="material-symbols-outlined text-[15px] text-[#94a3b8]">arrow_forward</span>
+                                <span className="text-[17px] font-mono font-bold text-[#f43f5e]">{gtDemo.expected_ics}</span>
                             </div>
                         </div>
                     </div>
@@ -145,54 +143,54 @@ window.MappingValidationPanel = ({ onArtifactClick }) => {
                 {/* Technique Card */}
                 <div className="flex-1 bg-[#0b1326] border border-[#334155] rounded flex flex-col overflow-hidden relative group">
                     <div className="bg-[#1e293b] px-3 py-2 border-b border-[#334155] flex justify-between items-center">
-                        <span className="font-bold text-[#89ceff] text-[11px] tracking-widest uppercase">TECHNIQUE CARD</span>
-                        <span className="material-symbols-outlined text-[#89ceff] text-[14px]">id_card</span>
+                        <span className="font-bold text-[#89ceff] text-[17px] tracking-widest uppercase">TECHNIQUE CARD</span>
+                        <span className="material-symbols-outlined text-[#89ceff] text-[17px]">id_card</span>
                     </div>
                     
-                    <div className="p-3 flex flex-col gap-2 flex-1 overflow-y-auto custom-scrollbar">
+                    <div className="p-2 flex flex-col gap-2 flex-1 overflow-y-auto custom-scrollbar">
                         <div className="flex flex-col">
-                            <span className="text-[9px] text-[#94a3b8] uppercase">Technique Name</span>
-                            <span className="text-[12px] font-bold text-white">{gtDemo.technique_name}</span>
+                            <span className="text-[15px] text-[#94a3b8] uppercase">Technique Name</span>
+                            <span className="text-[15px] font-bold text-white">{gtDemo.technique_name}</span>
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-[9px] text-[#94a3b8] uppercase">Tactic</span>
-                            <span className="text-[11px] font-mono text-[#fbbf24] bg-[#fbbf24]/10 w-max px-1.5 rounded mt-0.5">{gtDemo.tactic}</span>
+                            <span className="text-[15px] text-[#94a3b8] uppercase">Tactic</span>
+                            <span className="text-[17px] font-mono text-[#fbbf24] bg-[#fbbf24]/10 w-max px-1.5 rounded mt-0.5">{gtDemo.tactic}</span>
                         </div>
                         
                         <div className="h-px w-full bg-[#334155] my-1"></div>
                         
                         <div className="flex flex-col">
-                            <span className="text-[9px] text-[#94a3b8] uppercase mb-1">Why Selected?</span>
+                            <span className="text-[15px] text-[#94a3b8] uppercase mb-1">Why Selected?</span>
                             <div className="bg-[#34d399]/10 border border-[#34d399]/30 p-1.5 rounded">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-[11px] font-mono font-bold text-[#34d399]">{gtDemo.expected_ent}</span>
+                                    <span className="text-[17px] font-mono font-bold text-[#34d399]">{gtDemo.expected_ent}</span>
                                     <button 
                                         onClick={() => setShowConfidenceBreakdown(true)}
-                                        className="bg-[#34d399] text-[#090d16] text-[9px] font-bold px-1.5 py-0.5 rounded hover:bg-white transition-colors cursor-pointer"
+                                        className="bg-[#34d399] text-[#090d16] text-[15px] font-bold px-1.5 py-0.5 rounded hover:bg-white transition-colors cursor-pointer"
                                     >
                                         CONF: {gtDemo.confidence}
                                     </button>
                                 </div>
-                                <div className="text-[10px] text-[#e2e8f0] mt-1 italic">"{gtDemo.candidate_desc}"</div>
+                                <div className="text-[16px] text-[#e2e8f0] mt-1 italic">"{gtDemo.candidate_desc}"</div>
                             </div>
                         </div>
 
                         <div className="flex flex-col mt-1">
-                            <span className="text-[9px] text-[#94a3b8] uppercase mb-1">Why Rejected?</span>
+                            <span className="text-[15px] text-[#94a3b8] uppercase mb-1">Why Rejected?</span>
                             <div className="flex flex-col gap-1.5">
                                 <div className="bg-[#f43f5e]/10 border border-[#f43f5e]/30 p-1.5 rounded flex flex-col">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-[10px] font-mono font-bold text-[#f43f5e] line-through">{gtDemo.rejected_1.ent}</span>
-                                        <span className="text-[9px] text-[#94a3b8]">({gtDemo.rejected_1.conf})</span>
+                                        <span className="text-[16px] font-mono font-bold text-[#f43f5e] line-through">{gtDemo.rejected_1.ent}</span>
+                                        <span className="text-[15px] text-[#94a3b8]">({gtDemo.rejected_1.conf})</span>
                                     </div>
-                                    <div className="text-[9px] text-[#e2e8f0]">{gtDemo.rejected_1.reason}</div>
+                                    <div className="text-[15px] text-[#e2e8f0]">{gtDemo.rejected_1.reason}</div>
                                 </div>
                                 <div className="bg-[#f43f5e]/10 border border-[#f43f5e]/30 p-1.5 rounded flex flex-col">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-[10px] font-mono font-bold text-[#f43f5e] line-through">{gtDemo.rejected_2.ent}</span>
-                                        <span className="text-[9px] text-[#94a3b8]">({gtDemo.rejected_2.conf})</span>
+                                        <span className="text-[16px] font-mono font-bold text-[#f43f5e] line-through">{gtDemo.rejected_2.ent}</span>
+                                        <span className="text-[15px] text-[#94a3b8]">({gtDemo.rejected_2.conf})</span>
                                     </div>
-                                    <div className="text-[9px] text-[#e2e8f0]">{gtDemo.rejected_2.reason}</div>
+                                    <div className="text-[15px] text-[#e2e8f0]">{gtDemo.rejected_2.reason}</div>
                                 </div>
                             </div>
                         </div>

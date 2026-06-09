@@ -36,10 +36,6 @@ RE_FINDINGS = [
         "address": "0x004A80",
         "type": "Mutex",
         "finding": "DF_MUTEX_01",
-        "behavior": "Persistence Simulation",
-        "technique_id": "T0866",
-        "enterprise_tech_id": "T1547.001",
-        "ics_tech_id": "T0866",
         "evidence": "Mutex exists in RAM",
         "confidence": 95,
         "source": "Memory Dump",
@@ -49,10 +45,6 @@ RE_FINDINGS = [
         "address": "0x004B12",
         "type": "Domain",
         "finding": "c2.dronefleet.net",
-        "behavior": "Command and Control",
-        "technique_id": "T0885",
-        "enterprise_tech_id": "T1071",
-        "ics_tech_id": "T0885",
         "evidence": "Hardcoded C2 domain",
         "confidence": 98,
         "source": ".rdata Section",
@@ -62,10 +54,6 @@ RE_FINDINGS = [
         "address": "0x004F31",
         "type": "Encoding",
         "finding": "XOR+Base64",
-        "behavior": "Obfuscated Command Channel",
-        "technique_id": "T0832",
-        "enterprise_tech_id": "T1027",
-        "ics_tech_id": "T0832",
         "evidence": "Payload content intentionally encoded",
         "confidence": 85,
         "source": "Config Block",
@@ -75,12 +63,9 @@ RE_FINDINGS = [
         "address": "0x005C10",
         "type": "Function",
         "finding": "gps_spoof",
-        "behavior": "GPS Manipulation",
-        "technique_id": "T0832",
-        "enterprise_tech_id": "T1005",
-        "ics_tech_id": "T0832",
         "evidence": "Code block injecting random coordinates",
         "confidence": 95,
+        "artifact_quality": 10,
         "source": "Reverse Engineering",
         "validation_level": "L3"
     },
@@ -88,60 +73,55 @@ RE_FINDINGS = [
         "address": "0x005D44",
         "type": "Function",
         "finding": "battery_drain",
-        "behavior": "Battery Drain Exploitation",
-        "technique_id": "T0879",
-        "enterprise_tech_id": "T1498",
-        "ics_tech_id": "T0879",
         "evidence": "Code block altering battery sensor data",
         "confidence": 90,
         "source": "Reverse Engineering",
         "validation_level": "L3"
     },
     {
-        "address": "0x005A99",
-        "type": "Network Flow",
+        "address": "0x00612A",
+        "type": "String",
         "finding": "FLEET_SYNC",
-        "behavior": "Peer-to-Peer Command",
-        "technique_id": "T0866",
-        "enterprise_tech_id": "T1563",
-        "ics_tech_id": "T0866",
-        "evidence": "Drone-to-drone sync traffic",
+        "evidence": "Network broadcast function with sync header",
         "confidence": 88,
-        "source": "Network Flow",
+        "source": ".rdata Section",
         "validation_level": "L2"
     },
     {
-        "address": "0x001A20", "type": "Registry Key", "finding": "DF_REG_RUN", "behavior": "Persistence", "technique_id": "T0866", "enterprise_tech_id": "T1547.001", "ics_tech_id": "T0866", "evidence": "Registry Run key modification", "confidence": 95, "source": "Config Extraction", "validation_level": "L3"
+        "address": "0x00631F",
+        "type": "Function",
+        "finding": "FLEET_COMMAND_PUSH",
+        "evidence": "P2P command relay mechanism",
+        "confidence": 92,
+        "source": "Memory Dump",
+        "validation_level": "L3"
     },
     {
-        "address": "0x001A25", "type": "File", "finding": "DF_STARTUP_CFG", "behavior": "Persistence", "technique_id": "T0866", "enterprise_tech_id": "T1547.001", "ics_tech_id": "T0866", "evidence": "Startup folder script dropped", "confidence": 90, "source": "Reverse Engineering", "validation_level": "L3"
+        "address": "0x0078A0",
+        "type": "Protocol",
+        "finding": "custom_protocol_v1",
+        "evidence": "Non-standard telemetry format",
+        "confidence": 95,
+        "source": "Network PCAP",
+        "validation_level": "L3"
     },
     {
-        "address": "0x002B40", "type": "Network Pattern", "finding": "beacon_30s", "behavior": "Command and Control", "technique_id": "T0885", "enterprise_tech_id": "T1071", "ics_tech_id": "T0885", "evidence": "C2 beacon every 30 seconds", "confidence": 85, "source": "Network Traffic", "validation_level": "L2"
+        "address": "0x00801C",
+        "type": "Registry",
+        "finding": "DF_REG_RUN",
+        "evidence": "Writes to Windows Run key",
+        "confidence": 99,
+        "source": "Dynamic Analysis",
+        "validation_level": "L3"
     },
     {
-        "address": "0x002B45", "type": "Payload", "finding": "encoded_payload", "behavior": "Evasion", "technique_id": "T0832", "enterprise_tech_id": "T1027", "ics_tech_id": "T0832", "evidence": "Custom encoded payload over HTTP", "confidence": 90, "source": "Reverse Engineering", "validation_level": "L3"
-    },
-    {
-        "address": "0x002B50", "type": "Protocol", "finding": "custom_protocol_v1", "behavior": "Command and Control", "technique_id": "T0884", "enterprise_tech_id": "T1090", "ics_tech_id": "T0884", "evidence": "Non-standard protocol headers detected", "confidence": 95, "source": "Network Traffic", "validation_level": "L3"
-    },
-    {
-        "address": "0x003C10", "type": "Command", "finding": "FLEET_COMMAND_PUSH", "behavior": "Lateral Movement", "technique_id": "T0866", "enterprise_tech_id": "T1563", "ics_tech_id": "T0866", "evidence": "P2P command pushing to fleet members", "confidence": 90, "source": "Network Flow", "validation_level": "L3"
-    },
-    {
-        "address": "0x003C15", "type": "Process", "finding": "LEADER_NODE_COMPROMISED", "behavior": "Lateral Movement", "technique_id": "T0866", "enterprise_tech_id": "T1563", "ics_tech_id": "T0866", "evidence": "Leader node broadcasting override commands", "confidence": 95, "source": "Memory Dump", "validation_level": "L3"
-    },
-    {
-        "address": "0x003C20", "type": "Process", "finding": "MEMBER_NODE_CONTROLLED", "behavior": "Lateral Movement", "technique_id": "T0866", "enterprise_tech_id": "T1563", "ics_tech_id": "T0866", "evidence": "Member node accepting unauthorized sync", "confidence": 90, "source": "Memory Dump", "validation_level": "L3"
-    },
-    {
-        "address": "0x004D10", "type": "Memory Variable", "finding": "waypoint_override", "behavior": "Manipulation of Control", "technique_id": "T0832", "enterprise_tech_id": "T1005", "ics_tech_id": "T0832", "evidence": "Active waypoint coordinates overwritten in RAM", "confidence": 95, "source": "Memory Dump", "validation_level": "L3"
-    },
-    {
-        "address": "0x004D15", "type": "Logic", "finding": "gps_offset_120m", "behavior": "Manipulation of Control", "technique_id": "T0832", "enterprise_tech_id": "T1005", "ics_tech_id": "T0832", "evidence": "Hardcoded offset of 120m injected into navigation", "confidence": 95, "source": "Decompiled Code", "validation_level": "L3"
-    },
-    {
-        "address": "0x004D20", "type": "Logic", "finding": "navigation_drift", "behavior": "Manipulation of Control", "technique_id": "T0832", "enterprise_tech_id": "T1005", "ics_tech_id": "T0832", "evidence": "PID controller loop manipulated to cause drift", "confidence": 90, "source": "Reverse Engineering", "validation_level": "L3"
+        "address": "0x008B3A",
+        "type": "Config",
+        "finding": "DF_STARTUP_CFG",
+        "evidence": "Modifies init.d startup script",
+        "confidence": 94,
+        "source": "File System",
+        "validation_level": "L2"
     }
 ]
 
@@ -233,7 +213,7 @@ def listen_for_c2_commands(sock, drone_id):
                     physical_damage_active = True
         except: break
 
-def run_drone_agent(c2_ip, port, drone_id, scenario):
+def run_drone_agent(c2_ip, port, drone_id, scenario, delay_seconds=5):
     global max_altitude, beacon_mode, engine_kill, gps_spoof_active, physical_damage_active
     
     codename_list = ["Specter-Alpha", "Valkyrie-X1", "ShadowHawk-V", "Predator-C2", "Horizon-Zero", "SkyRanger-M9"]
@@ -441,10 +421,15 @@ def main():
     parser.add_argument("--speed", type=str, choices=["fast", "demo", "slow"], default="demo", help="Speed of the campaign simulation")
     parser.add_argument("--pause-after", type=str, default="", help="Pause the simulation after a specific stage (e.g., 'Persistence')")
     parser.add_argument("--repeat", type=int, default=1, help="Number of times to repeat the scenario")
+    parser.add_argument("--c2-ip", type=str, required=True, help="IP address of the C2 Server (where drone.py is running)")
     args = parser.parse_args()
     
     speed_map = {"fast": 1, "demo": 5, "slow": 10}
     delay_seconds = speed_map.get(args.speed, 5)
+    
+    if args.scenario == "clean":
+        MALWARE_PROFILE["family"] = "CleanDrone"
+        MALWARE_PROFILE["campaign"] = "Baseline"
     
     scenario_map = {
         "clean": "Clean Drone",
@@ -472,7 +457,7 @@ def main():
     print(f"{C_CYAN}[+] Injecting DroneFlood Botnet Payload into System Memory (Scenario: {selected_scenario})...{C_END}\n")
     time.sleep(1)
     
-    c2_ip = "127.0.0.1"
+    c2_ip = args.c2_ip
     num_drones = 3
         
     port = MALWARE_CONFIG["c2_port"]
@@ -501,7 +486,7 @@ def main():
             # Pick a random drone_id
             drone_id = f"DRONE-{random.randint(100,999)}"
                 
-            t = threading.Thread(target=run_drone_agent, args=(c2_ip, port, drone_id, selected_scenario), daemon=True)
+            t = threading.Thread(target=run_drone_agent, args=(c2_ip, port, drone_id, selected_scenario, delay_seconds), daemon=True)
             t.start()
             threads.append(t)
             time.sleep(0.5)

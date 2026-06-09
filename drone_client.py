@@ -67,17 +67,14 @@ def main():
         "mission": "Powerline Inspection",
         "gps_status": "OK",
         "profile": {
-            "family": "DroneFlood",
-            "version": "v2.1",
-            "campaign": "Operation Icarus",
-            "c2_protocol": "XOR-TCP",
+            "family": "CleanDrone",
+            "version": "baseline-1.0",
+            "campaign": "Baseline",
+            "c2_protocol": "Telemetry-TCP",
             "obfuscation": "XOR+Base64",
-            "capabilities": ["Telemetry Spoofing", "Beacon Flooding", "Credential Harvesting", "Logic Bomb"]
+            "capabilities": ["clean_telemetry", "mission_reporting"]
         },
-        "mitre_candidates": [
-            "T0885", "T0866", "T0895", "T0856", "T0886", 
-            "T0831", "T0816", "T0884", "T0853", "T0801"
-        ],
+        "mitre_candidates": [],
         "config": {
             "obfuscation": "XOR+Base64",
             "artifact_address": "0x00401000"
@@ -117,6 +114,8 @@ def main():
     battery = 100
     altitude = random.randint(50, 400)
     max_altitude = random.randint(150, 400)
+    waypoints = random.randint(5, 15)
+    current_wp = 1
     
     playback_data = []
     try:

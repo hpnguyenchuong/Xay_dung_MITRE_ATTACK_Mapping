@@ -1,0 +1,52 @@
+window.ThreatCoverageHeatmapPanel = () => {
+    return (
+        <div className="panel flex-1 min-w-0 min-h-0 flex flex-col bg-[#090d16]">
+            <div className="panel-header">
+                <span className="material-symbols-outlined text-[16px]">grid_on</span>
+                <span className="panel-title">Threat Coverage Heatmap</span>
+            </div>
+            <div className="flex-1 p-2 overflow-y-auto custom-scrollbar">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tactic</th>
+                            <th className="text-right">Coverage</th>
+                        </tr>
+                    </thead>
+                    <tbody className="text-[15px] font-mono text-[#e2e8f0]">
+                        <tr>
+                            <td>Persistence</td>
+                            <td className="text-right">
+                                <span className="heatmap-cell heat-high">100%</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Execution</td>
+                            <td className="text-right">
+                                <span className="heatmap-cell heat-medium">90%</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Defense Evasion</td>
+                            <td className="text-right">
+                                <span className="heatmap-cell heat-low">60%</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Command & Control</td>
+                            <td className="text-right">
+                                <span className="heatmap-cell heat-high">100%</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Impact</td>
+                            <td className="text-right">
+                                <span className="heatmap-cell heat-medium">80%</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+};

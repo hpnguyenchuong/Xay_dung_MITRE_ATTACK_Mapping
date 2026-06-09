@@ -19,43 +19,42 @@ window.GroundTruthPanel = () => {
                 <span className="material-symbols-outlined text-[16px]">fact_check</span>
                 <span>GROUND TRUTH EVALUATION</span>
             </div>
-            <div className="p-3 flex flex-col h-full min-h-0">
-                <div className="flex gap-3 mb-3 shrink-0">
-                    {/* Dataset Summary Panel */}
+            <div className="p-2 flex flex-col h-full min-h-0">
+                <div className="flex gap-2 mb-3 shrink-0">
+                    {/* Confusion Matrix Panel */}
                     <div className="flex-[0.4] bg-[#0f172a] p-2 rounded border border-[#38bdf8]/30 flex flex-col justify-between">
-                        <div className="text-[10px] text-[#38bdf8] uppercase font-bold mb-1 border-b border-[#38bdf8]/30 pb-1">Dataset Summary</div>
-                        <div className="flex justify-between text-[10px]">
-                            <span className="text-[#94a3b8]">Total RE Artifacts:</span>
-                            <span className="text-[#e2e8f0] font-bold">58</span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[9px] text-[#94a3b8] my-1">
-                            <div>Persistence: <span className="text-white">14</span></div>
-                            <div>Custom C2: <span className="text-white">18</span></div>
-                            <div>Takeover: <span className="text-white">12</span></div>
-                            <div>GPS Drift: <span className="text-white">14</span></div>
-                        </div>
-                        <div className="flex justify-between text-[10px] border-t border-[#1e293b] pt-1 mt-auto">
-                            <span className="text-[#94a3b8]">Ground Truth Labels:</span>
-                            <span className="text-[#a855f7] font-bold">58</span>
+                        <div className="text-[16px] text-[#38bdf8] uppercase font-bold mb-1 border-b border-[#38bdf8]/30 pb-1">Confusion Matrix</div>
+                        <div className="grid grid-cols-3 gap-1 text-[16px] text-center mt-1 font-mono items-center h-full">
+                            <div></div>
+                            <div className="text-[#94a3b8]">Pred Pos</div>
+                            <div className="text-[#94a3b8]">Pred Neg</div>
+                            
+                            <div className="text-[#94a3b8] text-right pr-1">Act Pos</div>
+                            <div className="bg-[#10b981]/20 border border-[#10b981]/50 text-[#10b981] rounded py-1">TP={gt.details?.TP || 0}</div>
+                            <div className="bg-[#f43f5e]/20 border border-[#f43f5e]/50 text-[#f43f5e] rounded py-1">FN={gt.details?.FN || 0}</div>
+                            
+                            <div className="text-[#94a3b8] text-right pr-1">Act Neg</div>
+                            <div className="bg-[#f43f5e]/20 border border-[#f43f5e]/50 text-[#f43f5e] rounded py-1">FP={gt.details?.FP || 0}</div>
+                            <div className="bg-[#10b981]/20 border border-[#10b981]/50 text-[#10b981] rounded py-1">TN={0}</div>
                         </div>
                     </div>
                     
                     {/* Metrics Grid */}
                     <div className="flex-[0.6] grid grid-cols-2 gap-2">
                         <div className="bg-[#0f172a] p-1.5 rounded text-center border border-[#1e293b] flex flex-col justify-center">
-                            <div className="text-[9px] text-[#94a3b8] uppercase mb-0.5">Accuracy</div>
+                            <div className="text-[15px] text-[#94a3b8] uppercase mb-0.5">Accuracy</div>
                             <div className="text-[#10b981] font-bold text-[16px]">{gt.metrics.Accuracy || '0%'}</div>
                         </div>
                         <div className="bg-[#0f172a] p-1.5 rounded text-center border border-[#1e293b] flex flex-col justify-center">
-                            <div className="text-[9px] text-[#94a3b8] uppercase mb-0.5">Precision</div>
+                            <div className="text-[15px] text-[#94a3b8] uppercase mb-0.5">Precision</div>
                             <div className="text-[#38bdf8] font-bold text-[16px]">{gt.metrics.Precision || '0%'}</div>
                         </div>
                         <div className="bg-[#0f172a] p-1.5 rounded text-center border border-[#1e293b] flex flex-col justify-center">
-                            <div className="text-[9px] text-[#94a3b8] uppercase mb-0.5">Recall</div>
+                            <div className="text-[15px] text-[#94a3b8] uppercase mb-0.5">Recall</div>
                             <div className="text-[#a855f7] font-bold text-[16px]">{gt.metrics.Recall || '0%'}</div>
                         </div>
                         <div className="bg-[#0f172a] p-1.5 rounded text-center border border-[#1e293b] flex flex-col justify-center">
-                            <div className="text-[9px] text-[#94a3b8] uppercase mb-0.5">F1 Score</div>
+                            <div className="text-[15px] text-[#94a3b8] uppercase mb-0.5">F1 Score</div>
                             <div className="text-[#f43f5e] font-bold text-[16px]">{gt.metrics.F1 || '0%'}</div>
                         </div>
                     </div>
@@ -65,10 +64,10 @@ window.GroundTruthPanel = () => {
                     <table className="w-full text-left border-collapse text-xs">
                         <thead className="sticky top-0 bg-[#334155] text-[#94a3b8]">
                             <tr>
-                                <th className="p-2 border-b border-[#1e293b] font-normal uppercase text-[10px]">Artifact</th>
-                                <th className="p-2 border-b border-[#1e293b] font-normal uppercase text-[10px]">Expected</th>
-                                <th className="p-2 border-b border-[#1e293b] font-normal uppercase text-[10px]">Predicted</th>
-                                <th className="p-2 border-b border-[#1e293b] font-normal uppercase text-[10px] text-center">Result</th>
+                                <th className="p-2 border-b border-[#1e293b] font-normal uppercase text-[16px]">Artifact</th>
+                                <th className="p-2 border-b border-[#1e293b] font-normal uppercase text-[16px]">Expected</th>
+                                <th className="p-2 border-b border-[#1e293b] font-normal uppercase text-[16px]">Predicted</th>
+                                <th className="p-2 border-b border-[#1e293b] font-normal uppercase text-[16px] text-center">Result</th>
                             </tr>
                         </thead>
                         <tbody className="text-[#f8fafc]">
@@ -89,11 +88,11 @@ window.GroundTruthPanel = () => {
                                 
                                 return (
                                     <tr key={idx} className="border-b border-[#1e293b] hover:bg-[#334155]/30">
-                                        <td className="p-2 text-[#a855f7] font-mono text-[10px]">{row.artifact}</td>
+                                        <td className="p-2 text-[#a855f7] font-mono text-[16px]">{row.artifact}</td>
                                         <td className="p-2 font-mono">{row.expected}</td>
                                         <td className="p-2 font-mono">{row.predicted}</td>
                                         <td className={`p-2 text-center ${resultClass}`}>
-                                            {resultIcon} <span className="text-[9px] block">{row.result}</span>
+                                            {resultIcon} <span className="text-[15px] block">{row.result}</span>
                                         </td>
                                     </tr>
                                 );
@@ -103,8 +102,8 @@ window.GroundTruthPanel = () => {
                 </div>
 
                 {/* Academic Conclusion */}
-                <div className="shrink-0 bg-[#34d399]/10 border border-[#34d399]/30 p-2 rounded text-[10px] flex gap-2 items-start mt-1">
-                    <span className="material-symbols-outlined text-[14px] text-[#34d399]">verified</span>
+                <div className="shrink-0 bg-[#34d399]/10 border border-[#34d399]/30 p-2 rounded text-[16px] flex gap-2 items-start mt-1">
+                    <span className="material-symbols-outlined text-[17px] text-[#34d399]">verified</span>
                     <div>
                         <span className="text-[#34d399] font-bold">Conclusion: </span>
                         <span className="text-[#cbd5e1] italic">The mapping engine achieved a high level of agreement with the ground truth dataset, demonstrating the feasibility of accurately mapping RE findings to MITRE ATT&CK techniques.</span>

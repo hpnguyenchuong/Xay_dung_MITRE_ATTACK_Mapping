@@ -45,7 +45,7 @@ python drone.py
 ### 2. Launch the Fleet Simulator
 To generate realistic attack traffic and populate the dashboard with RE findings, run the simulator in a separate terminal:
 ```bash
-python droneflood_simulator.py --repeat
+python3 droneflood_simulator.py --repeat 5
 ```
 
 ## 🔬 Academic Evaluation

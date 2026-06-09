@@ -1,0 +1,60 @@
+window.REEvidencePanel = () => {
+    return (
+        <div className="panel flex-[1.5] min-w-0 min-h-0 flex flex-col">
+            <div className="panel-header">
+                <span className="material-symbols-outlined text-[16px]">folder_special</span>
+                <span className="panel-title">RE EVIDENCE REPOSITORY</span>
+            </div>
+            <div className="flex-1 p-2 overflow-y-auto custom-scrollbar">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Artifact</th>
+                            <th>Type</th>
+                            <th>Source</th>
+                            <th>Offset</th>
+                            <th>Validation</th>
+                        </tr>
+                    </thead>
+                    <tbody className="text-[17px] font-mono text-[#e2e8f0]">
+                        <tr>
+                            <td className="text-[#38bdf8] font-bold">DF_MUTEX_01</td>
+                            <td className="text-[#fbbf24]">Mutex</td>
+                            <td>Memory Dump</td>
+                            <td className="text-[#94a3b8]">0x401210</td>
+                            <td><span className="bg-[#a855f7]/20 text-[#a855f7] px-1.5 py-0.5 rounded font-bold border border-[#a855f7]/50">L3</span></td>
+                        </tr>
+                        <tr>
+                            <td className="text-[#38bdf8] font-bold">beacon_30s</td>
+                            <td className="text-[#fbbf24]">String</td>
+                            <td>.rdata Section</td>
+                            <td className="text-[#94a3b8]">0x501430</td>
+                            <td><span className="bg-[#34d399]/20 text-[#34d399] px-1.5 py-0.5 rounded font-bold border border-[#34d399]/50">L2</span></td>
+                        </tr>
+                        <tr>
+                            <td className="text-[#38bdf8] font-bold">encoded_payload</td>
+                            <td className="text-[#fbbf24]">Config</td>
+                            <td>.data Section</td>
+                            <td className="text-[#94a3b8]">0x402ABC</td>
+                            <td><span className="bg-[#a855f7]/20 text-[#a855f7] px-1.5 py-0.5 rounded font-bold border border-[#a855f7]/50">L3</span></td>
+                        </tr>
+                        <tr>
+                            <td className="text-[#38bdf8] font-bold">Software\Windows\Run</td>
+                            <td className="text-[#fbbf24]">Registry</td>
+                            <td>API Call Log</td>
+                            <td className="text-[#94a3b8]">N/A</td>
+                            <td><span className="bg-[#a855f7]/20 text-[#a855f7] px-1.5 py-0.5 rounded font-bold border border-[#a855f7]/50">L3</span></td>
+                        </tr>
+                        <tr>
+                            <td className="text-[#38bdf8] font-bold">c2.dronefleet.net</td>
+                            <td className="text-[#fbbf24]">String</td>
+                            <td>Hardcoded Net</td>
+                            <td className="text-[#94a3b8]">0x502114</td>
+                            <td><span className="bg-[#a855f7]/20 text-[#a855f7] px-1.5 py-0.5 rounded font-bold border border-[#a855f7]/50">L3</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+};

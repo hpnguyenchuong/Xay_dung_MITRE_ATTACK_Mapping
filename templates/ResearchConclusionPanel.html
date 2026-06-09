@@ -1,0 +1,70 @@
+window.ResearchConclusionPanel = () => {
+    return (
+        <div className="panel flex-[1.2] min-w-0 min-h-0 flex flex-col">
+            <div className="panel-header">
+                <span className="material-symbols-outlined text-[20px]">verified</span>
+                <span className="panel-title">Research Conclusion</span>
+            </div>
+            <div className="flex-1 p-2 flex flex-col gap-2 overflow-y-auto custom-scrollbar">
+                
+                {/* Research Questions Status */}
+                <div className="grid grid-cols-2 gap-2">
+                    <div className="flex flex-col p-2 bg-[#0f172a] border border-[#334155] rounded">
+                        <span className="text-[16px] text-[#94a3b8] font-bold">RQ1: Can RE Findings be mapped to ATT&CK?</span>
+                        <div className="flex items-center gap-2 mt-1">
+                            <span className="material-symbols-outlined text-[#34d399] text-[16px]">check_circle</span>
+                            <span className="text-[17px] font-bold text-white">Yes</span>
+                        </div>
+                    </div>
+                    <div className="flex flex-col p-2 bg-[#0f172a] border border-[#334155] rounded">
+                        <span className="text-[16px] text-[#94a3b8] font-bold">RQ2: Can Behavior improve mapping quality?</span>
+                        <div className="flex items-center gap-2 mt-1">
+                            <span className="material-symbols-outlined text-[#34d399] text-[16px]">check_circle</span>
+                            <span className="text-[17px] font-bold text-white">Yes</span>
+                        </div>
+                    </div>
+                    <div className="flex flex-col p-2 bg-[#0f172a] border border-[#334155] rounded">
+                        <span className="text-[16px] text-[#94a3b8] font-bold">RQ3: Can Enterprise techniques translate to ICS?</span>
+                        <div className="flex items-center gap-2 mt-1">
+                            <span className="material-symbols-outlined text-[#34d399] text-[16px]">check_circle</span>
+                            <span className="text-[17px] font-bold text-white">Yes</span>
+                        </div>
+                    </div>
+                    <div className="flex flex-col p-2 bg-[#0f172a] border border-[#334155] rounded">
+                        <span className="text-[16px] text-[#94a3b8] font-bold">RQ4: Can mapping quality be evaluated?</span>
+                        <div className="flex items-center gap-2 mt-1">
+                            <span className="material-symbols-outlined text-[#34d399] text-[16px]">check_circle</span>
+                            <span className="text-[17px] font-bold text-white">Yes</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Final Result Metrics */}
+                <div className="flex flex-col mt-2">
+                    <span className="text-[16px] font-bold text-[#38bdf8] uppercase tracking-widest border-b border-[#334155] pb-1 mb-2">Final Result</span>
+                    <div className="flex justify-between items-center bg-[#1e293b] p-2 rounded">
+                        <div className="flex flex-col items-center"><span className="text-[15px] text-[#94a3b8] uppercase">Accuracy</span><span className="text-[17px] font-bold text-white font-mono">92%</span></div>
+                        <div className="w-px h-6 bg-[#334155]"></div>
+                        <div className="flex flex-col items-center"><span className="text-[15px] text-[#94a3b8] uppercase">Precision</span><span className="text-[17px] font-bold text-white font-mono">91%</span></div>
+                        <div className="w-px h-6 bg-[#334155]"></div>
+                        <div className="flex flex-col items-center"><span className="text-[15px] text-[#94a3b8] uppercase">Recall</span><span className="text-[17px] font-bold text-white font-mono">89%</span></div>
+                        <div className="w-px h-6 bg-[#334155]"></div>
+                        <div className="flex flex-col items-center"><span className="text-[15px] text-[#94a3b8] uppercase">F1 Score</span><span className="text-[17px] font-bold text-[#34d399] font-mono">90%</span></div>
+                    </div>
+                </div>
+
+                {/* Key Finding */}
+                <div className="flex flex-col mt-auto key-finding-box">
+                    <span className="key-finding-title flex items-center gap-1 mb-2">
+                        <span className="material-symbols-outlined text-[16px]">lightbulb</span>
+                        Key Finding
+                    </span>
+                    <span className="key-finding-text font-bold italic">
+                        "Behavior-centric mapping significantly improves explainability and ATT&CK alignment, closing the semantic gap between Reverse Engineering evidence and ICS operational impacts."
+                    </span>
+                </div>
+
+            </div>
+        </div>
+    );
+};
