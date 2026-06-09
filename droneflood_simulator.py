@@ -185,40 +185,29 @@ def active_drones_monitor(c2_ip, web_port=9000):
         mins, secs = divmod(uptime_sec, 60)
         runtime_str = f"{mins:02d}:{secs:02d}"
         
-        stage = getattr(args, 'scenario', 'Unknown').title()
-        if stage == 'Full_Campaign': stage = 'Full Campaign'
-        if stage == 'Custom_C2': stage = 'Custom C2'
-        if stage == 'Fleet_Takeover': stage = 'Fleet Takeover'
-        if stage == 'Gps_Drift': stage = 'GPS Drift'
-        if stage == 'Mission_Failure': stage = 'Mission Failure'
-        
         output = []
         if not getattr(args, 'verbose', False):
             output.append("\033[2J\033[H") # Clear screen and move cursor to home
             
-        output.append(f"{C_CYAN}╔════════════════════════════════════════════════════════════════════╗{C_END}")
-        output.append(f"{C_CYAN}║{C_END}                    {C_BOLD}DRONEFLOOD LIVE STATUS BOARD{C_END}                    {C_CYAN}║{C_END}")
-        output.append(f"{C_CYAN}╠════════════════════════════════════════════════════════════════════╣{C_END}")
-        output.append(f"{C_CYAN}║{C_END} Scenario : {stage:<16} Stage : {stage:<15} Runtime {runtime_str:<5} {C_CYAN}║{C_END}")
-        output.append(f"{C_CYAN}║{C_END} Ubuntu   : {len(ubuntu_clients):<2} clients       Bots  : {len(simulator_bots):<16} Total   : {len(fleet):<2}  {C_CYAN}║{C_END}")
-        output.append(f"{C_CYAN}╚════════════════════════════════════════════════════════════════════╝{C_END}\n")
-        
         if api_failed:
-            output.append(f" {C_RED}[!] WARNING: Could not fetch active drones from C2 REST API.{C_END}\n")
+            output.append(f"{C_RED}[!] WARNING: Could not fetch active drones from C2 REST API.{C_END}\n")
         
         if ubuntu_clients:
-            output.append(f" 🟢 {C_GREEN}{C_BOLD}Drone Active: {len(ubuntu_clients)}{C_END}\n")
-            output.append(f" | {'ID':<10} | {'STATUS':<8} | {'BATT':<5} | {'ALT':<5} | {'SPEED':<5} | {'GPS':<16} | {'MODE':<15} |")
-            output.append(f" |{'-'*12}|{'-'*10}|{'-'*7}|{'-'*7}|{'-'*7}|{'-'*18}|{'-'*17}|")
+            output.append(f"Drone Active: {len(ubuntu_clients)}")
+            output.append("=" * 80)
+            output.append("")
+            output.append(f"{'ID':<11}{'STATUS':<11}{'BATT':<7}{'ALT':<7}{'SPEED':<9}{'GPS':<20}{'MODE'}")
+            output.append("-" * 80)
             for i, (d_id, d) in enumerate(ubuntu_clients):
                 if i >= 8:
-                    output.append(f" | {C_GREEN}... +{len(ubuntu_clients)-8} more{C_END:<25} | {'':<8} | {'':<5} | {'':<5} | {'':<5} | {'':<16} | {'':<15} |")
+                    output.append(f"... +{len(ubuntu_clients)-8} more")
                     break
-                status = str(d.get('status', 'ACTIVE'))[:8]
+                status = str(d.get('status', 'ONLINE')).upper()[:10]
+                if status == 'ACTIVE': status = 'ONLINE'
                 batt = f"{d.get('battery', 0)}%"
                 alt = f"{d.get('altitude', 0)}m"
-                speed = str(d.get('speed', 0))
-                gps = str(d.get('gps', 'Unknown'))[:16]
+                speed = f"{d.get('speed', 0)} km/h"
+                gps = str(d.get('gps', 'Unknown'))[:18]
                 
                 mode_raw = str(d.get('campaign_stage', 'NORMAL')).upper()
                 if mode_raw == 'UNKNOWN' or not mode_raw: mode_raw = 'NORMAL'
@@ -227,29 +216,36 @@ def active_drones_monitor(c2_ip, web_port=9000):
                 if mode_raw in ['GPS_DRIFT', 'MISSION_FAILURE']: mode_color = C_RED
                 elif mode_raw == 'NORMAL': mode_color = C_GREEN
                 
-                output.append(f" | {C_GREEN}{d_id:<10}{C_END} | {status:<8} | {batt:<5} | {alt:<5} | {speed:<5} | {gps:<16} | {mode_color}{mode_raw[:15]:<15}{C_END} |")
-            output.append(f" └{'-'*12}┴{'-'*10}┴{'-'*7}┴{'-'*7}┴{'-'*7}┴{'-'*18}┴{'-'*17}┘\n")
+                output.append(f"{d_id:<11}{status:<11}{batt:<7}{alt:<7}{speed:<9}{gps:<20}{mode_color}{mode_raw}{C_END}")
+            output.append("\n" + "=" * 80 + "\n")
             
         if simulator_bots:
-            output.append(f" 🟠 {C_YELLOW}{C_BOLD}Drone Bot: {len(simulator_bots)}{C_END}\n")
-            output.append(f" | {'ID':<10} | {'ATTACK_STAGE':<15} | {'BATT':<5} | {'ALT':<5} | {'SPEED':<5} | {'GPS':<16} |")
-            output.append(f" |{'-'*12}|{'-'*17}|{'-'*7}|{'-'*7}|{'-'*7}|{'-'*18}|")
+            output.append(f"Drone Bot: {len(simulator_bots)}")
+            output.append("=" * 80)
+            output.append("")
+            output.append(f"{'ID':<11}{'ATTACK STAGE':<15}{'BATT':<7}{'ALT':<7}{'SPEED':<9}{'GPS'}")
+            output.append("-" * 80)
             for i, (d_id, d) in enumerate(simulator_bots):
                 if i >= 8:
-                    output.append(f" | {C_YELLOW}... +{len(simulator_bots)-8} more{C_END:<24} | {'':<15} | {'':<5} | {'':<5} | {'':<5} | {'':<16} |")
+                    output.append(f"... +{len(simulator_bots)-8} more")
                     break
                 stage_raw = str(d.get('campaign_stage', 'UNKNOWN')).upper()
+                if stage_raw == 'CUSTOM_C2': stage_raw = 'CUSTOM C2'
+                elif stage_raw == 'GPS_DRIFT': stage_raw = 'GPS DRIFT'
                 
                 stage_color = C_YELLOW
-                if stage_raw in ['GPS_DRIFT', 'MISSION_FAILURE']: stage_color = C_RED
+                if stage_raw in ['GPS DRIFT', 'MISSION_FAILURE']: stage_color = C_RED
                 elif stage_raw == 'NORMAL': stage_color = C_GREEN
                 
                 batt = f"{d.get('battery', 0)}%"
                 alt = f"{d.get('altitude', 0)}m"
-                speed = str(d.get('speed', 0))
-                gps = str(d.get('gps', 'Unknown'))[:16]
-                output.append(f" | {C_YELLOW}{d_id:<10}{C_END} | {stage_color}{stage_raw[:15]:<15}{C_END} | {batt:<5} | {alt:<5} | {speed:<5} | {gps:<16} |")
-            output.append(f" └{'-'*12}┴{'-'*17}┴{'-'*7}┴{'-'*7}┴{'-'*7}┴{'-'*18}┘\n")
+                speed = f"{d.get('speed', 0)} km/h"
+                gps = str(d.get('gps', 'Unknown'))[:18]
+                
+                stage_str = f"{stage_color}{stage_raw:<15}{C_END}"
+                
+                output.append(f"{d_id:<11}{stage_str}{batt:<7}{alt:<7}{speed:<9}{gps}")
+            output.append("\n" + "=" * 80 + "\n")
             
         with print_lock:
             print("\n".join(output), flush=True)
