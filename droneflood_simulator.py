@@ -451,7 +451,7 @@ def run_drone_agent(c2_ip, port, drone_id, scenario, delay_seconds=5):
             time.sleep(3)
 
 def main():
-    global beacon_mode
+    global beacon_mode, args
     
     parser = argparse.ArgumentParser(description="DroneFlood Campaign Simulator")
     parser.add_argument("c2_ip", type=str, help="IP address of the C2 Server")
