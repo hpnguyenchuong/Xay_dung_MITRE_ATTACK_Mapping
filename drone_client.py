@@ -52,7 +52,6 @@ def main():
         print(f"Failed to connect: {e}")
         sys.exit(1)
         
-    drone_id = f"DRONE_{uuid.uuid4().hex[:6].upper()}"
     fleet_role = "leader" if random.random() > 0.7 else "member"
     
     # Registration Request
@@ -71,12 +70,12 @@ def main():
             "version": "baseline-1.0",
             "campaign": "Baseline",
             "c2_protocol": "Telemetry-TCP",
-            "obfuscation": "XOR+Base64",
+            "obfuscation": "None",
             "capabilities": ["clean_telemetry", "mission_reporting"]
         },
         "mitre_candidates": [],
         "config": {
-            "obfuscation": "XOR+Base64",
+            "obfuscation": "None",
             "artifact_address": "0x00401000"
         }
     }
@@ -157,11 +156,11 @@ def main():
             altitude = max(0, altitude + current_state.get("alt_change", 0))
             speed = current_state.get("speed", 40)
             
-            if dynamic_phase == "gps_drift":
+            if dynamic_phase in ["gps_drift", "spoof"]:
                 drone_state = "GPS_DRIFT"
                 gps_status = "SPOOFED"
                 deviation_m = random.randint(110, 130)
-            elif dynamic_phase == "mission_failure":
+            elif dynamic_phase in ["mission_failure", "impact"]:
                 drone_state = "MISSION_FAILURE"
                 gps_status = "LOST"
                 deviation_m = random.randint(300, 500)
@@ -208,7 +207,8 @@ def main():
                 break
             
             if battery <= 0:
-                print(f"[{drone_id}] Battery depleted. Landing.")
+                print(f"\n{C_RED}[!] CRITICAL: BATTERY 0%. CONNECTION LOST.{C_END}")
+                print(f"{C_RED}[!] WARNING: {drone_id} IS IN FREE FALL AND CURRENTLY OFFLINE!{C_END}\n")
                 break
                 
             time.sleep(5)

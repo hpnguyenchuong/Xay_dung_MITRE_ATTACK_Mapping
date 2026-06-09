@@ -32,19 +32,20 @@ window.FleetInfectionPanel = ({ drones = [], selectedDrone, onDroneSelect }) => 
         setIsPlaying(true);
     };
 
-        const totalDrones = drones.length || 10;
-        const affectedDrones = drones.length > 0 ? drones.filter(d => d.status === 'OFFLINE' || d.drone_state === 'COMPROMISED').length : 7;
-        const compromiseRate = Math.round((affectedDrones / totalDrones) * 100);
-        
-        let missionCompletion = 100;
-        if (selectedDrone && selectedDrone.status && selectedDrone.status.mission_context) {
-            const ctx = selectedDrone.status.mission_context;
-            if (ctx.mission_phase === 'OFF_ROUTE') {
-                missionCompletion = 35; // Dropped heavily during GPS drift
-            } else {
-                missionCompletion = Math.round((ctx.current_waypoint / ctx.waypoints) * 100);
-            }
+    const activeDronesCount = drones.length > 0 ? drones.filter(d => d.status === 'ACTIVE').length : 10;
+    const totalDrones = drones.length || 10;
+    const affectedDrones = drones.length > 0 ? drones.filter(d => d.status === 'OFFLINE' || d.drone_state === 'COMPROMISED').length : 7;
+    const compromiseRate = Math.round((affectedDrones / totalDrones) * 100);
+    
+    let missionCompletion = 100;
+    if (selectedDrone && selectedDrone.status && selectedDrone.status.mission_context) {
+        const ctx = selectedDrone.status.mission_context;
+        if (ctx.mission_phase === 'OFF_ROUTE') {
+            missionCompletion = 35; // Dropped heavily during GPS drift
+        } else {
+            missionCompletion = Math.round((ctx.current_waypoint / ctx.waypoints) * 100);
         }
+    }
 
     return (
         <div className="panel flex-1 min-w-0 min-h-0 flex flex-col">
@@ -77,8 +78,8 @@ window.FleetInfectionPanel = ({ drones = [], selectedDrone, onDroneSelect }) => 
                 
                 <div className="grid grid-cols-2 gap-2 mb-2">
                     <div className="bg-[#1e293b] p-2 rounded border border-[#334155] flex flex-col items-center justify-center">
-                        <span className="text-[16px] text-[#94a3b8] font-mono">FLEET SIZE</span>
-                        <span className="text-[18px] font-bold text-[#e2e8f0]">{totalDrones}</span>
+                        <span className="text-[16px] text-[#38bdf8] font-mono font-bold">ACTIVE DRONES</span>
+                        <span className="text-[18px] font-bold text-[#38bdf8]">{activeDronesCount}</span>
                     </div>
                     <div className="bg-[#1e293b] p-2 rounded border border-[#f43f5e]/30 flex flex-col items-center justify-center shadow-[0_0_10px_rgba(244,63,94,0.1)]">
                         <span className="text-[16px] text-[#f43f5e] font-mono font-bold">AFFECTED</span>

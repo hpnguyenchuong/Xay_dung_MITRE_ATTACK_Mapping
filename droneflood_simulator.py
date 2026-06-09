@@ -245,13 +245,33 @@ def run_drone_agent(c2_ip, port, drone_id, scenario, delay_seconds=5):
             
             MALWARE_CONFIG["c2"] = c2_ip
             
+            profile = MALWARE_PROFILE
+            reg_findings = RE_FINDINGS
+            config = MALWARE_CONFIG
+            
+            if scenario == "Clean Drone":
+                profile = {
+                    "family": "CleanDrone",
+                    "version": "baseline-1.0",
+                    "campaign": "Baseline",
+                    "c2_protocol": "Telemetry-TCP",
+                    "obfuscation": "None",
+                    "capabilities": ["clean_telemetry", "mission_reporting"]
+                }
+                config = {
+                    "config_version": "baseline-1.0",
+                    "c2_port": 5555,
+                    "obfuscation": "None"
+                }
+                reg_findings = []
+            
             reg_packet = {
                 "type": "register", 
                 "drone_id": drone_id,
                 "session_id": session_id,
-                "profile": MALWARE_PROFILE,
-                "config": MALWARE_CONFIG,
-                "re_findings": RE_FINDINGS
+                "profile": profile,
+                "config": config,
+                "re_findings": reg_findings
             }
             sock.sendall(TransportObfuscationLayer.obfuscate(json.dumps(reg_packet)) + b"\n")
             
@@ -474,6 +494,10 @@ def main():
             active_drones = [d for d, info in fleet.items() if info.get("status") == "ACTIVE"]
     except Exception as e:
         print(f" {C_YELLOW}[!] Could not fetch active drones from C2 REST API. Fallback to random IDs.{C_END}")
+        
+    if active_drones:
+        num_drones = len(active_drones)
+        print(f" {C_GREEN}[+] Found {num_drones} active drones. Adapting payload to hijack them...{C_END}")
         
     for repeat_idx in range(args.repeat):
         if args.repeat > 1:

@@ -444,8 +444,9 @@ class MITREMappingEngine:
     def analyze_packet(self, drone_id: str, client_ip: str, p_hash: str, packet: dict):
         if "telemetry" in packet and isinstance(packet["telemetry"], dict):
             tel = packet["telemetry"]
-            if "lat" in tel and "lon" in tel:
-                packet["gps"] = f"{tel['lat']},{tel['lon']}"
+            if "lat" in tel and ("lon" in tel or "lng" in tel):
+                lon_val = tel.get("lon", tel.get("lng"))
+                packet["gps"] = f"{tel['lat']},{lon_val}"
             if "speed" in tel:
                 packet["speed"] = tel["speed"]
             if "altitude" in tel:
@@ -1031,6 +1032,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         # NÂNG CẤP HYBRID OVERRIDE ENGINE: KIỂM TRA SOCKET THỰC (MỤC II.4)
                         with clients_lock:
                             is_connected = d_id in clients
+                            
+                        if is_connected:
+                            with mitre_engine.packet_lock:
+                                last_ping = mitre_engine.last_packet_time.get(d_id, 0)
+                            if time.time() - last_ping > 15:
+                                is_connected = False
                         
                         fleet[d_id]["is_hardware_asset"] = True if is_connected else False
                         

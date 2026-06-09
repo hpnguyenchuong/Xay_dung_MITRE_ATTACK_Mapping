@@ -1,49 +1,90 @@
 window.ThreatCoverageHeatmapPanel = () => {
+    const [stats, setStats] = React.useState({
+        total_techniques: 0,
+        tactics_covered: {},
+        tactic_count: 0,
+        coverage_percent: 0
+    });
+
+    React.useEffect(() => {
+        const fetchData = () => {
+            fetch('/api/attack_coverage')
+                .then(res => res.json())
+                .then(data => {
+                    const tactics = data.tactics_covered || {};
+                    const techCount = data.total_techniques || 0;
+                    const tacticCount = Object.keys(tactics).length;
+                    
+                    // Assuming a baseline of 14 Tactics in Enterprise ATT&CK
+                    // and expected 8 techniques for full DroneFlood campaign
+                    const coveragePercent = Math.min(100, Math.round((techCount / 8) * 100));
+                    
+                    setStats({
+                        total_techniques: techCount,
+                        tactics_covered: tactics,
+                        tactic_count: tacticCount,
+                        coverage_percent: coveragePercent
+                    });
+                })
+                .catch(err => console.error("Error fetching attack coverage:", err));
+        };
+        fetchData();
+        const interval = setInterval(fetchData, 2000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const tacticRows = Object.entries(stats.tactics_covered).map(([tactic, count]) => {
+        let heatClass = "heat-low";
+        if (count > 2) heatClass = "heat-high";
+        else if (count === 2) heatClass = "heat-medium";
+        
+        return (
+            <tr key={tactic}>
+                <td>{tactic}</td>
+                <td className="text-right">
+                    <span className={`heatmap-cell ${heatClass}`}>{count} Techs</span>
+                </td>
+            </tr>
+        );
+    });
+
     return (
         <div className="panel flex-1 min-w-0 min-h-0 flex flex-col bg-[#090d16]">
             <div className="panel-header">
-                <span className="material-symbols-outlined text-[16px]">grid_on</span>
-                <span className="panel-title">Threat Coverage Heatmap</span>
+                <span className="material-symbols-outlined text-[16px]">map</span>
+                <span className="panel-title">ATT&CK Navigator Evaluation</span>
             </div>
+            
+            {/* Top Stats Block */}
+            <div className="flex gap-2 p-2 border-b border-[#1e293b]">
+                <div className="flex-1 bg-[#0f172a] p-2 rounded text-center border border-[#334155]">
+                    <div className="text-[#94a3b8] text-[11px] uppercase tracking-wider mb-1">Coverage %</div>
+                    <div className="text-[#38bdf8] font-mono text-[18px] font-bold">{stats.coverage_percent}%</div>
+                </div>
+                <div className="flex-1 bg-[#0f172a] p-2 rounded text-center border border-[#334155]">
+                    <div className="text-[#94a3b8] text-[11px] uppercase tracking-wider mb-1">Tactic Coverage</div>
+                    <div className="text-[#a78bfa] font-mono text-[18px] font-bold">{stats.tactic_count} / 14</div>
+                </div>
+                <div className="flex-1 bg-[#0f172a] p-2 rounded text-center border border-[#334155]">
+                    <div className="text-[#94a3b8] text-[11px] uppercase tracking-wider mb-1">Technique Coverage</div>
+                    <div className="text-[#f43f5e] font-mono text-[18px] font-bold">{stats.total_techniques}</div>
+                </div>
+            </div>
+
             <div className="flex-1 p-2 overflow-y-auto custom-scrollbar">
                 <table>
                     <thead>
                         <tr>
                             <th>Tactic</th>
-                            <th className="text-right">Coverage</th>
+                            <th className="text-right">Techniques Mapped</th>
                         </tr>
                     </thead>
-                    <tbody className="text-[15px] font-mono text-[#e2e8f0]">
-                        <tr>
-                            <td>Persistence</td>
-                            <td className="text-right">
-                                <span className="heatmap-cell heat-high">100%</span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Execution</td>
-                            <td className="text-right">
-                                <span className="heatmap-cell heat-medium">90%</span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Defense Evasion</td>
-                            <td className="text-right">
-                                <span className="heatmap-cell heat-low">60%</span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Command & Control</td>
-                            <td className="text-right">
-                                <span className="heatmap-cell heat-high">100%</span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Impact</td>
-                            <td className="text-right">
-                                <span className="heatmap-cell heat-medium">80%</span>
-                            </td>
-                        </tr>
+                    <tbody className="text-[13px] font-mono text-[#e2e8f0]">
+                        {tacticRows.length > 0 ? tacticRows : (
+                            <tr>
+                                <td colSpan="2" className="text-center text-[#64748b] py-4">No tactics mapped yet.</td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>
