@@ -191,39 +191,41 @@ def active_drones_monitor(c2_ip, web_port=9000):
         if not getattr(args, 'verbose', False):
             output.append("\033[2J\033[H") # Clear screen and move cursor to home
             
-        output.append("╔════════════════════════════════════════════════════════════════════╗")
-        output.append("║              DRONEFLOOD SWARM SIMULATOR STATUS BOARD               ║")
-        output.append("╠════════════════════════════════════════════════════════════════════╣")
-        output.append(f"║ Scenario: {stage:<17} Stage: {stage:<16} Runtime: {runtime_str:<5} ║")
-        output.append(f"║ Ubuntu Clients: {len(ubuntu_clients):<11} Simulator Bots: {len(simulator_bots):<7} Total: {len(fleet):<7} ║")
-        output.append("╚════════════════════════════════════════════════════════════════════╝\n")
+        output.append(f"{C_CYAN}╔════════════════════════════════════════════════════════════════════╗{C_END}")
+        output.append(f"{C_CYAN}║{C_END}                    {C_BOLD}DRONEFLOOD LIVE STATUS BOARD{C_END}                    {C_CYAN}║{C_END}")
+        output.append(f"{C_CYAN}╠════════════════════════════════════════════════════════════════════╣{C_END}")
+        output.append(f"{C_CYAN}║{C_END} Scenario : {stage:<16} Stage : {stage:<15} Runtime {runtime_str:<5} {C_CYAN}║{C_END}")
+        output.append(f"{C_CYAN}║{C_END} Ubuntu   : {len(ubuntu_clients):<2} clients       Bots  : {len(simulator_bots):<16} Total   : {len(fleet):<2}  {C_CYAN}║{C_END}")
+        output.append(f"{C_CYAN}╚════════════════════════════════════════════════════════════════════╝{C_END}\n")
         
         if api_failed:
             output.append(f" {C_RED}[!] WARNING: Could not fetch active drones from C2 REST API.{C_END}\n")
         
         if ubuntu_clients:
-            output.append(f"{C_CYAN}ACTIVE UBUNTU CLIENTS{C_END}")
-            output.append(f"{C_CYAN}{'ID':<10} {'IP':<15} {'BATT':<6} {'ALT':<6} {'SPEED':<7} {'GPS':<18}{C_END}")
+            output.append(f" 🟢 {C_GREEN}{C_BOLD}UBUNTU DRONE CLIENTS{C_END}\n")
+            output.append(f" | {'ID':<10} | {'IP':<15} | {'BATT':<6} | {'ALT':<5} | {'SPEED':<5} | {'GPS':<16} |")
+            output.append(f" |{'-'*12}|{'-'*17}|{'-'*8}|{'-'*7}|{'-'*7}|{'-'*18}|")
             for d_id, d in ubuntu_clients:
                 batt = f"{d.get('battery', 0)}%"
                 alt = f"{d.get('altitude', 0)}m"
                 speed = str(d.get('speed', 0))
-                gps = str(d.get('gps', 'Unknown'))[:18]
+                gps = str(d.get('gps', 'Unknown'))[:16]
                 ip = str(d.get('ip', 'Unknown'))
-                output.append(f"{C_GREEN}{d_id:<10}{C_END} {ip:<15} {batt:<6} {alt:<6} {speed:<7} {gps:<18}")
-            output.append("\n")
+                output.append(f" | {C_GREEN}{d_id:<10}{C_END} | {ip:<15} | {batt:<6} | {alt:<5} | {speed:<5} | {gps:<16} |")
+            output.append(f" └{'-'*12}┴{'-'*17}┴{'-'*8}┴{'-'*7}┴{'-'*7}┴{'-'*18}┘\n")
             
         if simulator_bots:
-            output.append(f"{C_CYAN}ACTIVE SIMULATOR BOTS{C_END}")
-            output.append(f"{C_CYAN}{'ID':<10} {'STAGE':<14} {'ARTIFACTS':<10} {'BATT':<6} {'ALT':<6} {'GPS':<18}{C_END}")
+            output.append(f" 🟠 {C_YELLOW}{C_BOLD}SIMULATOR BOTS{C_END}\n")
+            output.append(f" | {'ID':<10} | {'STAGE':<13} | {'ARTIFACTS':<9} | {'BATT':<6} | {'ALT':<5} | {'GPS':<16} |")
+            output.append(f" |{'-'*12}|{'-'*15}|{'-'*11}|{'-'*8}|{'-'*7}|{'-'*18}|")
             for d_id, d in simulator_bots:
-                stage_val = str(d.get('campaign_stage', 'Unknown'))[:14]
+                stage_val = str(d.get('campaign_stage', 'Unknown'))[:13]
                 arts = str(d.get('active_artifacts', 0))
                 batt = f"{d.get('battery', 0)}%"
                 alt = f"{d.get('altitude', 0)}m"
-                gps = str(d.get('gps', 'Unknown'))[:18]
-                output.append(f"{C_YELLOW}{d_id:<10}{C_END} {stage_val:<14} {arts:<10} {batt:<6} {alt:<6} {gps:<18}")
-            output.append("\n")
+                gps = str(d.get('gps', 'Unknown'))[:16]
+                output.append(f" | {C_YELLOW}{d_id:<10}{C_END} | {stage_val:<13} | {arts:<9} | {batt:<6} | {alt:<5} | {gps:<16} |")
+            output.append(f" └{'-'*12}┴{'-'*15}┴{'-'*11}┴{'-'*8}┴{'-'*7}┴{'-'*18}┘\n")
             
         with print_lock:
             print("\n".join(output), flush=True)
