@@ -662,35 +662,46 @@ class MITREMappingEngine:
                     if not cursor.fetchone():
                         cursor.execute("INSERT INTO attack_mapping (drone_id, tactic, tactic_name, technique_id, name, timestamp) VALUES (?, ?, ?, ?, ?, ?)", (drone_id, "TA0111", "Command and Control", tech, f"Candidate {tech} detected", t_str))
 
-            # Check Beacon Abuse (T1071) based on telemetry interval
+            # Check Beacon Abuse based on telemetry interval
             interval = packet.get("beacon_interval", packet.get("status", {}).get("beacon_interval", 5.0))
-            if interval > 0 and interval < 1.0: # Phát hiện tần suất xả gói tin áp đảo điện tử dưới 1s
-                    # Automated Active Defense (CLO7)
-                    flood_counter[drone_id] = flood_counter.get(drone_id, 0) + 1
+
+            if interval > 0 and interval < 1.0:
+                flood_counter[drone_id] = flood_counter.get(drone_id, 0) + 1
+
+                if flood_counter[drone_id] >= 10:
+                    payload = json.dumps({"cmd": "stop_attack"})
+                    obfuscated = TransportObfuscationLayer.obfuscate(payload) + b"\n"
+
+                    with clients_lock:
+                        client_sock = clients.get(drone_id)
+                        if client_sock:
+                            try:
+                                client_sock.sendall(obfuscated)
+                                cursor.execute(
+                                    "INSERT INTO timeline (drone_id, event_type, message, timestamp) VALUES (?, ?, ?, ?)",
+                                    (drone_id, "CONTAINMENT", "[SOAR ENGINE] Active Defense Playbook executed successfully: Host network containment applied.", t_str)
+                                )
+                                cursor.execute(
+                                    "UPDATE cases SET status='ISOLATED_BY_SOAR', resolution_notes='Automated containment triggered due to traffic flood' WHERE drone_id=? AND status='OPEN'",
+                                    (drone_id,)
+                                )
+                            except:
+                                pass
+
+                    flood_counter[drone_id] = 0
+
+                cursor.execute("SELECT id FROM attack_mapping WHERE drone_id=? AND technique_id=?", (drone_id, "T0814"))
+                if not cursor.fetchone():
+                    cursor.execute(
+                        "INSERT INTO attack_mapping (drone_id, tactic, tactic_name, technique_id, enterprise_tech_id, ics_tech_id, name, confidence, reason, evidence, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                        (drone_id, "TA0107", "Inhibit Response Function", "T0814", "T1498", "T0814", "Denial of Service (Traffic Flood Abuse)", 95, "Abnormal C2 interval detected", f"Interval: {interval}s", t_str)
+                    )
+                    cursor.execute(
+                        "INSERT INTO alerts (drone_id, severity, title, description, timestamp, status) VALUES (?, ?, ?, ?, ?, ?)",
+                        (drone_id, "CRITICAL", "[UPLINK_STORM PACKET FLOOD DETECTED]", f"Aggressive C2 Beaconing interval: {interval}s detected.", t_str, "OPEN")
+                    )
             else:
-                    flood_counter[drone_id] = 0
-            if flood_counter.get(drone_id, 0) >= 10:
-                        # Rule-Based Automated Containment
-                        payload = json.dumps({"cmd": "stop_attack"})
-                        obfuscated = TransportObfuscationLayer.obfuscate(payload) + b"\n"
-                        with clients_lock:
-                            client_sock = clients.get(drone_id)
-                            if client_sock:
-                                try:
-                                    client_sock.sendall(obfuscated)
-                                    cursor.execute("INSERT INTO timeline (drone_id, event_type, message, timestamp) VALUES (?, ?, ?, ?)", 
-                                                   (drone_id, "CONTAINMENT", "[SOAR ENGINE] Active Defense Playbook executed successfully: Host network containment applied.", t_str))
-                                    cursor.execute("UPDATE cases SET status='ISOLATED_BY_SOAR', resolution_notes='Automated containment triggered due to traffic flood' WHERE drone_id=? AND status='OPEN'", (drone_id,))
-                    cursor.execute("SELECT id FROM attack_mapping WHERE drone_id=? AND technique_id=?", (drone_id, "T0814"))
-                    if not cursor.fetchone():
-                        # Ánh xạ chuẩn mã T0814 - Denial of Service lên ma trận [CLO5]
-                        cursor.execute("INSERT INTO attack_mapping (drone_id, tactic, tactic_name, technique_id, enterprise_tech_id, ics_tech_id, name, confidence, reason, evidence, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
-                                       (drone_id, "TA0107", "Inhibit Response Function", "T0814", "T1498", "T0814", "Denial of Service (Traffic Flood Abuse)", 95, "Abnormal C2 interval detected", f"Interval: {interval}s", t_str))
-                        # Kích hoạt bản ghi alert đỏ rực đẩy lên C2 Monitor ở Frontend [CLO7]
-                        cursor.execute("INSERT INTO alerts (drone_id, severity, title, description, timestamp, status) VALUES (?, ?, ?, ?, ?, ?)", 
-                                       (drone_id, "CRITICAL", "[UPLINK_STORM PACKET FLOOD DETECTED]", f"Aggressive C2 Beaconing interval: {interval}s detected.", t_str, "OPEN"))
-                else:
-                    flood_counter[drone_id] = 0
+                flood_counter[drone_id] = 0
                         
             # Dynamic Attack Phase Mapping based on client explicitly reporting phase
             if "attack_phase" in packet:
