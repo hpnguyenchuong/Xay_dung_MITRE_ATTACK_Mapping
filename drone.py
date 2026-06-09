@@ -932,7 +932,8 @@ def handle_client(client, addr):
                             "ip": client_ip, 
                             "connected_at": time.time(), 
                             "last_seen": time.time(),
-                            "profile_type": packet.get("profile_type", "UNKNOWN")
+                            "profile_type": packet.get("profile_type", "UNKNOWN"),
+                            "family": packet.get("profile", {}).get("family", "Unknown")
                         }
                 else:
                     with clients_lock:
@@ -941,7 +942,8 @@ def handle_client(client, addr):
                                 "ip": client_ip, 
                                 "connected_at": time.time(), 
                                 "last_seen": time.time(),
-                                "profile_type": packet.get("profile_type", "UNKNOWN")
+                                "profile_type": packet.get("profile_type", "UNKNOWN"),
+                                "family": packet.get("profile", {}).get("family", "Unknown")
                             }
                         if drone_id and drone_id in client_metadata:
                             client_metadata[drone_id]["last_seen"] = time.time()
@@ -2091,7 +2093,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
 def terminal_dashboard_thread():
     while True:
-        time.sleep(1) # Refresh every second
+        time.sleep(2) # Refresh every 2 seconds
         
         current_time = time.time()
         
@@ -2105,10 +2107,25 @@ def terminal_dashboard_thread():
                 if current_time - metadata.get("last_seen", current_time) > 15:
                     drones_to_remove.append(drone_id)
                 else:
-                    if metadata.get("profile_type") == "CLIENT":
-                        clients_only.append((drone_id, metadata))
-                    else:
+                    family = metadata.get("family", "Unknown")
+                    artifacts = metadata.get("active_artifacts", 0)
+                    stage = str(metadata.get("campaign_stage", "Unknown")).upper()
+                    
+                    is_bot = False
+                    if family != "CleanDrone" and family != "Unknown":
+                        is_bot = True
+                    if artifacts > 0:
+                        is_bot = True
+                    if stage in ["PERSISTENCE", "CUSTOM_C2", "CUSTOM C2", "FLEET_TAKEOVER", "FLEET TAKEOVER", "GPS_DRIFT", "GPS DRIFT", "MISSION_FAILURE", "MISSION FAILURE"]:
+                        is_bot = True
+                        
+                    if family == "CleanDrone":
+                        is_bot = False
+                        
+                    if is_bot:
                         simulator_only.append((drone_id, metadata))
+                    else:
+                        clients_only.append((drone_id, metadata))
             
             for drone_id in drones_to_remove:
                 if drone_id in clients:
@@ -2117,46 +2134,50 @@ def terminal_dashboard_thread():
                     except: pass
                     del clients[drone_id]
                 del client_metadata[drone_id]
+                
+        # Sort both lists by drone_id
+        clients_only.sort(key=lambda x: x[0])
+        simulator_only.sort(key=lambda x: x[0])
         
         # Clear screen before printing
         os.system('cls' if os.name == 'nt' else 'clear')
         
-        output_lines = []
-        output_lines.append(f"\n {C_BLUE}{'='*60}{C_END}")
-        output_lines.append(f" {C_CYAN}{C_BOLD}UBUNTU DRONE CLIENTS : {len(clients_only)}{C_END}")
-        output_lines.append(f" {C_CYAN}{C_BOLD}SIMULATOR BOTS       : {len(simulator_only)}{C_END}")
-        output_lines.append(f" {C_CYAN}{C_BOLD}TOTAL ACTIVE DRONES  : {len(clients_only) + len(simulator_only)}{C_END}")
-        output_lines.append(f" {C_BLUE}{'='*60}{C_END}")
+        output = []
         
-        if clients_only:
-            output_lines.append(f"\n {C_GREEN}{C_BOLD}ACTIVE UBUNTU CLIENTS{C_END}")
-            output_lines.append(f" {C_GREEN}{'-'*60}{C_END}")
-            for drone_id, metadata in clients_only:
-                client_ip = metadata.get("ip", "Unknown")
-                conn_duration = int(current_time - metadata.get("connected_at", current_time))
-                batt = metadata.get("battery", "N/A")
-                alt = metadata.get("altitude", "N/A")
-                gps = metadata.get("gps", "N/A")
-                
-                output_lines.append(f" {C_GREEN}[+]{C_END} {C_BOLD}{drone_id}{C_END} | IP: {client_ip} | Batt: {batt}% | Alt: {alt}m | GPS: {gps} | Uptime: {conn_duration}s")
-                
-        if simulator_only:
-            output_lines.append(f"\n {C_YELLOW}{C_BOLD}ACTIVE SIMULATOR BOTS{C_END}")
-            output_lines.append(f" {C_YELLOW}{'-'*60}{C_END}")
-            for drone_id, metadata in simulator_only:
-                conn_duration = int(current_time - metadata.get("connected_at", current_time))
-                stage = metadata.get("campaign_stage", "Unknown")
-                artifacts = metadata.get("active_artifacts", 0)
-                
-                output_lines.append(f" {C_YELLOW}[*]{C_END} {C_BOLD}{drone_id}{C_END} | Stage: {stage} | Artifacts: {artifacts} | Uptime: {conn_duration}s")
-                
-        if not clients_only and not simulator_only:
-            output_lines.append(f"\n {C_YELLOW}[*] No active drones connected to C2 Server.{C_END}")
+        output.append("=" * 60)
+        output.append(f"DRONE ACTIVE : {len(clients_only)}")
+        output.append("=" * 60)
+        output.append("")
+        output.append(f"{'ID':<12}{'BATT':<7}{'ALT':<6}{'SPEED':<8}{'GPS':<20}{'STATUS'}")
+        output.append("-" * 60)
+        for drone_id, metadata in clients_only:
+            batt = f"{metadata.get('battery', 0)}%"
+            alt = f"{metadata.get('altitude', 0)}m"
+            speed = f"{metadata.get('speed', 0)}"
+            gps = str(metadata.get('gps', 'Unknown'))[:18]
+            status_raw = str(metadata.get("campaign_stage", "CLEAN")).upper()
+            if status_raw == "UNKNOWN" or not status_raw: status_raw = "CLEAN"
+            output.append(f"{drone_id:<12}{batt:<7}{alt:<6}{speed:<8}{gps:<20}{status_raw}")
             
-        output_lines.append(f"\n {C_BLUE}{'='*60}{C_END}\n")
+        output.append("")
+        output.append("=" * 60)
+        output.append(f"DRONE BOT : {len(simulator_only)}")
+        output.append("=" * 60)
+        output.append("")
+        output.append(f"{'ID':<12}{'STAGE':<17}{'ARTIFACTS':<12}{'ALT':<6}{'SPEED'}")
+        output.append("-" * 60)
+        for drone_id, metadata in simulator_only:
+            stage_raw = str(metadata.get("campaign_stage", "UNKNOWN")).title()
+            if stage_raw == "Unknown": stage_raw = "Clean"
+            artifacts = str(metadata.get("active_artifacts", 0))
+            alt = f"{metadata.get('altitude', 0)}m"
+            speed = f"{metadata.get('speed', 0)}"
+            output.append(f"{drone_id:<12}{stage_raw:<17}{artifacts:<12}{alt:<6}{speed}")
+            
+        output.append("")
+        output.append("=" * 60)
         
-        for line in output_lines:
-            print(line)
+        print("\n".join(output), flush=True)
 
 def http_server():
     server = ThreadingHTTPServer(('0.0.0.0', WEB_PORT), DashboardHandler)
