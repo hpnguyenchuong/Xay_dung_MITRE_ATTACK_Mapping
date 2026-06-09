@@ -248,7 +248,11 @@ def run_drone_agent(c2_ip, port, drone_id, scenario, delay_seconds=5):
     while True:
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(5.0)
+            print(f" [*] {drone_id} attempting connection to {c2_ip}:{port}...", flush=True)
             sock.connect((c2_ip, port))
+            sock.settimeout(None)
+            print(f" [+] {C_GREEN}{drone_id} connected successfully to C2.{C_END}", flush=True)
             
             MALWARE_CONFIG["c2"] = c2_ip
             
@@ -429,6 +433,7 @@ def run_drone_agent(c2_ip, port, drone_id, scenario, delay_seconds=5):
                     
                 time.sleep(sleep_time)
         except Exception as e:
+            print(f" [-] {C_RED}{drone_id} connection/telemetry error: {type(e).__name__} - {e}. Retrying in 3s...{C_END}", flush=True)
             current_time = time.time()
             uptime = int(current_time - start_time)
             
@@ -441,7 +446,7 @@ def run_drone_agent(c2_ip, port, drone_id, scenario, delay_seconds=5):
                 last_battery_drop += drops * drain_interval
                 
             if battery <= 0:
-                print(f"\n{C_RED}{C_BOLD}[!] BATTERY DEPLETED. DRONE OFFLINE: {drone_id}{C_END}")
+                print(f"\n{C_RED}{C_BOLD}[!] BATTERY DEPLETED. DRONE OFFLINE: {drone_id}{C_END}", flush=True)
                 sys.exit(0)
             time.sleep(3)
 
