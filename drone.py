@@ -2050,12 +2050,20 @@ def terminal_dashboard_thread():
                 if d_id not in active_drones: continue
                 if row["battery"] <= 0: continue
                 
+                # Check for zombie connections (no ping in 15s)
+                with mitre_engine.packet_lock:
+                    last_ping = mitre_engine.last_packet_time.get(d_id, 0)
+                if time.time() - last_ping > 15:
+                    continue
+                
                 client_ip = row["ip"]
                 output_lines.append(f" {C_GREEN}[+]{C_END} Distributed Node Active: {C_BOLD}{d_id}{C_END} bound from {client_ip}")
                 printed += 1
                 
             if printed > 0:
                 output_lines.append(f" {C_BLUE}{'='*60}{C_END}")
+                # Clear screen before printing
+                os.system('cls' if os.name == 'nt' else 'clear')
                 for line in output_lines:
                     print(line)
                     
