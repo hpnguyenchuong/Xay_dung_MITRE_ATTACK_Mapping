@@ -527,10 +527,12 @@ def main():
             
         # Monitor threads and print telemetry buffer
         while any(t.is_alive() for t in threads):
-            time.sleep(1)
+            time.sleep(0.5)
+            active_threads = sum(1 for t in threads if t.is_alive())
+            
             with print_lock:
-                if shared_telemetry_buffer:
-                    # Clear screen conceptually (or just print the frame)
+                # Wait until all currently active drones have dumped their telemetry into the buffer
+                if len(shared_telemetry_buffer) >= active_threads and active_threads > 0:
                     print(f"\n {C_BLUE}{'='*60}{C_END}")
                     for d_id, log in shared_telemetry_buffer.items():
                         print(log)
