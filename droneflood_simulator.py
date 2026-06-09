@@ -207,41 +207,54 @@ def active_drones_monitor(c2_ip, web_port=9000):
             output.append(f" {C_RED}[!] WARNING: Could not fetch active drones from C2 REST API.{C_END}\n")
         
         if ubuntu_clients:
-            output.append(f" 🟢 {C_GREEN}{C_BOLD}UBUNTU DRONE CLIENTS{C_END}\n")
-            output.append(f" | {'ID':<10} | {'IP':<15} | {'BATT':<6} | {'ALT':<5} | {'SPEED':<5} | {'GPS':<16} |")
-            output.append(f" |{'-'*12}|{'-'*17}|{'-'*8}|{'-'*7}|{'-'*7}|{'-'*18}|")
+            output.append(f" 🟢 {C_GREEN}{C_BOLD}Drone Active: {len(ubuntu_clients)}{C_END}\n")
+            output.append(f" | {'ID':<10} | {'STATUS':<8} | {'BATT':<5} | {'ALT':<5} | {'SPEED':<5} | {'GPS':<16} | {'MODE':<15} |")
+            output.append(f" |{'-'*12}|{'-'*10}|{'-'*7}|{'-'*7}|{'-'*7}|{'-'*18}|{'-'*17}|")
             for i, (d_id, d) in enumerate(ubuntu_clients):
                 if i >= 8:
-                    output.append(f" | {C_GREEN}... +{len(ubuntu_clients)-8} more{C_END:<25} | {'':<15} | {'':<6} | {'':<5} | {'':<5} | {'':<16} |")
+                    output.append(f" | {C_GREEN}... +{len(ubuntu_clients)-8} more{C_END:<25} | {'':<8} | {'':<5} | {'':<5} | {'':<5} | {'':<16} | {'':<15} |")
                     break
+                status = str(d.get('status', 'ACTIVE'))[:8]
                 batt = f"{d.get('battery', 0)}%"
                 alt = f"{d.get('altitude', 0)}m"
                 speed = str(d.get('speed', 0))
                 gps = str(d.get('gps', 'Unknown'))[:16]
-                ip = str(d.get('ip', 'Unknown'))
-                output.append(f" | {C_GREEN}{d_id:<10}{C_END} | {ip:<15} | {batt:<6} | {alt:<5} | {speed:<5} | {gps:<16} |")
-            output.append(f" └{'-'*12}┴{'-'*17}┴{'-'*8}┴{'-'*7}┴{'-'*7}┴{'-'*18}┘\n")
+                
+                mode_raw = str(d.get('campaign_stage', 'NORMAL')).upper()
+                if mode_raw == 'UNKNOWN' or not mode_raw: mode_raw = 'NORMAL'
+                
+                mode_color = C_YELLOW
+                if mode_raw in ['GPS_DRIFT', 'MISSION_FAILURE']: mode_color = C_RED
+                elif mode_raw == 'NORMAL': mode_color = C_GREEN
+                
+                output.append(f" | {C_GREEN}{d_id:<10}{C_END} | {status:<8} | {batt:<5} | {alt:<5} | {speed:<5} | {gps:<16} | {mode_color}{mode_raw[:15]:<15}{C_END} |")
+            output.append(f" └{'-'*12}┴{'-'*10}┴{'-'*7}┴{'-'*7}┴{'-'*7}┴{'-'*18}┴{'-'*17}┘\n")
             
         if simulator_bots:
-            output.append(f" 🟠 {C_YELLOW}{C_BOLD}SIMULATOR BOTS{C_END}\n")
-            output.append(f" | {'ID':<10} | {'STAGE':<13} | {'ARTIFACTS':<9} | {'BATT':<6} | {'ALT':<5} | {'GPS':<16} |")
-            output.append(f" |{'-'*12}|{'-'*15}|{'-'*11}|{'-'*8}|{'-'*7}|{'-'*18}|")
+            output.append(f" 🟠 {C_YELLOW}{C_BOLD}Drone Bot: {len(simulator_bots)}{C_END}\n")
+            output.append(f" | {'ID':<10} | {'ATTACK_STAGE':<15} | {'BATT':<5} | {'ALT':<5} | {'SPEED':<5} | {'GPS':<16} |")
+            output.append(f" |{'-'*12}|{'-'*17}|{'-'*7}|{'-'*7}|{'-'*7}|{'-'*18}|")
             for i, (d_id, d) in enumerate(simulator_bots):
                 if i >= 8:
-                    output.append(f" | {C_YELLOW}... +{len(simulator_bots)-8} more{C_END:<24} | {'':<13} | {'':<9} | {'':<6} | {'':<5} | {'':<16} |")
+                    output.append(f" | {C_YELLOW}... +{len(simulator_bots)-8} more{C_END:<24} | {'':<15} | {'':<5} | {'':<5} | {'':<5} | {'':<16} |")
                     break
-                stage_val = str(d.get('campaign_stage', 'Unknown'))[:13]
-                arts = str(d.get('active_artifacts', 0))
+                stage_raw = str(d.get('campaign_stage', 'UNKNOWN')).upper()
+                
+                stage_color = C_YELLOW
+                if stage_raw in ['GPS_DRIFT', 'MISSION_FAILURE']: stage_color = C_RED
+                elif stage_raw == 'NORMAL': stage_color = C_GREEN
+                
                 batt = f"{d.get('battery', 0)}%"
                 alt = f"{d.get('altitude', 0)}m"
+                speed = str(d.get('speed', 0))
                 gps = str(d.get('gps', 'Unknown'))[:16]
-                output.append(f" | {C_YELLOW}{d_id:<10}{C_END} | {stage_val:<13} | {arts:<9} | {batt:<6} | {alt:<5} | {gps:<16} |")
-            output.append(f" └{'-'*12}┴{'-'*15}┴{'-'*11}┴{'-'*8}┴{'-'*7}┴{'-'*18}┘\n")
+                output.append(f" | {C_YELLOW}{d_id:<10}{C_END} | {stage_color}{stage_raw[:15]:<15}{C_END} | {batt:<5} | {alt:<5} | {speed:<5} | {gps:<16} |")
+            output.append(f" └{'-'*12}┴{'-'*17}┴{'-'*7}┴{'-'*7}┴{'-'*7}┴{'-'*18}┘\n")
             
         with print_lock:
             print("\n".join(output), flush=True)
             
-        time.sleep(1)
+        time.sleep(2)
 
 def tcp_flood_task(c2_ip):
     while beacon_mode == "ABUSE":
