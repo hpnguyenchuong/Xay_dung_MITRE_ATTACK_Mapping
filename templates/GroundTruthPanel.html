@@ -61,11 +61,11 @@ window.GroundTruthPanel = () => {
                 </div>
                 
                 <div style={{ height: '280px', maxHeight: '280px', overflowY: 'auto', overflowX: 'hidden' }} className="custom-scrollbar border border-[#1e293b] rounded mb-2 shrink-0 flex flex-col">
-                    <div className="bg-[#334155] text-[#94a3b8] grid" style={{ gridTemplateColumns: '38% 20% 22% 20%', position: 'sticky', top: 0, zIndex: 10 }}>
-                        <div className="p-2 border-b border-[#1e293b] font-normal uppercase text-[16px]">Artifact</div>
-                        <div className="p-2 border-b border-[#1e293b] font-normal uppercase text-[16px] text-center">Expected</div>
-                        <div className="p-2 border-b border-[#1e293b] font-normal uppercase text-[16px] text-center">Predicted</div>
-                        <div className="p-2 border-b border-[#1e293b] font-normal uppercase text-[16px] text-center">Result</div>
+                    <div className="bg-[#334155] text-[#94a3b8] grid items-center" style={{ gridTemplateColumns: 'minmax(150px, 2fr) minmax(80px, 1fr) minmax(90px, 1fr) minmax(80px, 1fr)', columnGap: '12px', position: 'sticky', top: 0, zIndex: 10 }}>
+                        <div className="p-2 border-b border-[#1e293b] font-normal uppercase text-[13px] tracking-[1px] min-w-0">Artifact</div>
+                        <div className="p-2 border-b border-[#1e293b] font-normal uppercase text-[13px] tracking-[1px] text-center min-w-0">Expected</div>
+                        <div className="p-2 border-b border-[#1e293b] font-normal uppercase text-[13px] tracking-[1px] text-center min-w-0">Predicted</div>
+                        <div className="p-2 border-b border-[#1e293b] font-normal uppercase text-[13px] tracking-[1px] text-center min-w-0">Result</div>
                     </div>
                     <div className="text-[#f8fafc] flex flex-col">
                         {gt.results.map((row, idx) => {
@@ -84,11 +84,11 @@ window.GroundTruthPanel = () => {
                             }
                             
                             return (
-                                <div key={idx} className="grid border-b border-[#1e293b] hover:bg-[#334155]/30 items-center" style={{ gridTemplateColumns: '38% 20% 22% 20%' }}>
-                                    <div className="p-2 text-[#a855f7] font-mono text-[16px]" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={row.artifact}>{row.artifact}</div>
-                                    <div className="p-2 font-mono text-center">{row.expected}</div>
-                                    <div className="p-2 font-mono text-center">{row.predicted}</div>
-                                    <div className={`p-2 text-center flex flex-col justify-center items-center ${resultClass}`}>
+                                <div key={idx} className="grid border-b border-[#1e293b] hover:bg-[#334155]/30 items-center" style={{ gridTemplateColumns: 'minmax(150px, 2fr) minmax(80px, 1fr) minmax(90px, 1fr) minmax(80px, 1fr)', columnGap: '12px' }}>
+                                    <div className="p-2 text-[#a855f7] font-mono text-[16px] min-w-0" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={row.artifact}>{row.artifact}</div>
+                                    <div className="p-2 font-mono text-center min-w-0">{row.expected}</div>
+                                    <div className="p-2 font-mono text-center min-w-0">{row.predicted}</div>
+                                    <div className={`p-2 text-center flex flex-col justify-center items-center min-w-0 ${resultClass}`}>
                                         <span>{resultIcon}</span>
                                         <span className="text-[15px]">{row.result}</span>
                                     </div>
