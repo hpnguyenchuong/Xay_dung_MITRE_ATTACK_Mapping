@@ -41,18 +41,20 @@ def send_payload(sock, payload_dict):
 def main():
     parser = argparse.ArgumentParser(description="Drone Client Simulator")
     parser.add_argument("c2_ip", help="C2 Server IP")
+    parser.add_argument("c2_port", type=int, nargs='?', default=5555, help="C2 Server Port (default 5555)")
     parser.add_argument("--playback", type=str, default="datasets/clean_case.json", help="Path to playback JSON file")
     args = parser.parse_args()
         
     c2_ip = args.c2_ip
+    c2_port = args.c2_port
     drone_id = f"DRONE-{random.randint(100, 999)}"
     
     print(f"{C_CYAN}[i]{C_END} Starting Clean Drone Simulator: {C_BOLD}{drone_id}{C_END}")
     
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
-        sock.connect((c2_ip, 5555))
-        print(f"{C_GREEN}[+]{C_END} Connected to Drone Malware Analysis Server at {c2_ip}:5555")
+        sock.connect((c2_ip, c2_port))
+        print(f"{C_GREEN}[+]{C_END} Connected to C2 Server at {c2_ip}:{c2_port}")
     except Exception as e:
         print(f"Failed to connect: {e}")
         sys.exit(1)

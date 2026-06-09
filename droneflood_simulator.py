@@ -271,7 +271,7 @@ def run_drone_agent(c2_ip, port, drone_id, scenario, delay_seconds=5):
                 }
                 config = {
                     "config_version": "baseline-1.0",
-                    "c2_port": 5555,
+                    "c2_port": port,
                     "obfuscation": "None"
                 }
                 reg_findings = []
@@ -454,15 +454,19 @@ def main():
     global beacon_mode
     
     parser = argparse.ArgumentParser(description="DroneFlood Campaign Simulator")
+    parser.add_argument("c2_ip", type=str, help="IP address of the C2 Server")
+    parser.add_argument("c2_port", type=int, nargs='?', default=5555, help="C2 Server Port (default 5555)")
     parser.add_argument("--scenario", type=str, choices=["clean", "persistence", "custom_c2", "fleet_takeover", "gps_drift", "mission_failure", "full_campaign"], default="full_campaign", help="Scenario to execute")
     parser.add_argument("--speed", type=str, choices=["fast", "demo", "slow"], default="demo", help="Speed of the campaign simulation")
     parser.add_argument("--pause-after", type=str, default="", help="Pause the simulation after a specific stage (e.g., 'Persistence')")
     parser.add_argument("--repeat", type=int, default=1, help="Number of times to repeat the scenario")
-    parser.add_argument("--c2-ip", type=str, required=True, help="IP address of the C2 Server (where drone.py is running)")
     args = parser.parse_args()
     
     speed_map = {"fast": 1, "demo": 5, "slow": 10}
     delay_seconds = speed_map.get(args.speed, 5)
+    
+    c2_ip = args.c2_ip
+    port = args.c2_port
     
     if args.scenario == "clean":
         MALWARE_PROFILE["family"] = "CleanDrone"
@@ -495,9 +499,10 @@ def main():
     time.sleep(1)
     
     c2_ip = args.c2_ip
+    port = args.c2_port
     num_drones = 3
         
-    port = MALWARE_CONFIG["c2_port"]
+    MALWARE_CONFIG["c2_port"] = port
     beacon_mode = random.choice(["NORMAL", "ABUSE"])
     print(f"\n {C_BLUE}[i]{C_END} Swarm profile calibrated to beacon mode: {C_BOLD}{beacon_mode}{C_END}")
     
