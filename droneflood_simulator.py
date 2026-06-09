@@ -288,11 +288,14 @@ def run_drone_agent(c2_ip, port, drone_id, scenario, delay_seconds=5):
                 current_time = time.time()
                 uptime = int(current_time - start_time)
                 
-                # Advance stage for Full Campaign
+                # Advance stage for Full Campaign (caps at 4: GPS Drift)
                 if scenario == "Full Campaign":
-                    current_stage_idx = min(5, uptime // 15) # Advance stage every 15s
+                    current_stage_idx = min(4, uptime // 15) # Advance stage every 15s
                 
-                campaign_stage = stages[current_stage_idx]
+                if physical_damage_active:
+                    campaign_stage = "Mission Failure"
+                else:
+                    campaign_stage = stages[current_stage_idx]
                 
                 # Filter Findings based on Stage
                 active_findings = []
@@ -310,7 +313,7 @@ def run_drone_agent(c2_ip, port, drone_id, scenario, delay_seconds=5):
                         gps_spoof_active = True
                     elif campaign_stage == "Mission Failure":
                         active_findings.append(f)
-                        physical_damage_active = True
+                        # We don't need to set physical_damage_active=True here because campaign_stage is only "Mission Failure" if physical_damage_active is ALREADY True.
                 
                 
                 if gps_spoof_active:
