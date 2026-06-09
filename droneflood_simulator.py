@@ -309,7 +309,6 @@ def run_drone_agent(c2_ip, port, drone_id, scenario, delay_seconds=5):
                         active_findings.append(f)
                         physical_damage_active = True
                 
-                print(f"{C_YELLOW}[*] Campaign Stage: {C_BOLD}{campaign_stage}{C_END} | Active Artifacts: {len(active_findings)}")
                 
                 if gps_spoof_active:
                     lat_base += 1.5
@@ -406,9 +405,9 @@ def run_drone_agent(c2_ip, port, drone_id, scenario, delay_seconds=5):
                 sock.sendall(TransportObfuscationLayer.obfuscate(json.dumps(telemetry_packet)) + b"\n")
                 
                 uptime = int(current_time - start_time)
-                print(f"\n{C_CYAN} ╭──[ BOT: {drone_id} ]──────[ UPTIME: {uptime}s ]──────[ SEQ: {seq} ]{C_END}")
-                print(f"{C_CYAN} │ ↳ Batt: {battery}% | Alt: {alt}m | Net: {net_speed}Mbps | GPS: {lat_base:.4f},{lng_base:.4f}{C_END}")
-                print(f"{C_CYAN} ╰{'─'*65}{C_END}")
+                print(f"\n{C_CYAN}┌──[ BOT: {drone_id} ]────[ UPTIME: {uptime}s ]────[ SEQ: {seq} ]{C_END}")
+                print(f"{C_CYAN}↳{C_END} Batt: {battery}% | Alt: {alt}m | Net: {net_speed}Mbps | GPS: {lat_base:.4f},{lng_base:.4f}")
+                print(f"{C_YELLOW}[*] Campaign Stage: {C_BOLD}{campaign_stage}{C_END} | Active Artifacts: {len(active_findings)}")
                 
                 if args.pause_after.lower() == campaign_stage.lower():
                     print(f"\n{C_RED}[!] PAUSED AFTER {campaign_stage.upper()}. Press [ENTER] to continue...{C_END}")
