@@ -20,6 +20,7 @@ PORT = 5555
 WEB_PORT = 9000
 
 clients: Dict[str, socket.socket] = {}
+client_metadata: Dict[str, dict] = {}
 clients_lock = threading.Lock()
 db_write_lock = threading.RLock()
 
@@ -927,6 +928,11 @@ def handle_client(client, addr):
                                 clients[drone_id].close()
                             except: pass
                         clients[drone_id] = client
+                        client_metadata[drone_id] = {"ip": client_ip, "connected_at": time.time(), "last_seen": time.time()}
+                else:
+                    with clients_lock:
+                        if drone_id and drone_id in client_metadata:
+                            client_metadata[drone_id]["last_seen"] = time.time()
                 
                 # Queue the processing
                 t_now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -944,6 +950,8 @@ def handle_client(client, addr):
         with clients_lock:
             if clients.get(drone_id) is client:
                 del clients[drone_id]
+                if drone_id in client_metadata:
+                    del client_metadata[drone_id]
         with mitre_engine.packet_lock:
             if drone_id in mitre_engine.last_packet_time:
                 del mitre_engine.last_packet_time[drone_id]
@@ -2052,45 +2060,43 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
 def terminal_dashboard_thread():
     while True:
-        time.sleep(2) # Faster refresh rate for better UX
+        time.sleep(1) # Refresh every second
         
         output_lines = []
         output_lines.append(f"\n {C_BLUE}{'='*60}{C_END}")
         
+        current_time = time.time()
+        
+        # Cleanup zombies and build active list
         with clients_lock:
-            active_drones = list(clients.keys())
+            active_drones = []
+            drones_to_remove = []
             
-        printed = 0
+            for drone_id, metadata in client_metadata.items():
+                if current_time - metadata.get("last_seen", current_time) > 15:
+                    drones_to_remove.append(drone_id)
+                else:
+                    active_drones.append((drone_id, metadata))
+            
+            for drone_id in drones_to_remove:
+                if drone_id in clients:
+                    try:
+                        clients[drone_id].close()
+                    except: pass
+                    del clients[drone_id]
+                del client_metadata[drone_id]
+        
+        output_lines.append(f" {C_BOLD}Active Drones: {len(active_drones)}{C_END}")
+        output_lines.append(f" {C_BLUE}{'-'*60}{C_END}")
         
         if active_drones:
-            try:
-                conn = sqlite3.connect(DB_FILE_PATH, timeout=10)
-                conn.row_factory = sqlite3.Row
-                cursor = conn.cursor()
+            for drone_id, metadata in active_drones:
+                client_ip = metadata.get("ip", "Unknown")
+                last_seen_sec = int(current_time - metadata.get("last_seen", current_time))
+                conn_duration = int(current_time - metadata.get("connected_at", current_time))
                 
-                cursor.execute("SELECT * FROM telemetry WHERE id IN (SELECT MAX(id) FROM telemetry GROUP BY drone_id)")
-                t_rows = cursor.fetchall()
-                
-                for row in t_rows:
-                    d_id = row["drone_id"]
-                    if d_id not in active_drones: continue
-                    if row["battery"] <= 0: continue
-                    
-                    # Check for zombie connections (no ping in 15s)
-                    with mitre_engine.packet_lock:
-                        last_ping = mitre_engine.last_packet_time.get(d_id, 0)
-                    if time.time() - last_ping > 15:
-                        continue
-                    
-                    client_ip = row["ip"]
-                    output_lines.append(f" {C_GREEN}[+]{C_END} Distributed Node Active: {C_BOLD}{d_id}{C_END} bound from {client_ip}")
-                    printed += 1
-                        
-                conn.close()
-            except Exception as e:
-                pass
-                
-        if printed == 0:
+                output_lines.append(f" {C_GREEN}[+]{C_END} Node: {C_BOLD}{drone_id}{C_END} | IP: {client_ip} | Last Seen: {last_seen_sec}s ago | Uptime: {conn_duration}s")
+        else:
             output_lines.append(f" {C_YELLOW}[*] No active drones connected to C2 Server.{C_END}")
             
         output_lines.append(f" {C_BLUE}{'='*60}{C_END}")
