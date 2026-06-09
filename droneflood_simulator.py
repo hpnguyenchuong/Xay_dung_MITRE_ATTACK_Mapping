@@ -406,9 +406,9 @@ def run_drone_agent(c2_ip, port, drone_id, scenario, delay_seconds=5):
                 sock.sendall(TransportObfuscationLayer.obfuscate(json.dumps(telemetry_packet)) + b"\n")
                 
                 uptime = int(current_time - start_time)
-                print(f"\n ╭──[ {C_CYAN}BOT: {drone_id}{C_END} ]──────[ {C_YELLOW}UPTIME: {uptime}s{C_END} ]──────[ {C_GREEN}SEQ: {seq}{C_END} ]")
-                print(f" │ ↳ Batt: {battery}% | Alt: {alt}m | Net: {net_speed}Mbps | GPS: {lat_base:.4f},{lng_base:.4f}")
-                print(f" ╰{'─'*65}")
+                print(f"\n{C_CYAN} ╭──[ BOT: {drone_id} ]──────[ UPTIME: {uptime}s ]──────[ SEQ: {seq} ]{C_END}")
+                print(f"{C_CYAN} │ ↳ Batt: {battery}% | Alt: {alt}m | Net: {net_speed}Mbps | GPS: {lat_base:.4f},{lng_base:.4f}{C_END}")
+                print(f"{C_CYAN} ╰{'─'*65}{C_END}")
                 
                 if args.pause_after.lower() == campaign_stage.lower():
                     print(f"\n{C_RED}[!] PAUSED AFTER {campaign_stage.upper()}. Press [ENTER] to continue...{C_END}")
