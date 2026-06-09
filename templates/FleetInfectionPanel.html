@@ -17,7 +17,7 @@ window.FleetInfectionPanel = ({ drones = [], selectedDrone, onDroneSelect }) => 
         fetch('/api/command', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ cmd: cmd, drone_id: 'ALL' })
+            body: JSON.stringify({ cmd: cmd, drone_id: 'ALL_DRONES' })
         }).catch(e => console.error("Replay command failed", e));
     };
 
