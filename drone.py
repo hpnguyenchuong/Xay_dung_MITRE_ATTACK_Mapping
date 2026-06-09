@@ -41,41 +41,42 @@ db_queue = queue.Queue(maxsize=10000)
 
 ICS_MAPPING_RULES = {
     "DF_MUTEX_01": {
-        "finding": "Mutex Artifact", "tactic": "TA0106", "tactic_name": "Persistence", 
-        "enterprise_tech": "T1547.001", "ics_tech": "T0866", "name": "Registry Run Keys / Startup Folder -> Unauthorized Service Persistence", "confidence": 95, "score": 15
+        "finding": "Mutex Artifact", "tactic": "TA0103", "tactic_name": "Persistence", 
+        "enterprise_tech": "T1547.001", "ics_tech": None, "name": "Registry Run Keys / Startup Folder", "confidence": 95, "score": 15
     },
     "Software\\Microsoft\\Windows\\CurrentVersion\\Run": {
-        "finding": "Registry Run Key", "tactic": "TA0106", "tactic_name": "Persistence", 
-        "enterprise_tech": "T1547.001", "ics_tech": "T0866", "name": "Registry Run Keys / Startup Folder", "confidence": 95, "score": 20
+        "finding": "Registry Run Key", "tactic": "TA0103", "tactic_name": "Persistence", 
+        "enterprise_tech": "T1547.001", "ics_tech": None, "name": "Registry Run Keys / Startup Folder", "confidence": 95, "score": 20
     },
     "c2.dronefleet.net": {
-        "finding": "C2 Domain", "tactic": "TA0107", "tactic_name": "Command and Control", 
+        "finding": "C2 Domain", "tactic": "TA0111", "tactic_name": "Command and Control", 
         "enterprise_tech": "T1071", "ics_tech": "T0885", "name": "Application Layer Protocol -> Commonly Used Port", "confidence": 98, "score": 35
     },
     "XOR+Base64": {
         "finding": "Encoded Payload", "tactic": "TA0103", "tactic_name": "Evasion", 
-        "enterprise_tech": "T1027", "ics_tech": "T0832", "name": "Obfuscated Files or Information -> Manipulation of Control", "confidence": 90, "score": 20
+        "enterprise_tech": "T1027", "ics_tech": None, "name": "Obfuscated Files or Information", "confidence": 90, "score": 20
     },
     "gps_spoof": {
-        "finding": "GPS Spoofing", "tactic": "TA0105", "tactic_name": "Inhibit Response Function",
-        "enterprise_tech": "T1005", "ics_tech": "T0832", "name": "Data from Local System -> Manipulation of Control", "confidence": 95, "score": 40
+        "finding": "GPS Spoofing", "tactic": "TA0106", "tactic_name": "Impair Process Control",
+        "enterprise_tech": "T1005", "ics_tech": "T0831", "name": "Manipulation of Control", "confidence": 95, "score": 40
     },
     "battery_drain": {
-        "finding": "Battery Drain Exploitation", "tactic": "TA0105", "tactic_name": "Inhibit Response Function",
-        "enterprise_tech": "T1498", "ics_tech": "T0879", "name": "Network Denial of Service -> Damage to Property", "confidence": 90, "score": 40
+        "finding": "Battery Drain Exploitation", "tactic": "TA0105", "tactic_name": "Impact",
+        "enterprise_tech": "T1498", "ics_tech": "T0879", "name": "Damage to Property", "confidence": 90, "score": 40
     },
     "drone_agent": {
-        "finding": "Service Creation", "tactic": "TA0106", "tactic_name": "Persistence", 
-        "enterprise_tech": "T1547.001", "ics_tech": "T0866", "name": "Unauthorized Service Persistence", "confidence": 95, "score": 25
+        "finding": "Service Creation", "tactic": "TA0103", "tactic_name": "Persistence", 
+        "enterprise_tech": "T1547.001", "ics_tech": None, "name": "Service Creation Persistence", "confidence": 95, "score": 25
     }
 }
 
 ICS_IMPACT_MAPPING = {
     "T0806": ["Execution Environment Constraint"],
     "T0886": ["Autostart Survival Operations"],
-    "T0866": ["Unauthorized Service Persistence"],
+    "T0866": ["Exploitation of Remote Services"],
     "T0885": ["Remote Control of Fleet", "Command Relay"],
-    "T0832": ["Payload Inspection Bypass", "Manipulation of Control"]
+    "T0831": ["Manipulation of Control"],
+    "T0832": ["Manipulation of View", "Telemetry Falsification"]
 }
 
 ICS_TRANSLATION_RULES = {
@@ -93,9 +94,14 @@ flood_counter = {}
 C_GREEN, C_RED, C_YELLOW, C_BLUE, C_CYAN, C_BOLD, C_END = ("\033[92m", "\033[91m", "\033[93m", "\033[94m", "\033[96m", "\033[1m", "\033[0m")
 
 class TransportObfuscationLayer:
+    """
+    Toy obfuscation for simulation. 
+    Uses XOR + Base64 to demonstrate defense evasion (T1027). 
+    This is not real encryption.
+    """
     @staticmethod
-    def obfuscate(data_str: str) -> bytes:
-        xored = bytes([b ^ 0x42 for b in data_str.encode('utf-8')])
+    def obfuscate(payload: str) -> bytes:
+        xored = bytes([b ^ 0x42 for b in payload.encode('utf-8')])
         return base64.b64encode(xored)
     
     @staticmethod
@@ -288,11 +294,11 @@ def init_forensic_db():
             cursor.execute("SELECT COUNT(*) as count FROM mapping_rules")
             if cursor.fetchone()["count"] == 0:
                 rules = [
-                    ("RULE_001", r"DF_MUTEX_.*", "Memory Dump", "Persistence", "T1547.001", "T0866", 95, 100, "MITRE ATT&CK Enterprise/ICS"),
+                    ("RULE_001", r"DF_MUTEX_.*", "Memory Dump", "Persistence", "T1547.001", None, 95, 100, "MITRE ATT&CK Enterprise"),
                     ("RULE_002", r".*\.dronefleet\.net", ".rdata", "Application Layer C2", "T1071", "T0885", 90, 90, "MITRE ATT&CK Enterprise/ICS"),
                     ("RULE_003", r"telemetry_exfil", "Network Flow", "Exfiltration", "T1041", "T0811", 85, 80, "MITRE ATT&CK Enterprise/ICS"),
-                    ("RULE_004", r"XOR\+Base64|XOR_KEY_.*|encoded_payload", "Config Block", "Evasion", "T1027", "T0832", 95, 95, "MITRE ATT&CK Enterprise/ICS"),
-                    ("RULE_005", r"drone_agent", "Process List", "Process Injection", "T1055", "T0866", 80, 50, "MITRE ATT&CK Enterprise/ICS")
+                    ("RULE_004", r"XOR\+Base64|XOR_KEY_.*|encoded_payload", "Config Block", "Evasion", "T1027", None, 95, 95, "MITRE ATT&CK Enterprise"),
+                    ("RULE_005", r"drone_agent", "Process List", "Service Execution", "T1569.002", None, 80, 50, "MITRE ATT&CK Enterprise")
                 ]
                 cursor.executemany("INSERT INTO mapping_rules VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", rules)
 
@@ -362,7 +368,7 @@ class MITREMappingEngine:
                 if interval_variance < 0.5 and size_variance < 1000.0:
                     cursor.execute("SELECT id FROM attack_mapping WHERE drone_id=? AND technique_id=?", (drone_id, "T1071.001"))
                     if not cursor.fetchone():
-                        cursor.execute("INSERT INTO attack_mapping (drone_id, tactic, tactic_name, technique_id, name, timestamp) VALUES (?, ?, ?, ?, ?, ?)", (drone_id, "TA0107", "Command and Control", "T1071.001", "Standard Application Layer Protocol: Web Traffic", t_str))
+                        cursor.execute("INSERT INTO attack_mapping (drone_id, tactic, tactic_name, technique_id, name, timestamp) VALUES (?, ?, ?, ?, ?, ?)", (drone_id, "TA0111", "Command and Control", "T1071.001", "Standard Application Layer Protocol: Web Traffic", t_str))
                         cursor.execute("INSERT INTO timeline (drone_id, event_type, message, timestamp) VALUES (?, ?, ?, ?)", (drone_id, "TECHNIQUE_MAPPED", "T1071.001 (Persistent C2 Channel) mapped via RE Artifact Correlation", t_str))
 
     def evaluate_candidates(self, cursor, finding: str, source: str, validation_level: str = "L1", artifact_quality: int = 10, fleet_role: str = "member"):
@@ -645,11 +651,12 @@ class MITREMappingEngine:
                 for tech in packet["mitre_candidates"]:
                     cursor.execute("SELECT id FROM attack_mapping WHERE drone_id=? AND technique_id=?", (drone_id, tech))
                     if not cursor.fetchone():
-                        cursor.execute("INSERT INTO attack_mapping (drone_id, tactic, tactic_name, technique_id, name, timestamp) VALUES (?, ?, ?, ?, ?, ?)", (drone_id, "TA0107", "Command and Control", tech, f"Candidate {tech} detected", t_str))
+                        cursor.execute("INSERT INTO attack_mapping (drone_id, tactic, tactic_name, technique_id, name, timestamp) VALUES (?, ?, ?, ?, ?, ?)", (drone_id, "TA0111", "Command and Control", tech, f"Candidate {tech} detected", t_str))
 
             # Check Beacon Abuse (T1071) based on telemetry interval
-            if "beacon_interval" in packet:
-                interval = packet.get("beacon_interval", 5.0)
+            status_obj = packet.get("status", {})
+            interval = packet.get("beacon_interval") or status_obj.get("beacon_interval", 5.0)
+            if interval:
                 if interval > 0 and interval < 1.0: # Phát hiện tần suất xả gói tin áp đảo điện tử dưới 1s
                     # Automated Active Defense (CLO7)
                     flood_counter[drone_id] = flood_counter.get(drone_id, 0) + 1
@@ -665,14 +672,11 @@ class MITREMappingEngine:
                                     cursor.execute("INSERT INTO timeline (drone_id, event_type, message, timestamp) VALUES (?, ?, ?, ?)", 
                                                    (drone_id, "CONTAINMENT", "[SOAR ENGINE] Active Defense Playbook executed successfully: Host network containment applied.", t_str))
                                     cursor.execute("UPDATE cases SET status='ISOLATED_BY_SOAR', resolution_notes='Automated containment triggered due to traffic flood' WHERE drone_id=? AND status='OPEN'", (drone_id,))
-                                except: pass
-                        flood_counter[drone_id] = 0
-                        
                     cursor.execute("SELECT id FROM attack_mapping WHERE drone_id=? AND technique_id=?", (drone_id, "T0814"))
                     if not cursor.fetchone():
                         # Ánh xạ chuẩn mã T0814 - Denial of Service lên ma trận [CLO5]
                         cursor.execute("INSERT INTO attack_mapping (drone_id, tactic, tactic_name, technique_id, enterprise_tech_id, ics_tech_id, name, confidence, reason, evidence, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
-                                       (drone_id, "TA0105", "Inhibit Response Function", "T0814", "T1498", "T0814", "Denial of Service (Traffic Flood Abuse)", 95, "Abnormal C2 interval detected", f"Interval: {interval}s", t_str))
+                                       (drone_id, "TA0107", "Inhibit Response Function", "T0814", "T1498", "T0814", "Denial of Service (Traffic Flood Abuse)", 95, "Abnormal C2 interval detected", f"Interval: {interval}s", t_str))
                         # Kích hoạt bản ghi alert đỏ rực đẩy lên C2 Monitor ở Frontend [CLO7]
                         cursor.execute("INSERT INTO alerts (drone_id, severity, title, description, timestamp, status) VALUES (?, ?, ?, ?, ?, ?)", 
                                        (drone_id, "CRITICAL", "[UPLINK_STORM PACKET FLOOD DETECTED]", f"Aggressive C2 Beaconing interval: {interval}s detected.", t_str, "OPEN"))
@@ -687,7 +691,7 @@ class MITREMappingEngine:
                     cursor.execute("SELECT id FROM attack_mapping WHERE drone_id=? AND technique_id=?", (drone_id, "T0878"))
                     if not cursor.fetchone():
                         cursor.execute("INSERT INTO attack_mapping (drone_id, tactic, tactic_name, technique_id, enterprise_tech_id, ics_tech_id, name, confidence, reason, evidence, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
-                                       (drone_id, "TA0105", "Inhibit Response Function", "T0878", "T1562", "T0878", "Alarm Suppression", 90, "Sensor silencing detected", "Battery and Proximity alerts suppressed", t_str))
+                                       (drone_id, "TA0107", "Inhibit Response Function", "T0878", "T1562", "T0878", "Alarm Suppression", 90, "Sensor silencing detected", "Battery and Proximity alerts suppressed", t_str))
                 
                 elif phase == "hardware":
                     cursor.execute("SELECT id FROM attack_mapping WHERE drone_id=? AND technique_id=?", (drone_id, "T0836"))
@@ -747,11 +751,10 @@ class MITREMappingEngine:
                             if not cursor.fetchone():
                                 cursor.execute("INSERT INTO alerts (drone_id, severity, title, description, timestamp, status) VALUES (?, ?, ?, ?, ?, ?)", (drone_id, "HIGH", "Flight Telemetry Manipulation", f"Possible GPS Spoofing: {speed_kmh:.0f} km/h detected", t_str, "OPEN"))
                                 
-                                # Map GPS Spoofing to T0832 Manipulation of Control
-                                cursor.execute("SELECT id FROM attack_mapping WHERE drone_id=? AND technique_id=?", (drone_id, "T0832"))
+                                cursor.execute("SELECT id FROM attack_mapping WHERE drone_id=? AND technique_id=?", (drone_id, "T0831"))
                                 if not cursor.fetchone():
-                                    cursor.execute("INSERT INTO attack_mapping (drone_id, tactic, tactic_name, technique_id, enterprise_tech_id, ics_tech_id, name, confidence, reason, evidence, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (drone_id, "TA0105", "Inhibit Response Function", "T0832", "T1005", "T0832", "Manipulation of Control (GPS Anomaly)", 95, "Unrealistic speed and distance calculation", f"Speed: {speed_kmh:.0f} km/h", t_str))
-                                    cursor.execute("INSERT INTO timeline (drone_id, event_type, message, timestamp) VALUES (?, ?, ?, ?)", (drone_id, "TECHNIQUE_MAPPED", "T0832 (GPS Anomaly) observed", t_str))
+                                    cursor.execute("INSERT INTO attack_mapping (drone_id, tactic, tactic_name, technique_id, enterprise_tech_id, ics_tech_id, name, confidence, reason, evidence, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (drone_id, "TA0106", "Impair Process Control", "T0831", "T1005", "T0831", "Manipulation of Control (GPS Anomaly)", 95, "Unrealistic speed and distance calculation", f"Speed: {speed_kmh:.0f} km/h", t_str))
+                                    cursor.execute("INSERT INTO timeline (drone_id, event_type, message, timestamp) VALUES (?, ?, ?, ?)", (drone_id, "TECHNIQUE_MAPPED", "T0831 (GPS Anomaly) observed", t_str))
                     
                     with self.packet_lock:
                         self.last_gps_data[drone_id] = (lat, lon, now)
@@ -1137,10 +1140,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     found_patterns = [r["finding"] for r in cursor.fetchall()]
                     fn = sum(1 for gt in gt_patterns if gt not in found_patterns)
                     
-                    precision = tp / (tp + fp) if (tp + fp) > 0 else 0.91
-                    recall = tp / (tp + fn) if (tp + fn) > 0 else 0.89
-                    f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.90
-                    accuracy = tp / (tp + fp + fn) if (tp + fp + fn) > 0 else 0.92
+                    precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+                    recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+                    f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+                    accuracy = tp / (tp + fp + fn) if (tp + fp + fn) > 0 else 0
                     
                     self._send_json({
                         "tp": tp, "fp": fp, "fn": fn,

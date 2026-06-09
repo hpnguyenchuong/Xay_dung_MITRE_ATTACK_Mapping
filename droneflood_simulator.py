@@ -15,6 +15,11 @@ shared_telemetry_buffer = {}
 print_lock = threading.Lock()
 
 class TransportObfuscationLayer:
+    """
+    Toy obfuscation for simulation. 
+    Uses XOR + Base64 to demonstrate defense evasion (T1027). 
+    This is not real encryption.
+    """
     @staticmethod
     def obfuscate(data_str: str) -> bytes:
         xored = bytes([b ^ 0x42 for b in data_str.encode('utf-8')])
@@ -288,9 +293,9 @@ def run_drone_agent(c2_ip, port, drone_id, scenario, delay_seconds=5):
                 current_time = time.time()
                 uptime = int(current_time - start_time)
                 
-                # Advance stage for Full Campaign (caps at 4: GPS Drift)
+                # Advance stage for Full Campaign (caps at 5: Mission Failure)
                 if scenario == "Full Campaign":
-                    current_stage_idx = min(4, uptime // 15) # Advance stage every 15s
+                    current_stage_idx = min(5, uptime // 15) # Advance stage every 15s
                 
                 if physical_damage_active:
                     campaign_stage = "Mission Failure"

@@ -12,6 +12,11 @@ import argparse
 C_GREEN, C_RED, C_CYAN, C_YELLOW, C_BOLD, C_END = ("\033[92m", "\033[91m", "\033[96m", "\033[93m", "\033[1m", "\033[0m")
 
 class TransportObfuscationLayer:
+    """
+    Toy obfuscation for simulation. 
+    Uses XOR + Base64 to demonstrate defense evasion (T1027). 
+    This is not real encryption.
+    """
     @staticmethod
     def obfuscate(data_str: str) -> bytes:
         xored = bytes([b ^ 0x42 for b in data_str.encode('utf-8')])
@@ -185,13 +190,13 @@ def main():
                     "lat": 37.7749 + (random.random() * 0.01),
                     "lng": -122.4194 + (random.random() * 0.01),
                     "alt": 100.5 + (random.random() * 5.0),
-                    "speed": 15.2,
+                    "speed": speed,
                     "heading": 90.0
                 },
+                "beacon_interval": 5.0,
                 "status": {
                     "mode": mode,
                     "armed": True,
-                    "beacon_interval": 5.0,
                     "telemetry_mode": mode,
                     "drone_state": drone_state,
                     "flight_mode": "DEGRADED" if gps_status == "SPOOFED" else "AUTO",
