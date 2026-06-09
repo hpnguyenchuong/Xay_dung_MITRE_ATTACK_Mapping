@@ -1042,7 +1042,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         fleet[d_id]["is_hardware_asset"] = True if is_connected else False
                         
                         if not is_connected or row["battery"] <= 0:
-                            fleet[d_id]["status"] = "OFFLINE"
+                            # User requested NOT to show disconnected drones
+                            del fleet[d_id]
+                            continue
                         else:
                             fleet[d_id]["status"] = "ACTIVE"
                             
