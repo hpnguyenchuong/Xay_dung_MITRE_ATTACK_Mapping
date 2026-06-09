@@ -2025,6 +2025,56 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
         self.send_error(404, "File Not Found")
 
+def terminal_dashboard_thread():
+    while True:
+        time.sleep(5)
+        with clients_lock:
+            active_drones = list(clients.keys())
+            
+        if not active_drones:
+            continue
+            
+        try:
+            conn = sqlite3.connect(DB_FILE_PATH, timeout=10)
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            
+            cursor.execute("SELECT * FROM telemetry WHERE id IN (SELECT MAX(id) FROM telemetry GROUP BY drone_id)")
+            t_rows = cursor.fetchall()
+            
+            output_lines = []
+            output_lines.append(f"\n {C_BLUE}{'='*60}{C_END}")
+            
+            printed = 0
+            for row in t_rows:
+                d_id = row["drone_id"]
+                if d_id not in active_drones: continue
+                if row["battery"] <= 0: continue
+                
+                seq = row["id"]
+                batt = row["battery"]
+                alt = row["altitude"]
+                net_speed = row["network_speed"]
+                gps = row["gps"]
+                timestamp = row["timestamp"]
+                
+                log_str = f"{C_CYAN}┌──[ BOT: {d_id} ]────[ C2 CONNECTION: ACTIVE ]────[ SEQ: {seq} ]{C_END}\n"
+                log_str += f"{C_CYAN}↳{C_END} Batt: {batt}% | Alt: {alt}m | Net: {net_speed}Mbps | GPS: {gps}\n"
+                log_str += f"{C_YELLOW}[*] Last Synced: {timestamp}{C_END}"
+                
+                output_lines.append(log_str)
+                output_lines.append("")
+                printed += 1
+                
+            if printed > 0:
+                output_lines.append(f" {C_BLUE}{'='*60}{C_END}")
+                for line in output_lines:
+                    print(line)
+                    
+            conn.close()
+        except Exception as e:
+            pass
+
 def http_server():
     server = ThreadingHTTPServer(('0.0.0.0', WEB_PORT), DashboardHandler)
     print(f"{C_CYAN}[i]{C_END} Dashboard UI running on http://0.0.0.0:{WEB_PORT}")
@@ -2034,4 +2084,5 @@ if __name__ == "__main__":
     init_forensic_db()
     threading.Thread(target=db_worker, daemon=True).start()
     threading.Thread(target=tcp_server, daemon=True).start()
+    threading.Thread(target=terminal_dashboard_thread, daemon=True).start()
     http_server()
