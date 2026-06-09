@@ -936,6 +936,13 @@ def handle_client(client, addr):
                         }
                 else:
                     with clients_lock:
+                        if drone_id and drone_id not in client_metadata:
+                            client_metadata[drone_id] = {
+                                "ip": client_ip, 
+                                "connected_at": time.time(), 
+                                "last_seen": time.time(),
+                                "profile_type": packet.get("profile_type", "UNKNOWN")
+                            }
                         if drone_id and drone_id in client_metadata:
                             client_metadata[drone_id]["last_seen"] = time.time()
                 
@@ -947,13 +954,18 @@ def handle_client(client, addr):
                         print(f"\n{C_RED}{C_BOLD}[CRITICAL WARNING] DRONE {drone_id} BATTERY LEVEL CRITICAL: {batt}%! IMMEDIATE RTB REQUIRED!{C_END}\n")
                     
                     with clients_lock:
+                        campaign_stage = packet.get("campaign_stage")
+                        if not campaign_stage and "status" in packet:
+                            campaign_stage = packet["status"].get("drone_state", "Unknown")
+                        if not campaign_stage: campaign_stage = "Unknown"
+                        
                         if drone_id in client_metadata:
                             client_metadata[drone_id].update({
                                 "battery": batt,
                                 "altitude": packet.get("altitude", 0),
                                 "gps": packet.get("gps", "Unknown"),
                                 "speed": packet.get("speed", 0),
-                                "campaign_stage": packet.get("campaign_stage", "Unknown"),
+                                "campaign_stage": campaign_stage,
                                 "active_artifacts": len(packet.get("re_findings", []))
                             })
                 
@@ -1078,6 +1090,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         # NÂNG CẤP HYBRID OVERRIDE ENGINE: KIỂM TRA SOCKET THỰC (MỤC II.4)
                         with clients_lock:
                             is_connected = d_id in clients
+                            meta = client_metadata.get(d_id, {})
+                            fleet[d_id]["profile_type"] = meta.get("profile_type", "UNKNOWN")
+                            fleet[d_id]["campaign_stage"] = meta.get("campaign_stage", "NORMAL")
                             
                         if is_connected:
                             with mitre_engine.packet_lock:
