@@ -146,6 +146,11 @@ engine_kill = False
 gps_spoof_active = False
 physical_damage_active = False
 
+def vprint(*args_p, **kwargs):
+    if getattr(args, 'verbose', False):
+        with print_lock:
+            print(*args_p, **kwargs)
+
 def fetch_active_drones(c2_ip, web_port=9000):
     try:
         url = f"http://{c2_ip}:{web_port}/api/drones"
@@ -205,7 +210,10 @@ def active_drones_monitor(c2_ip, web_port=9000):
             output.append(f" 🟢 {C_GREEN}{C_BOLD}UBUNTU DRONE CLIENTS{C_END}\n")
             output.append(f" | {'ID':<10} | {'IP':<15} | {'BATT':<6} | {'ALT':<5} | {'SPEED':<5} | {'GPS':<16} |")
             output.append(f" |{'-'*12}|{'-'*17}|{'-'*8}|{'-'*7}|{'-'*7}|{'-'*18}|")
-            for d_id, d in ubuntu_clients:
+            for i, (d_id, d) in enumerate(ubuntu_clients):
+                if i >= 8:
+                    output.append(f" | {C_GREEN}... +{len(ubuntu_clients)-8} more{C_END:<25} | {'':<15} | {'':<6} | {'':<5} | {'':<5} | {'':<16} |")
+                    break
                 batt = f"{d.get('battery', 0)}%"
                 alt = f"{d.get('altitude', 0)}m"
                 speed = str(d.get('speed', 0))
@@ -218,7 +226,10 @@ def active_drones_monitor(c2_ip, web_port=9000):
             output.append(f" 🟠 {C_YELLOW}{C_BOLD}SIMULATOR BOTS{C_END}\n")
             output.append(f" | {'ID':<10} | {'STAGE':<13} | {'ARTIFACTS':<9} | {'BATT':<6} | {'ALT':<5} | {'GPS':<16} |")
             output.append(f" |{'-'*12}|{'-'*15}|{'-'*11}|{'-'*8}|{'-'*7}|{'-'*18}|")
-            for d_id, d in simulator_bots:
+            for i, (d_id, d) in enumerate(simulator_bots):
+                if i >= 8:
+                    output.append(f" | {C_YELLOW}... +{len(simulator_bots)-8} more{C_END:<24} | {'':<13} | {'':<9} | {'':<6} | {'':<5} | {'':<16} |")
+                    break
                 stage_val = str(d.get('campaign_stage', 'Unknown'))[:13]
                 arts = str(d.get('active_artifacts', 0))
                 batt = f"{d.get('battery', 0)}%"
@@ -269,41 +280,41 @@ def listen_for_c2_commands(sock, drone_id):
                 command = instruction.get("cmd")
                 
                 if command == "ping":
-                    print(f"\n{C_CYAN}[+] Received Command: PING{C_END}")
-                    print(f" {C_GREEN}[i]{C_END} C2 Verification ping received.")
+                    vprint(f"\n{C_CYAN}[+] Received Command: PING{C_END}")
+                    vprint(f" {C_GREEN}[i]{C_END} C2 Verification ping received.")
                 elif command == "get_status":
-                    print(f"\n{C_CYAN}[+] Received Command: GET_STATUS{C_END}")
+                    vprint(f"\n{C_CYAN}[+] Received Command: GET_STATUS{C_END}")
                 elif command == "get_config":
-                    print(f"\n{C_CYAN}[+] Received Command: GET_CONFIG{C_END}")
+                    vprint(f"\n{C_CYAN}[+] Received Command: GET_CONFIG{C_END}")
                 elif command == "get_ioc":
-                    print(f"\n{C_CYAN}[+] Received Command: GET_IOC{C_END}")
+                    vprint(f"\n{C_CYAN}[+] Received Command: GET_IOC{C_END}")
                 elif command == "get_profile":
-                    print(f"\n{C_CYAN}[+] Received Command: GET_PROFILE{C_END}")
+                    vprint(f"\n{C_CYAN}[+] Received Command: GET_PROFILE{C_END}")
                 elif command == "tcp_flood":
-                    print(f"\n{C_RED}[!] EMERGENCY DIRECTIVE: SIMULATE TCP TRAFFIC FLOOD!{C_END}")
+                    vprint(f"\n{C_RED}[!] EMERGENCY DIRECTIVE: SIMULATE TCP TRAFFIC FLOOD!{C_END}")
                     beacon_mode = "ABUSE"
                     threading.Thread(target=tcp_flood_task, args=(MALWARE_CONFIG.get("c2", "127.0.0.1"),), daemon=True).start()
                 elif command == "udp_flood":
-                    print(f"\n{C_RED}[!] EMERGENCY DIRECTIVE: SIMULATE UDP TRAFFIC FLOOD!{C_END}")
+                    vprint(f"\n{C_RED}[!] EMERGENCY DIRECTIVE: SIMULATE UDP TRAFFIC FLOOD!{C_END}")
                     beacon_mode = "ABUSE"
                     threading.Thread(target=udp_flood_task, args=(MALWARE_CONFIG.get("c2", "127.0.0.1"),), daemon=True).start()
                 elif command == "stop_attack":
-                    print(f"\n{C_GREEN}[+] EMERGENCY SUCCESS: THE TRANSMISSION CHANNEL RESTORED TO NOMINAL SPEC.{C_END}")
+                    vprint(f"\n{C_GREEN}[+] EMERGENCY SUCCESS: THE TRANSMISSION CHANNEL RESTORED TO NOMINAL SPEC.{C_END}")
                     beacon_mode = "NORMAL"
                 elif command == "manipulate_control":
-                    print(f"\n{C_RED}[!] EMERGENCY DIRECTIVE: MANIPULATION OF CONTROL (T0831) ACTIVATED!{C_END}")
+                    vprint(f"\n{C_RED}[!] EMERGENCY DIRECTIVE: MANIPULATION OF CONTROL (T0831) ACTIVATED!{C_END}")
                     engine_kill = True
                 elif command == "restore_control":
-                    print(f"\n{C_GREEN}[+] EMERGENCY SUCCESS: HARDWARE CONTROL RESTORED.{C_END}")
+                    vprint(f"\n{C_GREEN}[+] EMERGENCY SUCCESS: HARDWARE CONTROL RESTORED.{C_END}")
                     engine_kill = False
                 elif command == "gps_spoof":
-                    print(f"\n{C_RED}[!] CRITICAL: GPS SPOOFING ATTACK INITIATED!{C_END}")
+                    vprint(f"\n{C_RED}[!] CRITICAL: GPS SPOOFING ATTACK INITIATED!{C_END}")
                     gps_spoof_active = True
                 elif command == "stop_gps_spoof":
-                    print(f"\n{C_GREEN}[+] SUCCESS: GPS SPOOFING ABORTED.{C_END}")
+                    vprint(f"\n{C_GREEN}[+] SUCCESS: GPS SPOOFING ABORTED.{C_END}")
                     gps_spoof_active = False
                 elif command == "physical_damage":
-                    print(f"\n{C_RED}[!] CRITICAL: PHYSICAL DAMAGE (BATTERY DRAIN) ATTACK INITIATED!{C_END}")
+                    vprint(f"\n{C_RED}[!] CRITICAL: PHYSICAL DAMAGE (BATTERY DRAIN) ATTACK INITIATED!{C_END}")
                     physical_damage_active = True
         except: break
 
@@ -335,10 +346,10 @@ def run_drone_agent(c2_ip, port, drone_id, scenario, delay_seconds=5):
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(5.0)
-            print(f" [*] {drone_id} attempting connection to {c2_ip}:{port}...", flush=True)
+            vprint(f" [*] {drone_id} attempting connection to {c2_ip}:{port}...", flush=True)
             sock.connect((c2_ip, port))
             sock.settimeout(None)
-            print(f" [+] {C_GREEN}{drone_id} connected successfully to C2.{C_END}", flush=True)
+            vprint(f" [+] {C_GREEN}{drone_id} connected successfully to C2.{C_END}", flush=True)
             
             MALWARE_CONFIG["c2"] = c2_ip
             
@@ -431,7 +442,7 @@ def run_drone_agent(c2_ip, port, drone_id, scenario, delay_seconds=5):
                     
                 if battery <= 0:
                     uptime = int(current_time - start_time)
-                    print(f"\n{C_RED}{C_BOLD}[!] BATTERY DEPLETED. DRONE OFFLINE: {drone_id}{C_END}")
+                    vprint(f"\n{C_RED}{C_BOLD}[!] BATTERY DEPLETED. DRONE OFFLINE: {drone_id}{C_END}")
                     
                     telemetry_packet = {
                         "type": "telemetry", 
@@ -515,12 +526,12 @@ def run_drone_agent(c2_ip, port, drone_id, scenario, delay_seconds=5):
                     shared_telemetry_buffer[drone_id] = log_str
                 
                 if args.pause_after.lower() == campaign_stage.lower():
-                    print(f"\n{C_RED}[!] PAUSED AFTER {campaign_stage.upper()}. Press [ENTER] to continue...{C_END}")
+                    vprint(f"\n{C_RED}[!] PAUSED AFTER {campaign_stage.upper()}. Press [ENTER] to continue...{C_END}")
                     input()
                     
                 time.sleep(sleep_time)
         except Exception as e:
-            print(f" [-] {C_RED}{drone_id} connection/telemetry error: {type(e).__name__} - {e}. Retrying in 3s...{C_END}", flush=True)
+            vprint(f" [-] {C_RED}{drone_id} connection/telemetry error: {type(e).__name__} - {e}. Retrying in 3s...{C_END}", flush=True)
             current_time = time.time()
             uptime = int(current_time - start_time)
             
@@ -533,7 +544,7 @@ def run_drone_agent(c2_ip, port, drone_id, scenario, delay_seconds=5):
                 last_battery_drop += drops * drain_interval
                 
             if battery <= 0:
-                print(f"\n{C_RED}{C_BOLD}[!] BATTERY DEPLETED. DRONE OFFLINE: {drone_id}{C_END}", flush=True)
+                vprint(f"\n{C_RED}{C_BOLD}[!] BATTERY DEPLETED. DRONE OFFLINE: {drone_id}{C_END}", flush=True)
                 sys.exit(0)
             time.sleep(3)
 
@@ -571,19 +582,19 @@ def main():
     }
     selected_scenario = scenario_map[args.scenario]
     
-    print(r"""
+    vprint(r"""
    __  __ _  _ _    _ __  __ ___ ___ ___  ___  
   | |  | | \| | |  | |  |  |  |  |__ |  \ |__  
   |_|  |_| |  |_|_ |_|  |_|  |  |___ |_ / |___ (_) [ BOTNET INFILTRATION TERMINAL ]
     """)
     
-    print(f"{C_YELLOW}[*] Executing OS Fingerprint & Telemetry Spy modules...{C_END}")
+    vprint(f"{C_YELLOW}[*] Executing OS Fingerprint & Telemetry Spy modules...{C_END}")
     time.sleep(1)
-    print(f"{C_RED}[!] Exploiting Zero-Day Vulnerability in Drone Fleet Management System...{C_END}")
+    vprint(f"{C_RED}[!] Exploiting Zero-Day Vulnerability in Drone Fleet Management System...{C_END}")
     time.sleep(1.5)
-    print(f"{C_GREEN}[+] Access Granted. Privilege Escalation Successful.{C_END}")
+    vprint(f"{C_GREEN}[+] Access Granted. Privilege Escalation Successful.{C_END}")
     time.sleep(1)
-    print(f"{C_CYAN}[+] Injecting DroneFlood Botnet Payload into System Memory (Scenario: {selected_scenario})...{C_END}\n")
+    vprint(f"{C_CYAN}[+] Injecting DroneFlood Botnet Payload into System Memory (Scenario: {selected_scenario})...{C_END}\n")
     time.sleep(1)
     
     c2_ip = args.c2_ip
@@ -592,7 +603,7 @@ def main():
         
     MALWARE_CONFIG["c2_port"] = port
     beacon_mode = random.choice(["NORMAL", "ABUSE"])
-    print(f"\n {C_BLUE}[i]{C_END} Swarm profile calibrated to beacon mode: {C_BOLD}{beacon_mode}{C_END}")
+    vprint(f"\n {C_BLUE}[i]{C_END} Swarm profile calibrated to beacon mode: {C_BOLD}{beacon_mode}{C_END}")
     
     # Start monitor thread
     threading.Thread(
@@ -610,16 +621,16 @@ def main():
             fleet = data.get("fleet", {})
             active_drones = [d for d, info in fleet.items() if info.get("status") == "ACTIVE"]
     except Exception as e:
-        print(f" {C_YELLOW}[!] Could not fetch active drones from C2 REST API. Fallback to random IDs.{C_END}")
+        vprint(f" {C_YELLOW}[!] Could not fetch active drones from C2 REST API. Fallback to random IDs.{C_END}")
         
     if active_drones:
         num_drones = len(active_drones)
-        print(f" {C_GREEN}[+] Found {num_drones} active drones. Adapting payload to hijack them...{C_END}")
+        vprint(f" {C_GREEN}[+] Found {num_drones} active drones. Adapting payload to hijack them...{C_END}")
         
     for repeat_idx in range(args.repeat):
-        print(f"\n {C_RED}{C_BOLD}{'='*60}{C_END}")
-        print(f" {C_RED}{C_BOLD}🚀 LAUNCHING BOTNET SWARM ITERATION {repeat_idx + 1}/{args.repeat} (Targets: {num_drones}){C_END}")
-        print(f" {C_RED}{C_BOLD}{'='*60}{C_END}")
+        vprint(f"\n {C_RED}{C_BOLD}{'='*60}{C_END}")
+        vprint(f" {C_RED}{C_BOLD}🚀 LAUNCHING BOTNET SWARM ITERATION {repeat_idx + 1}/{args.repeat} (Targets: {num_drones}){C_END}")
+        vprint(f" {C_RED}{C_BOLD}{'='*60}{C_END}")
         
         # Pre-generate drone IDs so we can print them cleanly
         swarm_drones = [f"DRONE-{random.randint(100,999)}" for _ in range(num_drones)]
@@ -627,9 +638,9 @@ def main():
         for drone_id in swarm_drones:
             codename_list = ["Specter-Alpha", "Valkyrie-X1", "ShadowHawk-V", "Predator-C2", "Horizon-Zero", "SkyRanger-M9"]
             codename = codename_list[hash(drone_id) % len(codename_list)]
-            print(f" {C_GREEN}[+] Hooking stream for: {drone_id} (Codename: {codename}){C_END}")
+            vprint(f" {C_GREEN}[+] Hooking stream for: {drone_id} (Codename: {codename}){C_END}")
             
-        print(f" {C_RED}{C_BOLD}{'='*60}{C_END}\n")
+        vprint(f" {C_RED}{C_BOLD}{'='*60}{C_END}\n")
         
         threads = []
         for drone_id in swarm_drones:
@@ -646,17 +657,17 @@ def main():
             with print_lock:
                 # Wait until all currently active drones have dumped their telemetry into the buffer
                 if len(shared_telemetry_buffer) >= active_threads and active_threads > 0:
-                    print(f"\n {C_BLUE}{'='*60}{C_END}")
+                    vprint(f"\n {C_BLUE}{'='*60}{C_END}")
                     for d_id, log in shared_telemetry_buffer.items():
-                        print(log)
-                        print("") # Blank line between drone logs for readability
-                    print(f" {C_BLUE}{'='*60}{C_END}")
+                        vprint(log)
+                        vprint("") # Blank line between drone logs for readability
+                    vprint(f" {C_BLUE}{'='*60}{C_END}")
                     shared_telemetry_buffer.clear()
             
         if repeat_idx < args.repeat - 1:
-            print(f" {C_CYAN}[i] Waiting 5 seconds before next iteration...{C_END}")
+            vprint(f" {C_CYAN}[i] Waiting 5 seconds before next iteration...{C_END}")
             time.sleep(5)
             
-    print(f"\n{C_GREEN}{C_BOLD}[+] All iterations completed successfully.{C_END}")
+    vprint(f"\n{C_GREEN}{C_BOLD}[+] All iterations completed successfully.{C_END}")
 
 if __name__ == "__main__": main()
