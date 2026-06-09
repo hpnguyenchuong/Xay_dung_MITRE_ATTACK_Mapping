@@ -181,10 +181,6 @@ def active_drones_monitor(c2_ip, web_port=9000):
             else:
                 simulator_bots.append((drone_id, d))
                 
-        uptime_sec = int(time.time() - start_time)
-        mins, secs = divmod(uptime_sec, 60)
-        runtime_str = f"{mins:02d}:{secs:02d}"
-        
         output = []
         if not getattr(args, 'verbose', False):
             output.append("\033[2J\033[H") # Clear screen and move cursor to home
@@ -192,22 +188,30 @@ def active_drones_monitor(c2_ip, web_port=9000):
         if api_failed:
             output.append(f"{C_RED}[!] WARNING: Could not fetch active drones from C2 REST API.{C_END}\n")
         
+        # Sort by drone_id
+        ubuntu_clients.sort(key=lambda x: x[0])
+        simulator_bots.sort(key=lambda x: x[0])
+        
+        sep = "=" * 100
+        dash = "-" * 100
+        
         if ubuntu_clients:
-            output.append(f"Drone Active: {len(ubuntu_clients)}")
-            output.append("=" * 80)
-            output.append("")
-            output.append(f"{'ID':<11}{'STATUS':<11}{'BATT':<7}{'ALT':<7}{'SPEED':<9}{'GPS':<20}{'MODE'}")
-            output.append("-" * 80)
+            output.append(f"DRONE ACTIVE: {len(ubuntu_clients)}")
+            output.append(sep)
+            output.append(f"{'ID':<12}{'STATUS':<10}{'BATT':<9}{'ALT':<8}{'SPEED':<12}{'GPS':<23}{'MODE':<11}{'BEACON':<9}SIGNAL")
+            output.append(dash)
             for i, (d_id, d) in enumerate(ubuntu_clients):
                 if i >= 8:
                     output.append(f"... +{len(ubuntu_clients)-8} more")
                     break
-                status = str(d.get('status', 'ONLINE')).upper()[:10]
+                status = str(d.get('status', 'ONLINE')).upper()[:8]
                 if status == 'ACTIVE': status = 'ONLINE'
-                batt = f"{d.get('battery', 0)}%"
-                alt = f"{d.get('altitude', 0)}m"
-                speed = f"{d.get('speed', 0)} km/h"
-                gps = str(d.get('gps', 'Unknown'))[:18]
+                batt = f"{float(d.get('battery', 0)):.1f}%"
+                alt = f"{int(d.get('altitude', 0))}m"
+                speed = f"{int(d.get('speed', 0))} km/h"
+                gps = str(d.get('gps', 'Unknown'))[:20]
+                beacon = f"{float(d.get('beacon_interval', 5.0)):.1f}s"
+                signal = f"{int(d.get('signal_strength', 90))}%"
                 
                 mode_raw = str(d.get('campaign_stage', 'NORMAL')).upper()
                 if mode_raw == 'UNKNOWN' or not mode_raw: mode_raw = 'NORMAL'
@@ -216,18 +220,19 @@ def active_drones_monitor(c2_ip, web_port=9000):
                 if mode_raw in ['GPS_DRIFT', 'MISSION_FAILURE']: mode_color = C_RED
                 elif mode_raw == 'NORMAL': mode_color = C_GREEN
                 
-                output.append(f"{d_id:<11}{status:<11}{batt:<7}{alt:<7}{speed:<9}{gps:<20}{mode_color}{mode_raw}{C_END}")
-            output.append("\n" + "=" * 80 + "\n")
+                mode_str = f"{mode_color}{mode_raw[:10]:<11}{C_END}"
+                
+                output.append(f"{d_id:<12}{status:<10}{batt:<9}{alt:<8}{speed:<12}{gps:<23}{mode_str}{beacon:<9}{signal}")
+            output.append("\n")
             
         if simulator_bots:
-            output.append(f"Drone Bot: {len(simulator_bots)}")
-            output.append("=" * 80)
-            output.append("")
-            output.append(f"{'ID':<11}{'ATTACK STAGE':<15}{'BATT':<7}{'ALT':<7}{'SPEED':<9}{'GPS'}")
-            output.append("-" * 80)
+            output.append(f"DRONE BOT: {len(simulator_bots)}")
+            output.append(sep)
+            output.append(f"{'ID':<12}{'STAGE':<18}{'ART':<6}{'BATT':<9}{'ALT':<8}{'SPEED':<12}{'GPS':<23}{'BEACON':<9}EFFECT")
+            output.append(dash)
             for i, (d_id, d) in enumerate(simulator_bots):
-                if i >= 8:
-                    output.append(f"... +{len(simulator_bots)-8} more")
+                if i >= 15:
+                    output.append(f"... +{len(simulator_bots)-15} more")
                     break
                 stage_raw = str(d.get('campaign_stage', 'UNKNOWN')).upper()
                 if stage_raw == 'CUSTOM_C2': stage_raw = 'CUSTOM C2'
@@ -237,15 +242,28 @@ def active_drones_monitor(c2_ip, web_port=9000):
                 if stage_raw in ['GPS DRIFT', 'MISSION_FAILURE']: stage_color = C_RED
                 elif stage_raw == 'NORMAL': stage_color = C_GREEN
                 
-                batt = f"{d.get('battery', 0)}%"
-                alt = f"{d.get('altitude', 0)}m"
-                speed = f"{d.get('speed', 0)} km/h"
-                gps = str(d.get('gps', 'Unknown'))[:18]
+                batt = f"{float(d.get('battery', 0)):.1f}%"
+                alt = f"{int(d.get('altitude', 0))}m"
+                speed = f"{int(d.get('speed', 0))} km/h"
+                gps = str(d.get('gps', 'Unknown'))[:20]
+                beacon = f"{float(d.get('beacon_interval', 5.0)):.1f}s"
                 
-                stage_str = f"{stage_color}{stage_raw:<15}{C_END}"
+                # We need active_artifacts. In drone.py fleet, it's not present. 
+                # Wait, earlier I didn't inject active_artifacts into fleet in drone.py!
+                # We can fetch it if it's there, else default to 0.
+                artifacts = str(d.get("active_artifacts", 0))
                 
-                output.append(f"{d_id:<11}{stage_str}{batt:<7}{alt:<7}{speed:<9}{gps}")
-            output.append("\n" + "=" * 80 + "\n")
+                effect = "Normal Operation"
+                if "GPS" in stage_raw: effect = "Navigation Drift"
+                elif "MISSION" in stage_raw: effect = "Mission Failure"
+                elif "CUSTOM" in stage_raw: effect = "Loss of Telemetry"
+                elif "PERSISTENCE" in stage_raw: effect = "Unauthorized Startup"
+                elif "FLEET" in stage_raw: effect = "Fleet Control Hijack"
+                
+                stage_str = f"{stage_color}{stage_raw[:16]:<18}{C_END}"
+                
+                output.append(f"{d_id:<12}{stage_str}{artifacts:<6}{batt:<9}{alt:<8}{speed:<12}{gps:<23}{beacon:<9}{effect[:24]}")
+            output.append("\n")
             
         with print_lock:
             print("\n".join(output), flush=True)

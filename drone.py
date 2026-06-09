@@ -1095,6 +1095,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                             meta = client_metadata.get(d_id, {})
                             fleet[d_id]["profile_type"] = meta.get("profile_type", "UNKNOWN")
                             fleet[d_id]["campaign_stage"] = meta.get("campaign_stage", "NORMAL")
+                            fleet[d_id]["active_artifacts"] = meta.get("active_artifacts", 0)
                             
                         if is_connected:
                             with mitre_engine.packet_lock:
