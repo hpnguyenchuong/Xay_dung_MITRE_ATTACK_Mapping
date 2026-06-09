@@ -60,45 +60,42 @@ window.GroundTruthPanel = () => {
                     </div>
                 </div>
                 
-                <div style={{ height: '280px', maxHeight: '280px', overflowY: 'auto', overflowX: 'hidden' }} className="custom-scrollbar border border-[#1e293b] rounded mb-2 shrink-0">
-                    <table className="w-full text-left border-collapse text-xs" style={{ tableLayout: 'fixed' }}>
-                        <thead className="bg-[#334155] text-[#94a3b8]" style={{ position: 'sticky', top: 0, zIndex: 10 }}>
-                            <tr>
-                                <th style={{ width: '40%' }} className="p-2 border-b border-[#1e293b] font-normal uppercase text-[16px]">Artifact</th>
-                                <th style={{ width: '20%' }} className="p-2 border-b border-[#1e293b] font-normal uppercase text-[16px]">Expected</th>
-                                <th style={{ width: '20%' }} className="p-2 border-b border-[#1e293b] font-normal uppercase text-[16px]">Predicted</th>
-                                <th style={{ width: '20%' }} className="p-2 border-b border-[#1e293b] font-normal uppercase text-[16px] text-center">Result</th>
-                            </tr>
-                        </thead>
-                        <tbody className="text-[#f8fafc]">
-                            {gt.results.map((row, idx) => {
-                                let resultIcon = '';
-                                let resultClass = '';
-                                
-                                if (row.result === 'Correct') {
-                                    resultIcon = '✅';
-                                    resultClass = 'text-green-400';
-                                } else if (row.result === 'Incorrect') {
-                                    resultIcon = '❌';
-                                    resultClass = 'text-red-400';
-                                } else if (row.result === 'Missed') {
-                                    resultIcon = '⚠️';
-                                    resultClass = 'text-yellow-400';
-                                }
-                                
-                                return (
-                                    <tr key={idx} className="border-b border-[#1e293b] hover:bg-[#334155]/30">
-                                        <td className="p-2 text-[#a855f7] font-mono text-[16px]" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={row.artifact}>{row.artifact}</td>
-                                        <td className="p-2 font-mono">{row.expected}</td>
-                                        <td className="p-2 font-mono">{row.predicted}</td>
-                                        <td className={`p-2 text-center ${resultClass}`}>
-                                            {resultIcon} <span className="text-[15px] block">{row.result}</span>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
+                <div style={{ height: '280px', maxHeight: '280px', overflowY: 'auto', overflowX: 'hidden' }} className="custom-scrollbar border border-[#1e293b] rounded mb-2 shrink-0 flex flex-col">
+                    <div className="bg-[#334155] text-[#94a3b8] grid" style={{ gridTemplateColumns: '38% 20% 22% 20%', position: 'sticky', top: 0, zIndex: 10 }}>
+                        <div className="p-2 border-b border-[#1e293b] font-normal uppercase text-[16px]">Artifact</div>
+                        <div className="p-2 border-b border-[#1e293b] font-normal uppercase text-[16px] text-center">Expected</div>
+                        <div className="p-2 border-b border-[#1e293b] font-normal uppercase text-[16px] text-center">Predicted</div>
+                        <div className="p-2 border-b border-[#1e293b] font-normal uppercase text-[16px] text-center">Result</div>
+                    </div>
+                    <div className="text-[#f8fafc] flex flex-col">
+                        {gt.results.map((row, idx) => {
+                            let resultIcon = '';
+                            let resultClass = '';
+                            
+                            if (row.result === 'Correct') {
+                                resultIcon = '✅';
+                                resultClass = 'text-green-400';
+                            } else if (row.result === 'Incorrect') {
+                                resultIcon = '❌';
+                                resultClass = 'text-red-400';
+                            } else if (row.result === 'Missed') {
+                                resultIcon = '⚠️';
+                                resultClass = 'text-yellow-400';
+                            }
+                            
+                            return (
+                                <div key={idx} className="grid border-b border-[#1e293b] hover:bg-[#334155]/30 items-center" style={{ gridTemplateColumns: '38% 20% 22% 20%' }}>
+                                    <div className="p-2 text-[#a855f7] font-mono text-[16px]" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={row.artifact}>{row.artifact}</div>
+                                    <div className="p-2 font-mono text-center">{row.expected}</div>
+                                    <div className="p-2 font-mono text-center">{row.predicted}</div>
+                                    <div className={`p-2 text-center flex flex-col justify-center items-center ${resultClass}`}>
+                                        <span>{resultIcon}</span>
+                                        <span className="text-[15px]">{row.result}</span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
 
                 {/* Academic Conclusion */}
