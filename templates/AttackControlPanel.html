@@ -49,8 +49,8 @@ window.AttackControlPanel = ({ drones = [] }) => {
                     const d = new Date();
                     return `[${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}]`;
                 };
-                window.appendTerminal(`\n${getTime()} >_ [*] Preparing payload: ${selectedAttack.toUpperCase()}`);
-                setTimeout(() => window.appendTerminal(`\n${getTime()} >_ [*] Transmitting to ${selectedDrone}...`), 500);
+                window.appendTerminal(`\n${getTime()} >_ [*] Preparing payload: ${selectedAttack.toUpperCase()}`, selectedDrone);
+                setTimeout(() => window.appendTerminal(`\n${getTime()} >_ [*] Transmitting to ${selectedDrone}...`, selectedDrone), 500);
             }
 
             // Thông báo cho DroneFlood Simulator (trên cổng 5557) để hiển thị terminal log
@@ -82,7 +82,7 @@ window.AttackControlPanel = ({ drones = [] }) => {
                         const d = new Date();
                         return `[${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}]`;
                     };
-                    setTimeout(() => window.appendTerminal(`\n${getTime()} >_ [+] SUCCESS: Attack deployed on ${selectedDrone}.`), 1500);
+                    setTimeout(() => window.appendTerminal(`\n${getTime()} >_ [+] SUCCESS: Attack deployed on ${selectedDrone}.`, selectedDrone), 1500);
                 }
                 fetchActiveAttacks();
                 setSelectedAttack("");
@@ -93,7 +93,7 @@ window.AttackControlPanel = ({ drones = [] }) => {
                         const d = new Date();
                         return `[${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}:${d.getSeconds().toString().padStart(2, '0')}]`;
                     };
-                    setTimeout(() => window.appendTerminal(`\n${getTime()} >_ [-] ERROR: Failed to launch attack.`), 1500);
+                    setTimeout(() => window.appendTerminal(`\n${getTime()} >_ [-] ERROR: Failed to launch attack.`, selectedDrone), 1500);
                 }
             }
         } catch (e) {

