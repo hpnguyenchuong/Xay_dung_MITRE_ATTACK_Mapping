@@ -279,19 +279,30 @@ class DroneVictim:
         
         # Battery drain effect
         if self.battery_drain_active:
-            self.battery -= self.battery_drain_rate * 5  # Mỗi 5 giây
+            self.battery -= self.battery_drain_rate * 5
         else:
-            self.battery -= 0.1  # Normal drain
+            self.battery -= 0.1
         
-        # IMU Drift effect
+        # EMERGENCY LANDING EFFECT - GIẢM ĐỘ CAO NHANH
+        if self.state == "CRITICAL" and "forced_landing" in self.active_artifacts:
+            self.altitude -= 8.0  # Giảm 8m mỗi giây (hạ cánh nhanh)
+            if self.altitude < 0:
+                self.altitude = 0
+                self.state = "OFFLINE"
+        else:
+            # Normal altitude changes
+            self.altitude += random.uniform(-2, 2)
+        
+        self.altitude = max(0, min(500, self.altitude))
+        
+        # IMU Drift effect - ẢNH HƯỞNG ĐẾN TỐC ĐỘ
         if self.imu_drift_active:
             self.roll += random.uniform(-10, 10)
             self.pitch += random.uniform(-10, 10)
             self.heading += random.uniform(-20, 20)
-        
-        # Altitude changes
-        self.altitude += random.uniform(-2, 2)
-        self.altitude = max(0, min(500, self.altitude))
+            self.speed = random.randint(20, 80)  # Tốc độ bất thường
+        else:
+            self.speed = random.randint(35, 65)
         
         # Temperature
         if self.battery_drain_active:
@@ -300,17 +311,11 @@ class DroneVictim:
             self.temperature += random.uniform(-0.5, 0.5)
         self.temperature = max(25, min(80, self.temperature))
         
-        # Satellites (GPS spoof affects satellite count)
+        # Satellites
         if self.gps_spoof_active:
             self.satellites = random.randint(0, 5)
         else:
             self.satellites = random.randint(8, 18)
-        
-        # Speed
-        if self.imu_drift_active:
-            self.speed = random.randint(20, 80)
-        else:
-            self.speed = random.randint(35, 65)
         
         # Check for critical state
         if self.battery <= 15:
@@ -347,7 +352,6 @@ class DroneVictim:
     
     def run(self):
         """Vòng lặp chính"""
-        # Connect and register
         if not self.connect():
             return
         
@@ -357,34 +361,108 @@ class DroneVictim:
         listener_thread = threading.Thread(target=self.listen_for_commands, daemon=True)
         listener_thread.start()
         
-        print(f"{C_CYAN}[i] Drone {self.drone_id} is running...{C_END}")
-        print(f"{C_CYAN}[i] State: {self.state} | Threat Score: {self.threat_score}{C_END}\n")
+        print(f"Drone {self.drone_id} is running...")
+        print(f"State: {self.state} | Threat Score: {self.threat_score}\n")
         
         # Main telemetry loop
         last_print = time.time()
+        last_batt_warning = 0
+        
         while self.running and self.state != "OFFLINE":
             telemetry = self.get_telemetry()
             self.send_packet(telemetry)
             
-            # Print status every 5 seconds
-            if time.time() - last_print >= 5:
+            # Tần suất in: 1 giây nếu đang bị tấn công, 5 giây nếu bình thường
+            if self.state == "UNDER_ATTACK" or self.state == "CRITICAL":
+                interval = 1
+                status_color = C_RED + C_BOLD
+            else:
+                interval = 5
                 status_color = C_GREEN
-                if self.state == "COMPROMISED":
-                    status_color = C_YELLOW
-                elif self.state == "UNDER_ATTACK":
-                    status_color = C_RED
-                elif self.state == "CRITICAL":
-                    status_color = C_RED + C_BOLD
+            
+            if time.time() - last_print >= interval:
+                batt_pct = telemetry['battery']
+                altitude = telemetry['altitude']
+                speed = telemetry['speed']
+                gps = telemetry['gps']
                 
-                print(f"{status_color}[{datetime.now().strftime('%H:%M:%S')}] {self.drone_id} | "
-                      f"State: {self.state} | Batt: {telemetry['battery']}% | "
-                      f"GPS: {telemetry['gps']} | Artifacts: {len(self.active_artifacts)}{C_END}")
+                # Tạo thanh battery bar
+                batt_bar_len = int(batt_pct / 5)
+                batt_bar = "█" * batt_bar_len + "░" * (20 - batt_bar_len)
+                
+                # Tạo thanh altitude bar (0-500m)
+                alt_bar_len = int(altitude / 25)  # 500/20 = 25
+                alt_bar_len = min(20, max(0, alt_bar_len))
+                alt_bar = "█" * alt_bar_len + "░" * (20 - alt_bar_len)
+                
+                # Tạo thanh speed bar (0-200km/h)
+                speed_bar_len = int(speed / 10)  # 200/20 = 10
+                speed_bar_len = min(20, max(0, speed_bar_len))
+                speed_bar = "█" * speed_bar_len + "░" * (20 - speed_bar_len)
+                
+                # Chọn màu cho battery
+                if batt_pct <= 15:
+                    batt_color = C_RED + C_BOLD
+                elif batt_pct <= 40:
+                    batt_color = C_YELLOW
+                else:
+                    batt_color = C_GREEN
+                
+                # Chọn màu cho altitude (đỏ nếu đang hạ cánh khẩn cấp)
+                if self.state == "CRITICAL" and altitude < 50:
+                    alt_color = C_RED + C_BOLD
+                elif altitude < 50:
+                    alt_color = C_YELLOW
+                else:
+                    alt_color = status_color
+                
+                # Chọn màu cho speed (đỏ nếu IMU drift)
+                if self.imu_drift_active:
+                    speed_color = C_RED + C_BOLD
+                else:
+                    speed_color = status_color
+                
+                print(f"{status_color}[{datetime.now().strftime('%H:%M:%S')}] {C_END}")
+                print(f"{status_color}+{'-' * 50}+{C_END}")
+                print(f"{status_color}| Drone: {self.drone_id:<43} {status_color}|{C_END}")
+                print(f"{status_color}| State: {self.state:<43} {status_color}|{C_END}")
+                print(f"{status_color}|{'-' * 50}{status_color}|{C_END}")
+                print(f"{status_color}| Battery: {batt_color}{batt_pct:3.0f}% [{batt_bar}]{C_END} {status_color}|{C_END}")
+                print(f"{status_color}| Altitude: {alt_color}{altitude:5.1f}m [{alt_bar}]{C_END} {status_color}|{C_END}")
+                print(f"{status_color}| Speed: {speed_color}{speed:5.1f}km/h [{speed_bar}]{C_END} {status_color}|{C_END}")
+                print(f"{status_color}| GPS: {gps:<43} {status_color}|{C_END}")
+                print(f"{status_color}| Artifacts: {len(self.active_artifacts):<3} | Threat Score: {self.threat_score:<3}{' ' * (23 - len(str(self.threat_score)))} {status_color}|{C_END}")
+                print(f"{status_color}+{'-' * 50}+{C_END}")
+                
+                # Cảnh báo đặc biệt theo trạng thái
+                if self.state == "CRITICAL" and altitude < 30:
+                    print(f"\n{C_RED}{C_BOLD}")
+                    print("█" * 65)
+                    print(f"█  EMERGENCY! DRONE IS LANDING!  Altitude: {altitude:.0f}m  █")
+                    print("█" * 65)
+                    print(f"{C_END}")
+                elif self.gps_spoof_active:
+                    print(f"\n{C_YELLOW}GPS SPOOF ACTIVE: Drone flying to fake coordinates{C_END}")
+                elif self.imu_drift_active:
+                    print(f"\n{C_YELLOW}IMU DRIFT ACTIVE: Speed and attitude unstable{C_END}")
+                elif batt_pct <= 15 and time.time() - last_batt_warning > 10:
+                    print(f"\n{C_RED}{C_BOLD}")
+                    print("█" * 65)
+                    print(f"█  CRITICAL BATTERY WARNING!  {batt_pct:.0f}% REMAINING  █")
+                    print("█" * 65)
+                    print(f"{C_END}")
+                    last_batt_warning = time.time()
+                
                 last_print = time.time()
             
-            time.sleep(5)
+            time.sleep(interval)
         
         if self.state == "OFFLINE":
-            print(f"\n{C_RED}{C_BOLD}[!] DRONE {self.drone_id} IS OFFLINE!{C_END}")
+            print(f"\n{C_RED}{C_BOLD}")
+            print("█" * 65)
+            print(f"█  DRONE {self.drone_id} IS OFFLINE!                           █")
+            print("█" * 65)
+            print(f"{C_END}")
         
         self.sock.close()
 
