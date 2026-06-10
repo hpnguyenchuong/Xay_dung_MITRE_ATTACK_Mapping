@@ -116,6 +116,7 @@ Date.now() - b.t < 2000)); } } }, 50); return ()=> clearInterval(intv);
             return { ...prev, [droneId]: { ...st, terminalOutput: st.terminalOutput + text } };
             });
             };
+            window.appendTerminal = appendTerminal;
 
             const updateState = (updates) => {
             setAttackStates(prev => {

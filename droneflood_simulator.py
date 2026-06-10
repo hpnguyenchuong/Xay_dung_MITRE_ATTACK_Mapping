@@ -403,6 +403,13 @@ class DroneFloodSimulator:
             def log_message(self, format, *args):
                 pass
             
+            def do_OPTIONS(self):
+                self.send_response(200)
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.send_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+                self.send_header("Access-Control-Allow-Headers", "Content-Type")
+                self.end_headers()
+            
             def do_POST(self):
                 if self.path == "/execute":
                     content_length = int(self.headers.get('Content-Length', 0))
@@ -418,19 +425,23 @@ class DroneFloodSimulator:
                         success = self.server.simulator.launch_attack(drone_id, attack_type, params)
                         
                         self.send_response(200)
+                        self.send_header("Access-Control-Allow-Origin", "*")
                         self.send_header("Content-type", "application/json")
                         self.end_headers()
                         self.wfile.write(json.dumps({"success": success}).encode())
                     except Exception as e:
                         self.send_response(500)
+                        self.send_header("Access-Control-Allow-Origin", "*")
                         self.end_headers()
                 else:
                     self.send_response(404)
+                    self.send_header("Access-Control-Allow-Origin", "*")
                     self.end_headers()
             
             def do_GET(self):
                 if self.path == "/status":
                     self.send_response(200)
+                    self.send_header("Access-Control-Allow-Origin", "*")
                     self.send_header("Content-type", "application/json")
                     self.end_headers()
                     status = {
@@ -440,6 +451,7 @@ class DroneFloodSimulator:
                     self.wfile.write(json.dumps(status).encode())
                 else:
                     self.send_response(404)
+                    self.send_header("Access-Control-Allow-Origin", "*")
                     self.end_headers()
         
         server = HTTPServer(("0.0.0.0", self.http_port), CommandHandler)
