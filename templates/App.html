@@ -110,10 +110,10 @@ Date.now() - b.t < 2000)); } } }, 50); return ()=> clearInterval(intv);
         const criticalCount = drones.filter(d => d.battery < 20).length; const safeSelectedDrone=selectedDrone &&
             selectedDrone.status==='ACTIVE' ? selectedDrone : (activeDronesList[0] || { drone_id: 'UNKNOWN' , battery:
             0, altitude: 0, speed: 0, signal_strength: 0, network_speed: 0 }); const droneId=safeSelectedDrone.drone_id;
-            const appendTerminal=(text)=> {
+            const appendTerminal=(text, targetId = droneId)=> {
             setAttackStates(prev => {
-            const st = prev[droneId] || { terminalOutput: "Analysis Engine Terminal Ready...\n" };
-            return { ...prev, [droneId]: { ...st, terminalOutput: st.terminalOutput + text } };
+            const st = prev[targetId] || { terminalOutput: "Analysis Engine Terminal Ready...\n" };
+            return { ...prev, [targetId]: { ...st, terminalOutput: st.terminalOutput + text } };
             });
             };
             window.appendTerminal = appendTerminal;
@@ -140,17 +140,17 @@ Date.now() - b.t < 2000)); } } }, 50); return ()=> clearInterval(intv);
             '0')}:${d.getSeconds().toString().padStart(2, '0')}]`;
             };
 
-            appendTerminal(`\n${getTime()} >_ DISPATCHING: ${cmd} to ${targetId}`);
+            appendTerminal(`\n${getTime()} >_ DISPATCHING: ${cmd} to ${targetId}`, targetId);
 
             if (cmd === 'GENERATE_REPORT') {
-            if (droneId !== 'UNKNOWN') {
-            fetch(`/api/generate_report?drone_id=${droneId}`)
+            if (targetId !== 'UNKNOWN') {
+            fetch(`/api/generate_report?drone_id=${targetId}`)
             .then(res => res.json())
             .then(data => {
-            appendTerminal(`\n${getTime()} >_ REPORT GENERATED: ${data.file}`);
+            appendTerminal(`\n${getTime()} >_ REPORT GENERATED: ${data.file}`, targetId);
             window.open(`/${data.file}`, '_blank');
             }).catch(e => {
-            appendTerminal(`\n${getTime()} >_ ERROR: Failed to generate report`);
+            appendTerminal(`\n${getTime()} >_ ERROR: Failed to generate report`, targetId);
             });
             }
             return;
@@ -160,33 +160,45 @@ Date.now() - b.t < 2000)); } } }, 50); return ()=> clearInterval(intv);
             fetch(`/api/reset`)
             .then(res => res.json())
             .then(data => {
-            appendTerminal(`\n${getTime()} >_ MATRIX RESET SUCCESS`);
+            appendTerminal(`\n${getTime()} >_ MATRIX RESET SUCCESS`, targetId);
             setTimeout(() => window.location.reload(), 1000);
             }).catch(e => {
-            appendTerminal(`\n${getTime()} >_ ERROR: Failed to reset matrix`);
+            appendTerminal(`\n${getTime()} >_ ERROR: Failed to reset matrix`, targetId);
             });
             return;
             }
+
+            // Sync with simulator if triggered from C2 Live Monitor
+            const simulatorHost = window.location.hostname || "127.0.0.1";
+            fetch(`http://${simulatorHost}:5557/execute`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    drone_id: targetId,
+                    attack_type: cmd.toLowerCase(),
+                    params: {}
+                })
+            }).catch(e => console.log("Simulator notification skipped"));
 
             fetch('/api/command', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ cmd: cmd.toLowerCase(), drone_id: targetId })
             }).then(r => r.json()).then(data => {
-            if (['initial_access', 'execution', 'evasion', 'hardware', 'spoof', 'impact'].includes(cmd)) {
-            setTimeout(() => appendTerminal(`\n${getTime()} >_ [*] Authenticating with target...`), 300);
-            setTimeout(() => appendTerminal(`\n${getTime()} >_ [*] Exploiting vulnerabilities...`), 800);
-            setTimeout(() => appendTerminal(`\n${getTime()} >_ [*] Injecting payload [${cmd.toUpperCase()}]...`), 1400);
-            setTimeout(() => appendTerminal(`\n${getTime()} >_ [+] SUCCESS: ${cmd} executed on ${targetId}`), 2000);
+            if (['initial_access', 'execution', 'evasion', 'hardware', 'spoof', 'impact'].includes(cmd) || cmd === 'manipulate_control' || cmd === 'gps_spoof' || cmd === 'physical_damage') {
+            setTimeout(() => appendTerminal(`\n${getTime()} >_ [*] Authenticating with target...`, targetId), 300);
+            setTimeout(() => appendTerminal(`\n${getTime()} >_ [*] Exploiting vulnerabilities...`, targetId), 800);
+            setTimeout(() => appendTerminal(`\n${getTime()} >_ [*] Injecting payload [${cmd.toUpperCase()}]...`, targetId), 1400);
+            setTimeout(() => appendTerminal(`\n${getTime()} >_ [+] SUCCESS: ${cmd} executed on ${targetId}`, targetId), 2000);
             } else if (['ISOLATE NODE', 'stop_gps_spoof'].includes(cmd)) {
-            setTimeout(() => appendTerminal(`\n${getTime()} >_ [*] Initializing defense protocol...`), 300);
-            setTimeout(() => appendTerminal(`\n${getTime()} >_ [*] Applying security policies...`), 800);
-            setTimeout(() => appendTerminal(`\n${getTime()} >_ [+] SUCCESS: ${cmd} enforced on ${targetId}`), 1400);
+            setTimeout(() => appendTerminal(`\n${getTime()} >_ [*] Initializing defense protocol...`, targetId), 300);
+            setTimeout(() => appendTerminal(`\n${getTime()} >_ [*] Applying security policies...`, targetId), 800);
+            setTimeout(() => appendTerminal(`\n${getTime()} >_ [+] SUCCESS: ${cmd} enforced on ${targetId}`, targetId), 1400);
             } else {
-            setTimeout(() => appendTerminal(`\n${getTime()} >_ SUCCESS: Command transmitted to ${targetId}`), 500);
+            setTimeout(() => appendTerminal(`\n${getTime()} >_ SUCCESS: Command transmitted to ${targetId}`, targetId), 500);
             }
             }).catch(e => {
-            setTimeout(() => appendTerminal(`\n${getTime()} >_ ERROR: Transmission failed`), 500);
+            setTimeout(() => appendTerminal(`\n${getTime()} >_ ERROR: Transmission failed`, targetId), 500);
             });
             };
 
