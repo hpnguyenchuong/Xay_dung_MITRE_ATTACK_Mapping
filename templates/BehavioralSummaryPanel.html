@@ -1,0 +1,79 @@
+window.BehavioralSummaryPanel = () => {
+    return (
+        <div className="panel flex-[1.0] min-w-0 min-h-0 flex flex-col">
+            <div className="panel-header border-b border-[#334155] bg-gradient-to-r from-[#1e293b] to-transparent">
+                <span className="material-symbols-outlined text-[16px] text-[#fbbf24]">insights</span>
+                <span className="panel-title text-[#e2e8f0]">BEHAVIORAL INSIGHTS</span>
+            </div>
+            
+            <div className="flex-1 p-3 flex flex-col gap-2 overflow-y-auto custom-scrollbar">
+                <div className="text-[12px] text-[#94a3b8] uppercase tracking-widest font-bold border-b border-[#334155] pb-1 mb-1">
+                    Top Behaviors & Confidence Impact
+                </div>
+
+                <div className="flex flex-col gap-3 mt-1">
+                    {/* C2 Communication */}
+                    <div className="flex flex-col gap-1 group">
+                        <div className="flex justify-between items-end">
+                            <div className="flex items-center gap-2">
+                                <span className="material-symbols-outlined text-[14px] text-[#fbbf24]">wifi_tethering</span>
+                                <span className="text-[13px] font-bold text-[#e2e8f0]">C2 Communication</span>
+                            </div>
+                            <span className="text-[12px] font-mono font-bold text-[#fbbf24]">+0.92</span>
+                        </div>
+                        <div className="w-full bg-[#1e293b] h-2 rounded-full overflow-hidden border border-[#334155]">
+                            <div className="h-full bg-[#fbbf24] w-[92%] shadow-[0_0_10px_rgba(251,191,36,0.5)] group-hover:brightness-125 transition-all"></div>
+                        </div>
+                    </div>
+
+                    {/* Beaconing */}
+                    <div className="flex flex-col gap-1 group">
+                        <div className="flex justify-between items-end">
+                            <div className="flex items-center gap-2">
+                                <span className="material-symbols-outlined text-[14px] text-[#38bdf8]">radar</span>
+                                <span className="text-[13px] font-bold text-[#e2e8f0]">Beaconing</span>
+                            </div>
+                            <span className="text-[12px] font-mono font-bold text-[#38bdf8]">+0.88</span>
+                        </div>
+                        <div className="w-full bg-[#1e293b] h-2 rounded-full overflow-hidden border border-[#334155]">
+                            <div className="h-full bg-[#38bdf8] w-[88%] shadow-[0_0_10px_rgba(56,189,248,0.5)] group-hover:brightness-125 transition-all"></div>
+                        </div>
+                    </div>
+
+                    {/* Encoding */}
+                    <div className="flex flex-col gap-1 group">
+                        <div className="flex justify-between items-end">
+                            <div className="flex items-center gap-2">
+                                <span className="material-symbols-outlined text-[14px] text-[#c084fc]">code</span>
+                                <span className="text-[13px] font-bold text-[#e2e8f0]">Data Encoding</span>
+                            </div>
+                            <span className="text-[12px] font-mono font-bold text-[#c084fc]">+0.75</span>
+                        </div>
+                        <div className="w-full bg-[#1e293b] h-2 rounded-full overflow-hidden border border-[#334155]">
+                            <div className="h-full bg-[#c084fc] w-[75%] shadow-[0_0_10px_rgba(192,132,252,0.5)] group-hover:brightness-125 transition-all"></div>
+                        </div>
+                    </div>
+
+                    {/* Telemetry Falsification */}
+                    <div className="flex flex-col gap-1 group">
+                        <div className="flex justify-between items-end">
+                            <div className="flex items-center gap-2">
+                                <span className="material-symbols-outlined text-[14px] text-[#f43f5e]">gps_off</span>
+                                <span className="text-[13px] font-bold text-[#e2e8f0]">Telemetry Drift</span>
+                            </div>
+                            <span className="text-[12px] font-mono font-bold text-[#f43f5e]">+0.60</span>
+                        </div>
+                        <div className="w-full bg-[#1e293b] h-2 rounded-full overflow-hidden border border-[#334155]">
+                            <div className="h-full bg-[#f43f5e] w-[60%] shadow-[0_0_10px_rgba(244,63,94,0.5)] group-hover:brightness-125 transition-all"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mt-auto bg-[#0f172a] border border-[#334155] rounded p-2 text-[11px] text-[#94a3b8] italic">
+                    * Values represent confidence contribution score (0.0 to 1.0) towards mapping accuracy.
+                </div>
+
+            </div>
+        </div>
+    );
+};

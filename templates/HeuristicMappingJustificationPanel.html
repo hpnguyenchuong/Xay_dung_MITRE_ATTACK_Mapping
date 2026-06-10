@@ -1,0 +1,109 @@
+window.HeuristicMappingJustificationPanel = () => {
+    return (
+        <div className="panel flex-[1.0] min-w-0 min-h-0 flex flex-col">
+            <div className="panel-header border-b border-[#334155] bg-gradient-to-r from-[#1e293b] to-transparent">
+                <span className="material-symbols-outlined text-[16px] text-[#a855f7]">rule</span>
+                <span className="panel-title text-[#e2e8f0]">HEURISTIC JUSTIFICATION</span>
+            </div>
+            
+            <div className="flex-1 p-3 flex flex-col gap-3 overflow-y-auto custom-scrollbar">
+                
+                {/* Selected Technique Header */}
+                <div className="flex justify-between items-center bg-[#0f172a] p-2 rounded border border-[#334155]">
+                    <div className="flex flex-col">
+                        <span className="text-[10px] text-[#94a3b8] uppercase tracking-widest font-bold">Selected Technique</span>
+                        <span className="text-[16px] font-mono font-bold text-[#f43f5e]">T0885</span>
+                        <span className="text-[13px] font-bold text-white">Commonly Used Port</span>
+                    </div>
+                    <div className="bg-[#1e293b] border border-[#a855f7]/50 rounded p-2 flex flex-col items-center justify-center shadow-[0_0_10px_rgba(168,85,247,0.1)]">
+                        <span className="text-[10px] text-[#94a3b8] uppercase font-bold">Confidence</span>
+                        <span className="text-[18px] font-mono font-bold text-[#a855f7]">90%</span>
+                    </div>
+                </div>
+
+                {/* 1. Matching Evidence */}
+                <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2 text-[12px] font-bold text-[#34d399] uppercase tracking-wider">
+                        <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                        MATCHED EVIDENCE
+                    </div>
+                    <div className="bg-[#1e293b]/50 border border-[#34d399]/30 rounded p-2 flex flex-col gap-1">
+                        <div className="flex items-start gap-2 text-[12px]">
+                            <span className="material-symbols-outlined text-[14px] text-[#34d399] mt-0.5">done</span>
+                            <div>
+                                <span className="text-white font-bold">HTTP header pattern</span>
+                                <div className="text-[10px] font-mono text-[#94a3b8]">User-Agent: DroneClient/1.0</div>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-2 text-[12px]">
+                            <span className="material-symbols-outlined text-[14px] text-[#34d399] mt-0.5">done</span>
+                            <div>
+                                <span className="text-white font-bold">Beacon interval match</span>
+                                <div className="text-[10px] font-mono text-[#94a3b8]">Interval: 30s jitter 10%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 2. Rejected Techniques */}
+                <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2 text-[12px] font-bold text-[#f43f5e] uppercase tracking-wider">
+                        <span className="material-symbols-outlined text-[14px]">cancel</span>
+                        REJECTED TECHNIQUES
+                    </div>
+                    <div className="bg-[#1e293b]/50 border border-[#f43f5e]/30 rounded p-2 flex flex-col gap-1">
+                        <div className="flex justify-between items-center text-[12px]">
+                            <div className="flex items-center gap-2">
+                                <span className="material-symbols-outlined text-[14px] text-[#f43f5e]">close</span>
+                                <span className="text-[#cbd5e1] font-mono font-bold">T1095</span>
+                            </div>
+                            <span className="text-[10px] text-[#f43f5e] italic bg-[#f43f5e]/10 px-1 rounded border border-[#f43f5e]/20">Missing evidence</span>
+                        </div>
+                        <div className="flex justify-between items-center text-[12px]">
+                            <div className="flex items-center gap-2">
+                                <span className="material-symbols-outlined text-[14px] text-[#f43f5e]">close</span>
+                                <span className="text-[#cbd5e1] font-mono font-bold">T1059</span>
+                            </div>
+                            <span className="text-[10px] text-[#f43f5e] italic bg-[#f43f5e]/10 px-1 rounded border border-[#f43f5e]/20">No shell execution</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 3. Unknown States */}
+                <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2 text-[12px] font-bold text-[#fbbf24] uppercase tracking-wider">
+                        <span className="material-symbols-outlined text-[14px]">help</span>
+                        UNKNOWN / PARTIAL
+                    </div>
+                    <div className="bg-[#1e293b]/50 border border-[#fbbf24]/30 rounded p-2 text-[12px] flex items-start gap-2">
+                        <span className="material-symbols-outlined text-[14px] text-[#fbbf24] mt-0.5">question_mark</span>
+                        <div>
+                            <span className="text-[#cbd5e1] font-mono font-bold">T0832</span>
+                            <div className="text-[10px] text-[#94a3b8] italic">Telemetry anomaly detected but lacks physical validation logic.</div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 4. Confidence Breakdown */}
+                <div className="mt-auto border-t border-[#334155] pt-2 flex flex-col gap-1.5">
+                    <div className="text-[10px] text-[#94a3b8] uppercase tracking-widest font-bold">Confidence Breakdown</div>
+                    <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
+                        <div className="flex justify-between bg-[#0f172a] px-2 py-1 rounded border border-[#334155]">
+                            <span className="text-[#cbd5e1]">Payload</span><span className="text-[#38bdf8]">+40%</span>
+                        </div>
+                        <div className="flex justify-between bg-[#0f172a] px-2 py-1 rounded border border-[#334155]">
+                            <span className="text-[#cbd5e1]">Network</span><span className="text-[#38bdf8]">+35%</span>
+                        </div>
+                        <div className="flex justify-between bg-[#0f172a] px-2 py-1 rounded border border-[#334155]">
+                            <span className="text-[#cbd5e1]">Timing</span><span className="text-[#38bdf8]">+15%</span>
+                        </div>
+                        <div className="flex justify-between bg-[#0f172a] px-2 py-1 rounded border border-[#334155] opacity-50">
+                            <span className="text-[#cbd5e1]">Context</span><span className="text-[#94a3b8]">0%</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    );
+};

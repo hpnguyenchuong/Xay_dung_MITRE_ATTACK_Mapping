@@ -1,5 +1,4 @@
 import socket
-import sys
 import os
 import time
 import threading
@@ -10,9 +9,9 @@ import sqlite3
 import math
 import re
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict
 import queue
-from http.server import BaseHTTPRequestHandler, HTTPServer, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
 HOST = "0.0.0.0"
@@ -114,7 +113,7 @@ def get_breakdown(row):
     if row and dict(row).get("breakdown"):
         try:
             return json.loads(row["breakdown"])
-        except:
+        except Exception:
             return {}
     return {}
 
@@ -172,6 +171,17 @@ def init_forensic_db():
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS drone_risk (
                     drone_id TEXT PRIMARY KEY, score INTEGER, breakdown TEXT, last_updated TEXT
+                )
+            """)
+            
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS active_attacks (
+                    attack_id TEXT PRIMARY KEY,
+                    drone_id TEXT,
+                    attack_type TEXT,
+                    status TEXT,
+                    started_at TEXT,
+                    params TEXT
                 )
             """)
             
@@ -339,14 +349,64 @@ def init_forensic_db():
             
             db_conn.commit()
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             print(f"DB Init Error: {e}")
 
 class MITREMappingEngine:
+    EVIDENCE_WEIGHTS = {
+        "Memory Dump": 95, "Config Block": 90, ".rdata Section": 90,
+        "Decompiled Code": 85, "Network PCAP": 80, "Dynamic Analysis": 75,
+        "Strings Analysis": 70, "File System": 65
+    }
+
     def __init__(self):
         self.last_packet_time = {}
         self.packet_lock = threading.Lock()
         self.last_gps_data = {}
         self.network_history = {}
+
+    def calculate_confidence(self, artifact, source, campaign_count=0, fleet_role="member"):
+        base_score = artifact.get("confidence", 80)
+        evidence_strength = self.EVIDENCE_WEIGHTS.get(source, 70)
+        
+        campaign_bonus = 15 if campaign_count >= 3 else 8 if campaign_count >= 2 else 3
+        fleet_bonus = 10 if (fleet_role == "leader" and artifact.get("type") == "Command") else 0
+        
+        score = (base_score * 0.5 + evidence_strength * 0.3) + campaign_bonus + fleet_bonus
+        return min(100, int(score))
+    
+    def map_artifact(self, drone_id, artifact, source, validation_level="L2", campaign_count=0, fleet_role="member"):
+        # Pre-defined mapping rules
+        mapping_rules = {
+            "DF_MUTEX_01": {"tech": "T1547.001", "ics": "T0866", "tactic": "Persistence", "score": 95},
+            "c2.dronefleet.net": {"tech": "T1071", "ics": "T0885", "tactic": "C2", "score": 98},
+            "XOR+Base64": {"tech": "T1027", "ics": "T0832", "tactic": "Evasion", "score": 85},
+            "gps_spoof": {"tech": "T0831", "ics": "T0831", "tactic": "Impact", "score": 95},
+            "imu_drift_injection": {"tech": "T0832", "ics": "T0832", "tactic": "Impact", "score": 94},
+            "battery_drain": {"tech": "T0879", "ics": "T0879", "tactic": "Impact", "score": 90},
+            "lidar_jamming": {"tech": "T0831", "ics": "T0831", "tactic": "Impact", "score": 93},
+            "collision_vector": {"tech": "T0831", "ics": "T0831", "tactic": "Impact", "score": 96},
+            "forced_landing": {"tech": "T0831", "ics": "T0831", "tactic": "Impact", "score": 92}
+        }
+        
+        rule = mapping_rules.get(artifact, {})
+        if not rule:
+            return None
+        
+        confidence = self.calculate_confidence(
+            {"confidence": rule["score"], "type": "Artifact"}, source, campaign_count, fleet_role
+        )
+        
+        rejected = []
+        all_candidates = ["T1547.001", "T1055", "T1543", "T1071", "T1041", "T1105"]
+        for cand in all_candidates:
+            if cand != rule["tech"]:
+                import random
+                rejected.append({"technique": cand, "score": random.randint(50, 70), 
+                                "reason": f"Lower confidence or no evidence for {cand}"})
+        
+        return {"technique": rule["tech"], "confidence": confidence, "rejected": rejected}
 
     def analyze_network_behavior(self, drone_id: str, packet: dict, now: float, cursor, t_str: str):
         # Implement RE Artifact Correlation (CLO5)
@@ -562,6 +622,21 @@ class MITREMappingEngine:
                             map_str = f"{tactic} -> {tech}" if tech else "No ATT&CK Map"
                             timeline_msg = f"Artifact Extracted\n\n{artifact_address}\n{string}\n\n↓\n\n{finding_desc}\n\n↓\n\n{map_str}\n{tech_name}\n\n↓\n\n+{score_add} Risk\n\n↓\n\nTotal Score = {projected_score}"
                             cursor.execute("INSERT INTO timeline (drone_id, event_type, message, timestamp) VALUES (?, ?, ?, ?)", (drone_id, "TECHNIQUE_MAPPED", timeline_msg, t_str))
+                            
+                            # Print to terminal
+                            print(f"\n{C_RED}{C_BOLD}")
+                            print("╔════════════════════════════════════════════════════════════════╗")
+                            
+                            def print_line(msg):
+                                print(f"║{msg.ljust(64)}║")
+                                
+                            print_line(f"  🚨 ARTIFACT DETECTED: {finding_desc[:38]}")
+                            print("╠════════════════════════════════════════════════════════════════╣")
+                            print_line(f"  📍 Source: {artifact_source[:50]}")
+                            print_line(f"  🎯 MITRE: {tech_name[:51]}")
+                            print_line(f"  📈 Threat Score: +{score_add}")
+                            print("╚════════════════════════════════════════════════════════════════╝")
+                            print(f"{C_END}")
 
             # 2. Map Profiles & Config
             if "profile" in packet:
@@ -686,7 +761,7 @@ class MITREMappingEngine:
                                     "UPDATE cases SET status='ISOLATED_BY_SOAR', resolution_notes='Automated containment triggered due to traffic flood' WHERE drone_id=? AND status='OPEN'",
                                     (drone_id,)
                                 )
-                            except:
+                            except Exception:
                                 pass
 
                     flood_counter[drone_id] = 0
@@ -779,7 +854,7 @@ class MITREMappingEngine:
                     
                     with self.packet_lock:
                         self.last_gps_data[drone_id] = (lat, lon, now)
-                except: pass
+                except Exception: pass
                         
             with self.packet_lock:
                 self.last_packet_time[drone_id] = now
@@ -796,7 +871,6 @@ class MITREMappingEngine:
             speed_kmh = packet.get("speed", 0)
             satellites = packet.get("satellites", 10)
             temp = packet.get("temp", 40)
-            batt = packet.get("battery", 100)
             
             if speed_kmh > 300.0:
                 safety_impact = 80
@@ -844,16 +918,46 @@ class MITREMappingEngine:
                     cursor.execute("INSERT INTO ioc_attack_mapping (drone_id, ioc_value, technique_id, description, timestamp, confidence, campaign) VALUES (?, ?, ?, ?, ?, ?, ?)", (drone_id, "DF_MUTEX + C2 Domain", "T0885 + Persistence Evidence", "Correlated DroneFlood Campaign (Multiple High-Fidelity IOCs)", t_str, 95, "DroneFlood"))
                     cursor.execute("INSERT INTO timeline (drone_id, event_type, message, timestamp) VALUES (?, ?, ?, ?)", (drone_id, "CORRELATION", "IOCs Correlated to DroneFlood Campaign (95% Confidence)", t_str))
             
-            global server_processed_packets
+            
             if server_processed_packets > 0 and server_processed_packets % 100 == 0:
                 cursor.execute("DELETE FROM timeline WHERE id NOT IN (SELECT id FROM timeline ORDER BY id DESC LIMIT 5000)")
                 
-            db_conn.commit()
         except Exception as e:
             import traceback
             traceback.print_exc()
             print(f"DB Error: {e}")
 
+class AttackRelay:
+    def __init__(self):
+        self.active_attacks = {}
+    
+    def send_command(self, drone_id, command, params=None):
+        with clients_lock:
+            sock = clients.get(drone_id)
+            if not sock:
+                return {"success": False, "error": "Drone not connected"}
+        payload = json.dumps({"cmd": command, "params": params or {}})
+        obfuscated = TransportObfuscationLayer.obfuscate(payload) + b"\n"
+        try:
+            sock.sendall(obfuscated)
+            return {"success": True}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+    
+    def start_attack(self, drone_id, attack_type, params=None):
+        result = self.send_command(drone_id, attack_type, params)
+        if result["success"]:
+            attack_id = f"{drone_id}_{attack_type}_{int(time.time())}"
+            self.active_attacks[attack_id] = {"drone_id": drone_id, "attack_type": attack_type, "status": "active"}
+            conn = sqlite3.connect(DB_FILE_PATH)
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO active_attacks (attack_id, drone_id, attack_type, status, started_at, params) VALUES (?, ?, ?, ?, ?, ?)",
+                          (attack_id, drone_id, attack_type, "active", datetime.now().isoformat(), json.dumps(params or {})))
+            conn.commit()
+            conn.close()
+        return result
+
+attack_relay = AttackRelay()
 mitre_engine = MITREMappingEngine()
 
 def db_worker():
@@ -926,7 +1030,7 @@ def handle_client(client, addr):
                         if drone_id in clients:
                             try:
                                 clients[drone_id].close()
-                            except: pass
+                            except Exception: pass
                         clients[drone_id] = client
                         client_metadata[drone_id] = {
                             "ip": client_ip, 
@@ -988,7 +1092,6 @@ def handle_client(client, addr):
     client.close()
 
 def tcp_server():
-    global HOST, PORT # Sửa lỗi NameError triệt để
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind((HOST, PORT))
@@ -998,7 +1101,9 @@ def tcp_server():
         try:
             c, addr = server.accept()
             threading.Thread(target=handle_client, args=(c, addr), daemon=True).start()
-        except: break
+        except Exception as e:
+            print(f"Connection error: {e}")
+            break
 
 class DashboardHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args): return
@@ -1020,6 +1125,21 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path_parts = self.path.strip('/').split('/')
+        if self.path.startswith("/api/attack"):
+            content_length = int(self.headers['Content-Length'])
+            post_data = json.loads(self.rfile.read(content_length))
+            drone_id = post_data.get("drone_id")
+            command = post_data.get("command")
+            params = post_data.get("params", {})
+            
+            result = attack_relay.start_attack(drone_id, command, params)
+            
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(result).encode('utf-8'))
+            return
+            
         if path_parts[0] == "api" and len(path_parts) > 1 and path_parts[1] == "command":
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)
@@ -1080,7 +1200,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
             cursor = conn.cursor()
             
             try:
-                if endpoint == "drones":
+                if endpoint == "attacks":
+                    cursor.execute("SELECT * FROM active_attacks ORDER BY started_at DESC")
+                    attacks = [dict(row) for row in cursor.fetchall()]
+                    self._send_json({"attacks": attacks})
+                    
+                elif endpoint == "drones":
                     # Fleet Status mapping to connected sockets
                     cursor.execute("SELECT * FROM telemetry WHERE id IN (SELECT MAX(id) FROM telemetry GROUP BY drone_id)")
                     t_rows = cursor.fetchall()
@@ -1237,7 +1362,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         
                         try:
                             r["breakdown"] = json.loads(r["confidence_breakdown"]) if r["confidence_breakdown"] else {}
-                        except:
+                        except Exception:
                             r["breakdown"] = {}
                         if "confidence_breakdown" in r:
                             del r["confidence_breakdown"]
@@ -1258,7 +1383,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         
                         try:
                             r["rejected"] = json.loads(r["rejected_candidates"]) if r["rejected_candidates"] else []
-                        except:
+                        except Exception:
                             r["rejected"] = []
                         if "rejected_candidates" in r:
                             del r["rejected_candidates"]
@@ -1297,7 +1422,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     try:
                         with open(os.path.join(BASE_DIR, "datasets", "ground_truth.json"), "r") as f:
                             gt_data = json.load(f)
-                    except:
+                    except Exception:
                         gt_data = []
                         
                     cursor.execute("SELECT finding as artifact, enterprise_tech_id as expected FROM re_findings")
@@ -1359,7 +1484,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     self._send_json({"correlations": correlations})
                     
                 elif endpoint == "export_navigator":
-                    layer_type = query_components.get("layer", ["all"])[0]
+                    layer_type = query_params.get("layer", ["all"])[0]
                     
                     if layer_type == "enterprise":
                         cursor.execute("SELECT DISTINCT enterprise_tech_id as technique FROM attack_mapping WHERE enterprise_tech_id IS NOT NULL")
@@ -1620,12 +1745,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     iocs = [dict(row) for row in cursor.fetchall()]
                     cursor.execute("SELECT * FROM attack_mapping WHERE drone_id=?", (drone_id,))
                     mitre = [dict(row) for row in cursor.fetchall()]
-                    
-                    caps = json.loads(profile["capabilities"]) if profile and dict(profile).get("capabilities") else []
-                    capabilities_html = "".join([f"<li>{c} &nbsp;&nbsp;&#10003;</li>" for c in caps])
-                    
-                    persistence_iocs = [i for i in iocs if i['type'] in ['SERVICE', 'REGISTRY']]
-                    persistence_html = "".join([f"<li><strong>{i['type']}:</strong> {i['value']}</li>" for i in persistence_iocs])
                     
                     cursor.execute("SELECT * FROM timeline WHERE drone_id=? ORDER BY id ASC", (drone_id,))
                     timeline = [dict(row) for row in cursor.fetchall()]
@@ -2132,7 +2251,7 @@ def terminal_dashboard_thread():
                 if drone_id in clients:
                     try:
                         clients[drone_id].close()
-                    except: pass
+                    except Exception: pass
                     del clients[drone_id]
                 del client_metadata[drone_id]
                 

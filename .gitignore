@@ -23,3 +23,8 @@ venv/
 logs/
 reports/
 navigator_exports/
+
+# Temporary files
+scratch_logs/
+extract_logs.py
+drone_backup.py

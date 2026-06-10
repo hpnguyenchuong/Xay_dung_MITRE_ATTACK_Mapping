@@ -1,60 +1,208 @@
 window.REEvidencePanel = () => {
+    const [artifacts, setArtifacts] = useState([]);
+    const [selectedArtifact, setSelectedArtifact] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        fetch('/api/re_findings')
+            .then(res => res.json())
+            .then(data => {
+                if (data.findings) setArtifacts(data.findings);
+                setIsLoading(false);
+            })
+            .catch(e => {
+                console.error("Error fetching RE findings:", e);
+                setIsLoading(false);
+            });
+    }, []);
+
+    const openJustification = (artifact) => {
+        setSelectedArtifact(artifact);
+    };
+
+    const closeJustification = () => {
+        setSelectedArtifact(null);
+    };
+
     return (
-        <div className="panel flex-[1.5] min-w-0 min-h-0 flex flex-col">
-            <div className="panel-header">
-                <span className="material-symbols-outlined text-[16px]">folder_special</span>
-                <span className="panel-title">RE EVIDENCE REPOSITORY</span>
+        <div className="panel flex-[1.5] min-w-0 min-h-0 flex flex-col relative group">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#0f172a] to-[#050b14] -z-10 group-hover:scale-[1.01] transition-transform duration-700"></div>
+            
+            <div className="panel-header border-b border-[#38bdf8]/30 bg-gradient-to-r from-[#38bdf8]/10 to-transparent">
+                <span className="material-symbols-outlined text-[16px] text-[#38bdf8]">folder_special</span>
+                <span className="panel-title text-[#38bdf8]">RE EVIDENCE REPOSITORY</span>
             </div>
-            <div className="flex-1 p-2 overflow-y-auto custom-scrollbar">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Artifact</th>
-                            <th>Type</th>
-                            <th>Source</th>
-                            <th>Offset</th>
-                            <th>Validation</th>
-                        </tr>
-                    </thead>
-                    <tbody className="text-[17px] font-mono text-[#e2e8f0]">
-                        <tr>
-                            <td className="text-[#38bdf8] font-bold">DF_MUTEX_01</td>
-                            <td className="text-[#fbbf24]">Mutex</td>
-                            <td>Memory Dump</td>
-                            <td className="text-[#94a3b8]">0x401210</td>
-                            <td><span className="bg-[#a855f7]/20 text-[#a855f7] px-1.5 py-0.5 rounded font-bold border border-[#a855f7]/50">L3</span></td>
-                        </tr>
-                        <tr>
-                            <td className="text-[#38bdf8] font-bold">beacon_30s</td>
-                            <td className="text-[#fbbf24]">String</td>
-                            <td>.rdata Section</td>
-                            <td className="text-[#94a3b8]">0x501430</td>
-                            <td><span className="bg-[#34d399]/20 text-[#34d399] px-1.5 py-0.5 rounded font-bold border border-[#34d399]/50">L2</span></td>
-                        </tr>
-                        <tr>
-                            <td className="text-[#38bdf8] font-bold">encoded_payload</td>
-                            <td className="text-[#fbbf24]">Config</td>
-                            <td>.data Section</td>
-                            <td className="text-[#94a3b8]">0x402ABC</td>
-                            <td><span className="bg-[#a855f7]/20 text-[#a855f7] px-1.5 py-0.5 rounded font-bold border border-[#a855f7]/50">L3</span></td>
-                        </tr>
-                        <tr>
-                            <td className="text-[#38bdf8] font-bold">Software\Windows\Run</td>
-                            <td className="text-[#fbbf24]">Registry</td>
-                            <td>API Call Log</td>
-                            <td className="text-[#94a3b8]">N/A</td>
-                            <td><span className="bg-[#a855f7]/20 text-[#a855f7] px-1.5 py-0.5 rounded font-bold border border-[#a855f7]/50">L3</span></td>
-                        </tr>
-                        <tr>
-                            <td className="text-[#38bdf8] font-bold">c2.dronefleet.net</td>
-                            <td className="text-[#fbbf24]">String</td>
-                            <td>Hardcoded Net</td>
-                            <td className="text-[#94a3b8]">0x502114</td>
-                            <td><span className="bg-[#a855f7]/20 text-[#a855f7] px-1.5 py-0.5 rounded font-bold border border-[#a855f7]/50">L3</span></td>
-                        </tr>
-                    </tbody>
-                </table>
+            
+            <div className="flex-1 p-2 overflow-y-auto custom-scrollbar relative">
+                {isLoading ? (
+                    <div className="flex flex-col gap-2 p-2">
+                        {[1, 2, 3, 4].map(i => (
+                            <div key={i} className="h-10 bg-[#1e293b]/50 animate-pulse rounded border border-[#334155]"></div>
+                        ))}
+                    </div>
+                ) : (
+                    <table className="w-full text-[13px]">
+                        <thead className="text-[#94a3b8] sticky top-0 bg-[#0f172a] z-10">
+                            <tr>
+                                <th className="text-left p-2 border-b border-[#334155]">Artifact</th>
+                                <th className="text-left p-2 border-b border-[#334155]">Type</th>
+                                <th className="text-left p-2 border-b border-[#334155]">Confidence</th>
+                                <th className="text-left p-2 border-b border-[#334155]">Mapped Technique</th>
+                                <th className="text-center p-2 border-b border-[#334155]">Justification</th>
+                            </tr>
+                        </thead>
+                        <tbody className="font-mono text-[#e2e8f0]">
+                            {artifacts.length === 0 ? (
+                                <tr>
+                                    <td colSpan="5" className="text-center p-4 text-[#64748b] italic">No artifacts mapped yet</td>
+                                </tr>
+                            ) : (
+                                artifacts.map((art, idx) => {
+                                    const confColor = art.confidence > 80 ? '#34d399' : (art.confidence > 50 ? '#fbbf24' : '#f43f5e');
+                                    return (
+                                        <tr key={idx} className="hover:bg-[#1e293b]/60 border-b border-[#334155]/30 transition-colors group/row">
+                                            <td className="p-2 font-bold text-[#38bdf8] truncate max-w-[150px] group-hover/row:text-white transition-colors" title={art.artifact}>{art.artifact}</td>
+                                            <td className="p-2 text-[#fbbf24]">{art.artifact_type || 'Unknown'}</td>
+                                            <td className="p-2">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-16 h-1.5 bg-[#1e293b] rounded-full overflow-hidden">
+                                                        <div className="h-full" style={{ width: `${art.confidence || 0}%`, backgroundColor: confColor }}></div>
+                                                    </div>
+                                                    <span className="text-[11px]" style={{ color: confColor }}>{art.confidence || 0}%</span>
+                                                </div>
+                                            </td>
+                                            <td className="p-2">
+                                                <span className="bg-[#a855f7]/20 text-[#a855f7] px-1.5 py-0.5 rounded font-bold border border-[#a855f7]/50 text-[11px]">
+                                                    {art.selected_technique || 'UNMAPPED'}
+                                                </span>
+                                            </td>
+                                            <td className="p-2 text-center">
+                                                <button 
+                                                    onClick={() => openJustification(art)}
+                                                    className="bg-[#1e293b] hover:bg-[#38bdf8]/20 text-[#94a3b8] hover:text-[#38bdf8] border border-[#334155] hover:border-[#38bdf8] px-2 py-1 rounded transition-all flex items-center justify-center mx-auto"
+                                                    title="View AI Justification"
+                                                >
+                                                    <span className="material-symbols-outlined text-[16px]">psychology</span>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
+                            )}
+                        </tbody>
+                    </table>
+                )}
             </div>
+
+            {/* JUSTIFICATION MODAL */}
+            {selectedArtifact && (
+                <div className="absolute inset-0 z-50 bg-[#050b14]/90 backdrop-blur-sm flex items-center justify-center p-4 animate-slide-in-fade">
+                    <div className="bg-[#0f172a] border border-[#38bdf8]/50 rounded-xl w-full max-w-2xl max-h-full flex flex-col shadow-[0_0_40px_rgba(56,189,248,0.15)] overflow-hidden">
+                        
+                        <div className="flex justify-between items-center p-3 border-b border-[#334155] bg-gradient-to-r from-[#1e293b] to-[#0f172a]">
+                            <div className="flex items-center gap-2">
+                                <span className="material-symbols-outlined text-[#38bdf8]">psychology</span>
+                                <span className="font-bold text-white tracking-widest text-[14px]">MAPPING JUSTIFICATION</span>
+                            </div>
+                            <button onClick={closeJustification} className="text-[#94a3b8] hover:text-[#f43f5e] transition-colors">
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        
+                        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 flex flex-col gap-4">
+                            
+                            {/* Target Artifact Info */}
+                            <div className="bg-[#1e293b]/50 p-3 rounded-lg border border-[#334155]">
+                                <div className="text-[11px] text-[#94a3b8] uppercase font-bold mb-1">Target Artifact</div>
+                                <div className="font-mono text-[#38bdf8] text-[15px] font-bold break-all">{selectedArtifact.artifact}</div>
+                                <div className="flex gap-4 mt-2 font-mono text-[12px]">
+                                    <div><span className="text-[#64748b]">Type:</span> <span className="text-[#fbbf24]">{selectedArtifact.artifact_type}</span></div>
+                                    <div><span className="text-[#64748b]">Source:</span> <span className="text-[#c084fc]">{selectedArtifact.re_source || 'Unknown'}</span></div>
+                                </div>
+                            </div>
+
+                            {/* Selected Technique */}
+                            <div>
+                                <div className="flex items-center gap-2 mb-2">
+                                    <span className="material-symbols-outlined text-[#34d399] text-[18px]">check_circle</span>
+                                    <span className="font-bold text-[#34d399]">SELECTED TECHNIQUE</span>
+                                </div>
+                                <div className="bg-[#34d399]/10 border border-[#34d399]/30 p-3 rounded-lg font-mono">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="bg-[#34d399] text-black px-2 py-0.5 rounded font-bold text-[13px]">{selectedArtifact.selected_technique}</span>
+                                        <span className="text-[#34d399] font-bold text-[15px]">{selectedArtifact.confidence}% Confidence</span>
+                                    </div>
+                                    <div className="text-[#cbd5e1] text-[13px] mb-2"><span className="text-[#64748b]">Behavior:</span> {selectedArtifact.behavior}</div>
+                                    <div className="text-[#cbd5e1] text-[13px]"><span className="text-[#64748b]">Reason:</span> {selectedArtifact.reason}</div>
+                                </div>
+                            </div>
+
+                            {/* Confidence Breakdown */}
+                            {selectedArtifact.confidence_breakdown && (
+                                <div>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className="material-symbols-outlined text-[#89ceff] text-[18px]">analytics</span>
+                                        <span className="font-bold text-[#89ceff]">CONFIDENCE BREAKDOWN</span>
+                                    </div>
+                                    <div className="bg-[#1e293b]/50 border border-[#334155] p-3 rounded-lg font-mono text-[12px]">
+                                        {(() => {
+                                            try {
+                                                const bd = typeof selectedArtifact.confidence_breakdown === 'string' 
+                                                    ? JSON.parse(selectedArtifact.confidence_breakdown) 
+                                                    : selectedArtifact.confidence_breakdown;
+                                                return Object.entries(bd).map(([key, val], i) => (
+                                                    <div key={i} className="flex justify-between items-center py-1 border-b border-[#334155]/50 last:border-0">
+                                                        <span className="text-[#94a3b8] capitalize">{key.replace(/_/g, ' ')}</span>
+                                                        <span className="text-[#89ceff] font-bold">+{val}</span>
+                                                    </div>
+                                                ));
+                                            } catch(e) {
+                                                return <div className="text-[#94a3b8] italic">Breakdown data unavailable</div>;
+                                            }
+                                        })()}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Rejected Candidates */}
+                            {selectedArtifact.rejected_candidates && (
+                                <div>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className="material-symbols-outlined text-[#f43f5e] text-[18px]">cancel</span>
+                                        <span className="font-bold text-[#f43f5e]">REJECTED CANDIDATES</span>
+                                    </div>
+                                    <div className="flex flex-col gap-2">
+                                        {(() => {
+                                            try {
+                                                const rej = typeof selectedArtifact.rejected_candidates === 'string'
+                                                    ? JSON.parse(selectedArtifact.rejected_candidates)
+                                                    : selectedArtifact.rejected_candidates;
+                                                
+                                                if (Array.isArray(rej) && rej.length > 0) {
+                                                    return rej.map((r, i) => (
+                                                        <div key={i} className="bg-[#f43f5e]/10 border border-[#f43f5e]/20 p-2 rounded text-[12px] font-mono">
+                                                            <div className="flex justify-between text-[#f43f5e] font-bold mb-1">
+                                                                <span>{r.technique}</span>
+                                                                <span>{r.score}%</span>
+                                                            </div>
+                                                            <div className="text-[#94a3b8]">{r.reason}</div>
+                                                        </div>
+                                                    ));
+                                                } else {
+                                                    return <div className="text-[#64748b] italic text-[12px] ml-6">No competing candidates evaluated.</div>;
+                                                }
+                                            } catch(e) {
+                                                return <div className="text-[#64748b] italic text-[12px] ml-6">Data unavailable.</div>;
+                                            }
+                                        })()}
+                                    </div>
+                                </div>
+                            )}
+
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

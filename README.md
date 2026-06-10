@@ -40,7 +40,7 @@ Ensure you have Python installed. The server runs natively without heavy depende
 ```bash
 python drone.py
 ```
-*The UI will be accessible at `http://localhost:8080`.*
+*The UI will be accessible at `http://localhost:9000`.*
 
 ### 2. Launch the Fleet Simulator
 To generate realistic attack traffic and populate the dashboard with RE findings, run the simulator in a separate terminal:

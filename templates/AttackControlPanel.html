@@ -1,0 +1,226 @@
+window.AttackControlPanel = ({ drones = [] }) => {
+    const [selectedDrone, setSelectedDrone] = useState("");
+    const [selectedAttack, setSelectedAttack] = useState("");
+    const [activeAttacks, setActiveAttacks] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [showToast, setShowToast] = useState(false);
+    const [toastMessage, setToastMessage] = useState("");
+
+    const attacks = [
+        { id: "gps_spoof", name: "1. GPS Spoof (T0831)", icon: "gps_off", color: "#fbbf24", desc: "Spoof navigation coordinates" },
+        { id: "battery_drain", name: "2. Battery Drain (T0879)", icon: "battery_alert", color: "#f43f5e", desc: "Accelerate battery depletion" },
+        { id: "imu_drift", name: "3. IMU Drift (T0832)", icon: "explore", color: "#89ceff", desc: "Inject false gyroscopic data" },
+        { id: "lidar_jamming", name: "4. LiDAR Jamming (T0831)", icon: "radar", color: "#c084fc", desc: "Disable collision avoidance" },
+        { id: "collision", name: "5. Collision Vector (T0831)", icon: "warning", color: "#ef4444", desc: "Force path intersection" },
+        { id: "emergency_land", name: "6. Emergency Land", icon: "flight_land", color: "#34d399", desc: "Trigger forced landing" }
+    ];
+
+    const fetchActiveAttacks = () => {
+        fetch('/api/attacks')
+            .then(res => res.json())
+            .then(data => {
+                if (data.attacks) setActiveAttacks(data.attacks);
+            })
+            .catch(e => console.error("Error fetching attacks:", e));
+    };
+
+    useEffect(() => {
+        fetchActiveAttacks();
+        const interval = setInterval(fetchActiveAttacks, 2000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const triggerToast = (msg) => {
+        setToastMessage(msg);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+    };
+
+    const handleLaunchAttack = async () => {
+        if (!selectedDrone || !selectedAttack) {
+            triggerToast("Please select both a target drone and an attack type.");
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            // Thông báo cho DroneFlood Simulator (trên cổng 5557) để hiển thị terminal log
+            const simulatorHost = window.location.hostname || "127.0.0.1";
+            fetch(`http://${simulatorHost}:5557/execute`, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify({
+                    drone_id: selectedDrone,
+                    attack_type: selectedAttack,
+                    params: {}
+                })
+            }).catch(e => console.log("Simulator notification skipped"));
+
+            const response = await fetch('/api/attack', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    drone_id: selectedDrone,
+                    command: selectedAttack,
+                    params: {} // Add custom params if needed based on attack type
+                })
+            });
+            const result = await response.json();
+            if (result.success) {
+                triggerToast(`SUCCESS: ${selectedAttack} launched on ${selectedDrone}`);
+                fetchActiveAttacks();
+                setSelectedAttack("");
+            } else {
+                triggerToast(`ERROR: Failed to launch attack - ${result.error || 'Unknown error'}`);
+            }
+        } catch (e) {
+            triggerToast("ERROR: Connection failed.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <div className="panel flex-[1.0] w-full max-w-full min-w-0 min-h-0 flex flex-col relative box-border overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#0f172a] to-[#050b14] -z-10 group-hover:scale-105 transition-transform duration-700"></div>
+            
+            <div className="panel-header border-b border-[#f43f5e]/30 bg-gradient-to-r from-[#f43f5e]/20 to-transparent">
+                <span className="material-symbols-outlined text-[18px] text-[#f43f5e] animate-pulse">crisis_alert</span>
+                <span className="panel-title text-[#f43f5e]">ATTACK CONTROL PANEL</span>
+            </div>
+
+            <div className="flex-1 p-3 overflow-y-auto overflow-x-hidden custom-scrollbar flex flex-col gap-3 box-border w-full max-w-full">
+                
+                {/* 1. SELECTION ROW */}
+                <div className="flex gap-3 h-[200px] shrink-0">
+                    
+                    {/* Target Selection */}
+                    <div className="flex-1 bg-[#1e293b]/60 backdrop-blur-md border border-[#334155] rounded-lg flex flex-col overflow-hidden hover:border-[#89ceff]/50 transition-colors">
+                        <div className="bg-[#0f172a] px-3 py-1.5 border-b border-[#334155] text-[13px] font-bold text-[#89ceff] flex items-center gap-2">
+                            <span className="material-symbols-outlined text-[16px]">my_location</span>
+                            SELECT TARGET
+                        </div>
+                        <div className="flex-1 overflow-y-auto custom-scrollbar p-1">
+                            {drones.length === 0 ? (
+                                <div className="text-center text-[#94a3b8] italic p-4 text-[13px]">No drones available</div>
+                            ) : (
+                                drones.map(d => (
+                                    <div 
+                                        key={d.drone_id}
+                                        onClick={() => setSelectedDrone(d.drone_id)}
+                                        className={`px-3 py-2 mb-1 rounded cursor-pointer flex justify-between items-center text-[13px] transition-all
+                                            ${selectedDrone === d.drone_id 
+                                                ? 'bg-[#38bdf8]/20 border border-[#38bdf8] text-white shadow-[0_0_10px_rgba(56,189,248,0.2)]' 
+                                                : 'bg-transparent border border-transparent text-[#cbd5e1] hover:bg-[#334155]/50'
+                                            }`}
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <div className={`w-2 h-2 rounded-full ${d.campaign_stage === 'COMPROMISED' ? 'bg-[#fbbf24] animate-pulse' : (d.status === 'ACTIVE' ? 'bg-[#34d399]' : 'bg-[#ef4444]')}`}></div>
+                                            <span className="font-mono">{d.drone_id}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            {d.campaign_stage === 'COMPROMISED' && <span className="material-symbols-outlined text-[14px] text-[#fbbf24]">lock_open</span>}
+                                            <span className="bg-[#0f172a] px-1.5 py-0.5 rounded text-[11px] text-[#94a3b8]">Score: {d.threat_score || 0}</span>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Attack Type Selection */}
+                    <div className="flex-1 bg-[#1e293b]/60 backdrop-blur-md border border-[#334155] rounded-lg flex flex-col overflow-hidden hover:border-[#f43f5e]/50 transition-colors">
+                        <div className="bg-[#0f172a] px-3 py-1.5 border-b border-[#334155] text-[13px] font-bold text-[#f43f5e] flex items-center gap-2">
+                            <span className="material-symbols-outlined text-[16px]">swords</span>
+                            SELECT PAYLOAD
+                        </div>
+                        <div className="flex-1 overflow-y-auto custom-scrollbar p-1">
+                            {attacks.map(atk => (
+                                <div 
+                                    key={atk.id}
+                                    onClick={() => setSelectedAttack(atk.id)}
+                                    className={`px-3 py-2 mb-1 rounded cursor-pointer flex items-center gap-3 text-[13px] transition-all group
+                                        ${selectedAttack === atk.id 
+                                            ? 'bg-[#f43f5e]/20 border border-[#f43f5e] text-white shadow-[0_0_10px_rgba(244,63,94,0.2)]' 
+                                            : 'bg-transparent border border-transparent text-[#cbd5e1] hover:bg-[#334155]/50'
+                                        }`}
+                                >
+                                    <span className="material-symbols-outlined text-[18px]" style={{ color: atk.color }}>{atk.icon}</span>
+                                    <div className="flex flex-col">
+                                        <span className="font-bold tracking-wide" style={{ color: selectedAttack === atk.id ? '#fff' : atk.color }}>{atk.name}</span>
+                                        <span className="text-[10px] text-[#94a3b8] group-hover:text-[#cbd5e1] transition-colors">{atk.desc}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* LAUNCH BUTTON */}
+                <button 
+                    onClick={handleLaunchAttack}
+                    disabled={isLoading || !selectedDrone || !selectedAttack}
+                    className={`w-full py-3 shrink-0 rounded-lg font-bold tracking-widest flex items-center justify-center gap-2 transition-all duration-300
+                        ${(!selectedDrone || !selectedAttack) 
+                            ? 'bg-[#1e293b] text-[#64748b] border border-[#334155] cursor-not-allowed' 
+                            : 'bg-gradient-to-r from-[#f43f5e] to-[#c084fc] text-white shadow-[0_0_20px_rgba(244,63,94,0.4)] hover:shadow-[0_0_30px_rgba(244,63,94,0.6)] hover:scale-[1.02]'
+                        }`}
+                >
+                    {isLoading ? (
+                        <span className="material-symbols-outlined animate-spin">refresh</span>
+                    ) : (
+                        <span className="material-symbols-outlined">rocket_launch</span>
+                    )}
+                    {isLoading ? "DEPLOYING PAYLOAD..." : "LAUNCH ATTACK"}
+                </button>
+
+                {/* ACTIVE ATTACKS LIST */}
+                <div className="flex-1 min-h-[200px] shrink-0 bg-[#1e293b]/60 backdrop-blur-md border border-[#334155] rounded-lg flex flex-col overflow-hidden">
+                    <div className="bg-[#0f172a] px-3 py-1.5 border-b border-[#334155] text-[13px] font-bold text-[#fbbf24] flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[16px] animate-pulse">sensors</span>
+                        ACTIVE CAMPAIGNS ({activeAttacks.length})
+                    </div>
+                    <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar p-1 box-border w-full max-w-full">
+                        <table className="w-full text-[12px] table-fixed">
+                            <thead className="text-[#94a3b8] sticky top-0 bg-[#1e293b]">
+                                <tr>
+                                    <th className="text-left p-2 border-b border-[#334155]">Attack ID</th>
+                                    <th className="text-left p-2 border-b border-[#334155]">Target</th>
+                                    <th className="text-left p-2 border-b border-[#334155]">Type</th>
+                                    <th className="text-left p-2 border-b border-[#334155]">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {activeAttacks.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="4" className="text-center p-4 text-[#64748b] italic">No active attacks detected</td>
+                                    </tr>
+                                ) : (
+                                    activeAttacks.map((atk, idx) => (
+                                        <tr key={idx} className="hover:bg-[#334155]/50 border-b border-[#334155]/30">
+                                            <td className="p-2 font-mono text-[#cbd5e1] truncate max-w-[100px]">{atk.attack_id.substring(0, 15)}...</td>
+                                            <td className="p-2 font-mono text-[#89ceff]">{atk.drone_id}</td>
+                                            <td className="p-2 text-[#f43f5e] font-bold">{atk.attack_type.toUpperCase()}</td>
+                                            <td className="p-2">
+                                                <span className="bg-[#fbbf24]/20 text-[#fbbf24] border border-[#fbbf24]/50 px-2 py-0.5 rounded text-[10px] animate-pulse">
+                                                    {atk.status.toUpperCase()}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            {/* TOAST NOTIFICATION */}
+            {showToast && (
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-[#0f172a] border border-[#38bdf8] text-[#38bdf8] px-4 py-2 rounded shadow-[0_0_15px_rgba(56,189,248,0.3)] z-50 animate-slide-in-fade text-[13px] font-mono font-bold whitespace-nowrap">
+                    {toastMessage}
+                </div>
+            )}
+        </div>
+    );
+};

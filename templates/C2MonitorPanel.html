@@ -5,12 +5,12 @@ window.C2MonitorPanel = ({ drones, droneId, setSelectedDrone, logsEndRef, curren
             C2 LIVE MONITOR
         </div>
         <div className="flex-1 flex min-h-0 p-2 gap-2">
-            <div className="w-[120px] border border-[#334155] bg-[#090d16] rounded flex flex-col overflow-y-auto custom-scrollbar p-1">
+            <div className="w-[160px] shrink-0 border border-[#334155] bg-[#090d16] rounded flex flex-col overflow-y-auto overflow-x-hidden custom-scrollbar p-1 box-border">
                 <div className="text-[15px] font-bold text-[#34d399] px-1 py-1 border-b border-[#334155] mb-1">● ONLINE</div>
                 {drones.map(d => (
                     <div key={d.drone_id} className={`flex items-center gap-2 p-1 rounded cursor-pointer ${droneId === d.drone_id ? 'bg-[#334155]' : 'hover:bg-[#1e293b]'}`} onClick={() => setSelectedDrone(d)}>
-                        <div className={`w-2 h-2 rounded-full ${d.battery < 20 ? 'bg-[#f43f5e] animate-pulse' : 'bg-[#34d399]'}`}></div>
-                        <span className="text-[15px] font-mono">{d.drone_id.substring(0,8)}</span>
+                        <div className={`w-2 h-2 shrink-0 rounded-full ${d.battery < 20 ? 'bg-[#f43f5e] animate-pulse' : 'bg-[#34d399]'}`}></div>
+                        <span className="text-[15px] font-mono truncate">{d.drone_id}</span>
                     </div>
                 ))}
             </div>

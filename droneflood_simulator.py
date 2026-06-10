@@ -1,3 +1,9 @@
+#!/usr/bin/env python3
+"""
+DRONEFLOOD SIMULATOR - Attack Tool (Kali)
+Nhận lệnh từ C2, thực thi tấn công, báo trạng thái
+"""
+
 import socket
 import sys
 import time
@@ -7,694 +13,465 @@ import random
 import threading
 import uuid
 import urllib.request
+import urllib.error
 import argparse
+import os
+from datetime import datetime
 
-C_GREEN, C_RED, C_YELLOW, C_BLUE, C_CYAN, C_BOLD, C_END = ("\033[92m", "\033[91m", "\033[93m", "\033[94m", "\033[96m", "\033[1m", "\033[0m")
+C_GREEN = "\033[92m"
+C_RED = "\033[91m"
+C_YELLOW = "\033[93m"
+C_BLUE = "\033[94m"
+C_CYAN = "\033[96m"
+C_BOLD = "\033[1m"
+C_END = "\033[0m"
 
-shared_telemetry_buffer = {}
-print_lock = threading.Lock()
 
 class TransportObfuscationLayer:
-    """
-    Toy obfuscation for simulation. 
-    Uses XOR + Base64 to demonstrate defense evasion (T1027). 
-    This is not real encryption.
-    """
     @staticmethod
     def obfuscate(data_str: str) -> bytes:
         xored = bytes([b ^ 0x42 for b in data_str.encode('utf-8')])
         return base64.b64encode(xored)
+    
     @staticmethod
     def deobfuscate(cipher_bytes: bytes) -> str:
         decoded = base64.b64decode(cipher_bytes)
         return bytes([b ^ 0x42 for b in decoded]).decode('utf-8')
 
-MALWARE_PROFILE = {
-    "family": "DroneFlood",
-    "version": "1.0",
-    "campaign": "DF-2026",
-    "author": "Unknown",
-    "c2_protocol": "TCP",
-    "obfuscation": "XOR+Base64",
-    "capabilities": ["telemetry_exfiltration", "c2_beacon", "remote_command"]
-}
 
-RE_FINDINGS = [
-    {
-        "address": "0x004A80",
-        "type": "Mutex",
-        "finding": "DF_MUTEX_01",
-        "evidence": "Mutex exists in RAM",
-        "confidence": 95,
-        "source": "Memory Dump",
-        "validation_level": "L3"
-    },
-    {
-        "address": "0x004B12",
-        "type": "Domain",
-        "finding": "c2.dronefleet.net",
-        "evidence": "Hardcoded C2 domain",
-        "confidence": 98,
-        "source": ".rdata Section",
-        "validation_level": "L3"
-    },
-    {
-        "address": "0x004F31",
-        "type": "Encoding",
-        "finding": "XOR+Base64",
-        "evidence": "Payload content intentionally encoded",
-        "confidence": 85,
-        "source": "Config Block",
-        "validation_level": "L2"
-    },
-    {
-        "address": "0x005C10",
-        "type": "Function",
-        "finding": "gps_spoof",
-        "evidence": "Code block injecting random coordinates",
-        "confidence": 95,
-        "artifact_quality": 10,
-        "source": "Reverse Engineering",
-        "validation_level": "L3"
-    },
-    {
-        "address": "0x005D44",
-        "type": "Function",
-        "finding": "battery_drain",
-        "evidence": "Code block altering battery sensor data",
-        "confidence": 90,
-        "source": "Reverse Engineering",
-        "validation_level": "L3"
-    },
-    {
-        "address": "0x00612A",
-        "type": "String",
-        "finding": "FLEET_SYNC",
-        "evidence": "Network broadcast function with sync header",
-        "confidence": 88,
-        "source": ".rdata Section",
-        "validation_level": "L2"
-    },
-    {
-        "address": "0x00631F",
-        "type": "Function",
-        "finding": "FLEET_COMMAND_PUSH",
-        "evidence": "P2P command relay mechanism",
-        "confidence": 92,
-        "source": "Memory Dump",
-        "validation_level": "L3"
-    },
-    {
-        "address": "0x0078A0",
-        "type": "Protocol",
-        "finding": "custom_protocol_v1",
-        "evidence": "Non-standard telemetry format",
-        "confidence": 95,
-        "source": "Network PCAP",
-        "validation_level": "L3"
-    },
-    {
-        "address": "0x00801C",
-        "type": "Registry",
-        "finding": "DF_REG_RUN",
-        "evidence": "Writes to Windows Run key",
-        "confidence": 99,
-        "source": "Dynamic Analysis",
-        "validation_level": "L3"
-    },
-    {
-        "address": "0x008B3A",
-        "type": "Config",
-        "finding": "DF_STARTUP_CFG",
-        "evidence": "Modifies init.d startup script",
-        "confidence": 94,
-        "source": "File System",
-        "validation_level": "L2"
-    }
-]
-
-MALWARE_CONFIG = {
-    "config_version": "1.0",
-    "c2_port": 5555,
-    "obfuscation": "XOR+Base64"
-}
-
-codename = ""
-max_altitude = 300
-beacon_mode = "NORMAL"
-engine_kill = False
-gps_spoof_active = False
-physical_damage_active = False
-
-def vprint(*args_p, **kwargs):
-    if getattr(args, 'verbose', False):
-        with print_lock:
-            print(*args_p, **kwargs)
-
-def fetch_active_drones(c2_ip, web_port=9000):
-    try:
-        url = f"http://{c2_ip}:{web_port}/api/drones"
-        with urllib.request.urlopen(url, timeout=2) as res:
-            data = json.loads(res.read().decode("utf-8"))
-            return data.get("fleet", {})
-    except Exception:
-        return None
-
-def active_drones_monitor(c2_ip, web_port=9000):
-    global args
-    start_time = time.time()
+class DroneFloodSimulator:
+    """Attack Simulator - có thể nhận lệnh từ C2 và thực thi tấn công"""
     
-    while True:
-        fleet = fetch_active_drones(c2_ip, web_port)
+    def __init__(self, c2_ip, c2_port, web_port=9000):
+        self.c2_ip = c2_ip
+        self.c2_port = c2_port
+        self.web_port = web_port
+        self.attacker_id = f"ATTACKER-{random.randint(100, 999)}"
+        self.running = True
         
-        ubuntu_clients = []
-        simulator_bots = []
+        # Danh sách drone đã chiếm được (lưu drone_id)
+        self.compromised_drones = []
         
-        api_failed = False
-        if fleet is None:
-            api_failed = True
-            fleet = {}
-            
-        for drone_id, d in fleet.items():
-            if d.get("profile_type") == "CLIENT":
-                ubuntu_clients.append((drone_id, d))
-            else:
-                simulator_bots.append((drone_id, d))
-                
-        output = []
-        if not getattr(args, 'verbose', False):
-            output.append("\033[2J\033[H") # Clear screen and move cursor to home
-            
-        if api_failed:
-            output.append(f"{C_RED}[!] WARNING: Could not fetch active drones from C2 REST API.{C_END}\n")
+        # HTTP server để nhận lệnh từ C2
+        self.http_port = 5557
+        self.http_server = None
         
-        # Sort by drone_id
-        ubuntu_clients.sort(key=lambda x: x[0])
-        simulator_bots.sort(key=lambda x: x[0])
-        
-        sep = "=" * 100
-        dash = "-" * 100
-        
-        if ubuntu_clients:
-            output.append(f"DRONE ACTIVE: {len(ubuntu_clients)}")
-            output.append(sep)
-            output.append(f"{'ID':<12}{'STATUS':<10}{'BATT':<9}{'ALT':<8}{'SPEED':<12}{'GPS':<23}{'MODE':<11}{'BEACON':<9}SIGNAL")
-            output.append(dash)
-            for i, (d_id, d) in enumerate(ubuntu_clients):
-                if i >= 8:
-                    output.append(f"... +{len(ubuntu_clients)-8} more")
-                    break
-                status = str(d.get('status', 'ONLINE')).upper()[:8]
-                if status == 'ACTIVE': status = 'ONLINE'
-                batt = f"{float(d.get('battery', 0)):.1f}%"
-                alt = f"{int(d.get('altitude', 0))}m"
-                speed = f"{int(d.get('speed', 0))} km/h"
-                gps = str(d.get('gps', 'Unknown'))[:20]
-                beacon = f"{float(d.get('beacon_interval', 5.0)):.1f}s"
-                signal = f"{int(d.get('signal_strength', 90))}%"
-                
-                mode_raw = str(d.get('campaign_stage', 'NORMAL')).upper()
-                if mode_raw == 'UNKNOWN' or not mode_raw: mode_raw = 'NORMAL'
-                
-                mode_color = C_YELLOW
-                if mode_raw in ['GPS_DRIFT', 'MISSION_FAILURE']: mode_color = C_RED
-                elif mode_raw == 'NORMAL': mode_color = C_GREEN
-                
-                mode_str = f"{mode_color}{mode_raw[:10]:<11}{C_END}"
-                
-                output.append(f"{d_id:<12}{status:<10}{batt:<9}{alt:<8}{speed:<12}{gps:<23}{mode_str}{beacon:<9}{signal}")
-            output.append("\n")
-            
-        if simulator_bots:
-            output.append(f"DRONE BOT: {len(simulator_bots)}")
-            output.append(sep)
-            output.append(f"{'ID':<12}{'STAGE':<18}{'ART':<6}{'BATT':<9}{'ALT':<8}{'SPEED':<12}{'GPS':<23}{'BEACON':<9}EFFECT")
-            output.append(dash)
-            for i, (d_id, d) in enumerate(simulator_bots):
-                if i >= 15:
-                    output.append(f"... +{len(simulator_bots)-15} more")
-                    break
-                stage_raw = str(d.get('campaign_stage', 'UNKNOWN')).upper()
-                if stage_raw == 'CUSTOM_C2': stage_raw = 'CUSTOM C2'
-                elif stage_raw == 'GPS_DRIFT': stage_raw = 'GPS DRIFT'
-                
-                stage_color = C_YELLOW
-                if stage_raw in ['GPS DRIFT', 'MISSION_FAILURE']: stage_color = C_RED
-                elif stage_raw == 'NORMAL': stage_color = C_GREEN
-                
-                batt = f"{float(d.get('battery', 0)):.1f}%"
-                alt = f"{int(d.get('altitude', 0))}m"
-                speed = f"{int(d.get('speed', 0))} km/h"
-                gps = str(d.get('gps', 'Unknown'))[:20]
-                beacon = f"{float(d.get('beacon_interval', 5.0)):.1f}s"
-                
-                # We need active_artifacts. In drone.py fleet, it's not present. 
-                # Wait, earlier I didn't inject active_artifacts into fleet in drone.py!
-                # We can fetch it if it's there, else default to 0.
-                artifacts = str(d.get("active_artifacts", 0))
-                
-                effect = "Normal Operation"
-                if "GPS" in stage_raw: effect = "Navigation Drift"
-                elif "MISSION" in stage_raw: effect = "Mission Failure"
-                elif "CUSTOM" in stage_raw: effect = "Loss of Telemetry"
-                elif "PERSISTENCE" in stage_raw: effect = "Unauthorized Startup"
-                elif "FLEET" in stage_raw: effect = "Fleet Control Hijack"
-                
-                stage_str = f"{stage_color}{stage_raw[:16]:<18}{C_END}"
-                
-                output.append(f"{d_id:<12}{stage_str}{artifacts:<6}{batt:<9}{alt:<8}{speed:<12}{gps:<23}{beacon:<9}{effect[:24]}")
-            output.append("\n")
-            
-        with print_lock:
-            print("\n".join(output), flush=True)
-            
-        time.sleep(2)
-
-def tcp_flood_task(c2_ip):
-    while beacon_mode == "ABUSE":
+    def fetch_drones(self):
+        """Lấy danh sách drone từ C2 API"""
         try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.settimeout(0.5)
-            s.connect((c2_ip, MALWARE_CONFIG["c2_port"]))
-            s.close()
-            time.sleep(0.01)
-        except:
-            pass
-
-def udp_flood_task(c2_ip):
-    while beacon_mode == "ABUSE":
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            s.sendto(b"X" * 1024, (c2_ip, MALWARE_CONFIG["c2_port"]))
-            time.sleep(0.01)
-        except:
-            pass
-
-def listen_for_c2_commands(sock, drone_id):
-    global codename, max_altitude, beacon_mode, engine_kill, gps_spoof_active, physical_damage_active
-    cmd_buffer = ""
-    while True:
-        try:
-            cmd_data = sock.recv(4096)
-            if not cmd_data: break
-            cmd_buffer += cmd_data.decode('utf-8')
-            while "\n" in cmd_buffer:
-                line, cmd_buffer = cmd_buffer.split("\n", 1)
-                if not line.strip(): continue
+            url = f"http://{self.c2_ip}:{self.web_port}/api/drones"
+            with urllib.request.urlopen(url, timeout=3) as res:
+                data = json.loads(res.read().decode())
+                fleet = data.get("fleet", {})
                 
-                raw_payload = TransportObfuscationLayer.deobfuscate(line.strip().encode('utf-8'))
-                instruction = json.loads(raw_payload)
-                command = instruction.get("cmd")
-                
-                if command == "ping":
-                    vprint(f"\n{C_CYAN}[+] Received Command: PING{C_END}")
-                    vprint(f" {C_GREEN}[i]{C_END} C2 Verification ping received.")
-                elif command == "get_status":
-                    vprint(f"\n{C_CYAN}[+] Received Command: GET_STATUS{C_END}")
-                elif command == "get_config":
-                    vprint(f"\n{C_CYAN}[+] Received Command: GET_CONFIG{C_END}")
-                elif command == "get_ioc":
-                    vprint(f"\n{C_CYAN}[+] Received Command: GET_IOC{C_END}")
-                elif command == "get_profile":
-                    vprint(f"\n{C_CYAN}[+] Received Command: GET_PROFILE{C_END}")
-                elif command == "tcp_flood":
-                    vprint(f"\n{C_RED}[!] EMERGENCY DIRECTIVE: SIMULATE TCP TRAFFIC FLOOD!{C_END}")
-                    beacon_mode = "ABUSE"
-                    threading.Thread(target=tcp_flood_task, args=(MALWARE_CONFIG.get("c2", "127.0.0.1"),), daemon=True).start()
-                elif command == "udp_flood":
-                    vprint(f"\n{C_RED}[!] EMERGENCY DIRECTIVE: SIMULATE UDP TRAFFIC FLOOD!{C_END}")
-                    beacon_mode = "ABUSE"
-                    threading.Thread(target=udp_flood_task, args=(MALWARE_CONFIG.get("c2", "127.0.0.1"),), daemon=True).start()
-                elif command == "stop_attack":
-                    vprint(f"\n{C_GREEN}[+] EMERGENCY SUCCESS: THE TRANSMISSION CHANNEL RESTORED TO NOMINAL SPEC.{C_END}")
-                    beacon_mode = "NORMAL"
-                elif command == "manipulate_control":
-                    vprint(f"\n{C_RED}[!] EMERGENCY DIRECTIVE: MANIPULATION OF CONTROL (T0831) ACTIVATED!{C_END}")
-                    engine_kill = True
-                elif command == "restore_control":
-                    vprint(f"\n{C_GREEN}[+] EMERGENCY SUCCESS: HARDWARE CONTROL RESTORED.{C_END}")
-                    engine_kill = False
-                elif command == "gps_spoof":
-                    vprint(f"\n{C_RED}[!] CRITICAL: GPS SPOOFING ATTACK INITIATED!{C_END}")
-                    gps_spoof_active = True
-                elif command == "stop_gps_spoof":
-                    vprint(f"\n{C_GREEN}[+] SUCCESS: GPS SPOOFING ABORTED.{C_END}")
-                    gps_spoof_active = False
-                elif command == "physical_damage":
-                    vprint(f"\n{C_RED}[!] CRITICAL: PHYSICAL DAMAGE (BATTERY DRAIN) ATTACK INITIATED!{C_END}")
-                    physical_damage_active = True
-        except: break
-
-def run_drone_agent(c2_ip, port, drone_id, scenario, delay_seconds=5):
-    global max_altitude, beacon_mode, engine_kill, gps_spoof_active, physical_damage_active
-    
-    codename_list = ["Specter-Alpha", "Valkyrie-X1", "ShadowHawk-V", "Predator-C2", "Horizon-Zero", "SkyRanger-M9"]
-    codename = codename_list[hash(drone_id) % len(codename_list)]
-    max_alt = random.choice([300, 350, 400, 450, 500])
-    
-    session_id = uuid.uuid4().hex[:8].upper()
-    
-    start_time = time.time()
-    battery = 100
-    last_battery_drop = start_time
-    last_warning_time = 0
-    
-    stages = ["Clean", "Persistence", "Custom C2", "Fleet Takeover", "GPS Drift", "Mission Failure"]
-    current_stage_idx = 0
-    
-    if scenario == "Clean Drone": current_stage_idx = 0
-    elif scenario == "Persistence Only": current_stage_idx = 1
-    elif scenario == "Custom C2": current_stage_idx = 2
-    elif scenario == "Fleet Takeover": current_stage_idx = 3
-    elif scenario == "GPS Drift": current_stage_idx = 4
-    elif scenario == "Mission Failure": current_stage_idx = 5
-    
-    while True:
-        try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(5.0)
-            vprint(f" [*] {drone_id} attempting connection to {c2_ip}:{port}...", flush=True)
-            sock.connect((c2_ip, port))
-            sock.settimeout(None)
-            vprint(f" [+] {C_GREEN}{drone_id} connected successfully to C2.{C_END}", flush=True)
-            
-            MALWARE_CONFIG["c2"] = c2_ip
-            
-            profile = MALWARE_PROFILE
-            reg_findings = RE_FINDINGS
-            config = MALWARE_CONFIG
-            
-            if scenario == "Clean Drone":
-                profile = {
-                    "family": "CleanDrone",
-                    "version": "baseline-1.0",
-                    "campaign": "Baseline",
-                    "c2_protocol": "Telemetry-TCP",
-                    "obfuscation": "None",
-                    "capabilities": ["clean_telemetry", "mission_reporting"]
-                }
-                config = {
-                    "config_version": "baseline-1.0",
-                    "c2_port": port,
-                    "obfuscation": "None"
-                }
-                reg_findings = []
-            
-            reg_packet = {
-                "type": "register", 
-                "profile_type": "SIMULATOR",
-                "drone_id": drone_id,
-                "session_id": session_id,
-                "profile": profile,
-                "config": config,
-                "re_findings": reg_findings
-            }
-            sock.sendall(TransportObfuscationLayer.obfuscate(json.dumps(reg_packet)) + b"\n")
-            
-            threading.Thread(target=listen_for_c2_commands, args=(sock, drone_id), daemon=True).start()
-            
-            seq = 0
-            lat_base = 10.841 + random.uniform(-0.005, 0.005)
-            lng_base = 106.654 + random.uniform(-0.005, 0.005)
-            
-            while True:
-                seq += 1
-                current_time = time.time()
-                uptime = int(current_time - start_time)
-                
-                # Advance stage for Full Campaign (caps at 5: Mission Failure)
-                if scenario == "Full Campaign":
-                    current_stage_idx = min(5, uptime // 15) # Advance stage every 15s
-                
-                if physical_damage_active:
-                    campaign_stage = "Mission Failure"
-                else:
-                    campaign_stage = stages[current_stage_idx]
-                
-                # Filter Findings based on Stage
-                active_findings = []
-                for f in RE_FINDINGS:
-                    if campaign_stage == "Clean":
-                        pass
-                    elif campaign_stage == "Persistence" and f["finding"] in ["DF_MUTEX_01", "DF_REG_RUN", "DF_STARTUP_CFG"]:
-                        active_findings.append(f)
-                    elif campaign_stage == "Custom C2" and f["finding"] in ["DF_MUTEX_01", "DF_REG_RUN", "DF_STARTUP_CFG", "c2.dronefleet.net", "XOR+Base64", "beacon_30s", "encoded_payload", "custom_protocol_v1"]:
-                        active_findings.append(f)
-                    elif campaign_stage == "Fleet Takeover" and f["finding"] in ["DF_MUTEX_01", "c2.dronefleet.net", "FLEET_SYNC", "FLEET_COMMAND_PUSH", "LEADER_NODE_COMPROMISED", "MEMBER_NODE_CONTROLLED"]:
-                        active_findings.append(f)
-                    elif campaign_stage == "GPS Drift" and f["finding"] in ["gps_spoof", "waypoint_override", "gps_offset_120m", "navigation_drift", "c2.dronefleet.net", "DF_MUTEX_01"]:
-                        active_findings.append(f)
-                        gps_spoof_active = True
-                    elif campaign_stage == "Mission Failure":
-                        active_findings.append(f)
-                        # We don't need to set physical_damage_active=True here because campaign_stage is only "Mission Failure" if physical_damage_active is ALREADY True.
-                
-                
-                if gps_spoof_active:
-                    lat_base += 1.5
-                    lng_base -= 2.0
-                else:
-                    lat_base += random.uniform(-0.00012, 0.00012)
-                    lng_base += random.uniform(-0.00012, 0.00012)
-                
-                current_time = time.time()
-                
-                drain_interval = 10.0
-                if physical_damage_active:
-                    battery = max(0, battery - 5)
-                elif current_time - last_battery_drop >= drain_interval:
-                    drops = int((current_time - last_battery_drop) / drain_interval)
-                    battery = max(0, battery - drops)
-                    last_battery_drop += drops * drain_interval
-                    
-                if battery <= 0:
-                    uptime = int(current_time - start_time)
-                    vprint(f"\n{C_RED}{C_BOLD}[!] BATTERY DEPLETED. DRONE OFFLINE: {drone_id}{C_END}")
-                    
-                    telemetry_packet = {
-                        "type": "telemetry", 
-                        "drone_id": drone_id, 
-                        "session_id": session_id,
-                        "sequence": seq,
-                        "beacon_interval": 0,
-                        "gps": f"{lat_base:.6f},{lng_base:.6f}", 
-                        "battery": 0, 
-                        "altitude": 0, 
-                        "speed": 0,
-                        "codename": codename, 
-                        "max_altitude": max_alt,
-                        "network_speed": 0, 
-                        "signal_strength": -99,
-                        "temp": 40, 
-                        "satellites": 0,
-                        "family": MALWARE_PROFILE["family"],
-                        "version": MALWARE_PROFILE["version"],
-                        "campaign": MALWARE_PROFILE["campaign"],
-                        "campaign_stage": campaign_stage,
-                        "custom_c2_indicators": {"beacon_interval": 30, "encoded_payload": True, "fleet_command": True} if current_stage_idx >= 1 else {},
-                        "re_findings": active_findings
-                    }
-                    try:
-                        sock.sendall(TransportObfuscationLayer.obfuscate(json.dumps(telemetry_packet)) + b"\n")
-                        sock.close()
-                    except: pass
-                    sys.exit(0)
-                    
-                if battery < 10:
-                    pass
-                alt = random.randint(120, max_alt - 20)
-                net_speed = random.randint(150, 280)
-                sig_strength = random.randint(-62, -48)
-                temp = random.randint(38, 48)
-                satellites = random.randint(12, 18)
-                
-                sleep_time = 0.5 if beacon_mode == "ABUSE" else delay_seconds
-                if engine_kill:
-                    speed_val = 0
-                    alt = 300
-                else:
-                    speed_val = random.randint(35, 65)
-
-                if physical_damage_active:
-                    temp = random.randint(55, 80)
-                    satellites = random.randint(0, 2)
-
-                telemetry_packet = {
-                    "type": "telemetry", 
-                    "drone_id": drone_id, 
-                    "session_id": session_id,
-                    "sequence": seq,
-                    "beacon_interval": sleep_time,
-                    "gps": f"{lat_base:.6f},{lng_base:.6f}", 
-                    "battery": battery, 
-                    "altitude": alt, 
-                    "speed": speed_val,
-                    "codename": codename, 
-                    "max_altitude": max_alt,
-                    "network_speed": net_speed, 
-                    "signal_strength": sig_strength,
-                    "temp": temp, 
-                    "satellites": satellites,
-                    "family": MALWARE_PROFILE["family"],
-                    "version": MALWARE_PROFILE["version"],
-                    "campaign": MALWARE_PROFILE["campaign"],
-                    "campaign_stage": campaign_stage,
-                    "custom_c2_indicators": {"beacon_interval": 30, "encoded_payload": True, "fleet_command": True} if current_stage_idx >= 1 else {},
-                    "re_findings": active_findings
-                }
-                sock.sendall(TransportObfuscationLayer.obfuscate(json.dumps(telemetry_packet)) + b"\n")
-                
-                uptime = int(current_time - start_time)
-                log_str = f"{C_CYAN}┌──[ BOT: {drone_id} ]────[ UPTIME: {uptime}s ]────[ SEQ: {seq} ]{C_END}\n"
-                log_str += f"{C_CYAN}↳{C_END} Batt: {battery}% | Alt: {alt}m | Net: {net_speed}Mbps | GPS: {lat_base:.4f},{lng_base:.4f}\n"
-                log_str += f"{C_YELLOW}[*] Campaign Stage: {C_BOLD}{campaign_stage}{C_END} | Active Artifacts: {len(active_findings)}"
-                
-                with print_lock:
-                    shared_telemetry_buffer[drone_id] = log_str
-                
-                if args.pause_after.lower() == campaign_stage.lower():
-                    vprint(f"\n{C_RED}[!] PAUSED AFTER {campaign_stage.upper()}. Press [ENTER] to continue...{C_END}")
-                    input()
-                    
-                time.sleep(sleep_time)
+                # Chuyển đổi dict thành list với drone_id được giữ lại
+                drone_list = []
+                for drone_id, drone_info in fleet.items():
+                    drone_list.append({
+                        "id": drone_id,
+                        "status": drone_info.get("status", "UNKNOWN"),
+                        "threat_score": drone_info.get("threat_score", 0),
+                        "battery": drone_info.get("battery", 0),
+                        "campaign_stage": drone_info.get("campaign_stage", "NORMAL")
+                    })
+                return drone_list
         except Exception as e:
-            vprint(f" [-] {C_RED}{drone_id} connection/telemetry error: {type(e).__name__} - {e}. Retrying in 3s...{C_END}", flush=True)
-            current_time = time.time()
-            uptime = int(current_time - start_time)
+            print(f"{C_YELLOW}[!] Cannot fetch drones: {e}{C_END}")
+            return []
+    
+    def send_command_to_drone(self, drone_id, command, params=None):
+        """Gửi lệnh tấn công đến drone thông qua C2"""
+        try:
+            url = f"http://{self.c2_ip}:{self.web_port}/api/attack"
+            data = json.dumps({
+                "drone_id": drone_id,
+                "command": command,
+                "params": params or {}
+            }).encode()
             
-            drain_interval = 10.0
-            if physical_damage_active:
-                battery = max(0, battery - 5)
-            elif current_time - last_battery_drop >= drain_interval:
-                drops = int((current_time - last_battery_drop) / drain_interval)
-                battery = max(0, battery - drops)
-                last_battery_drop += drops * drain_interval
+            req = urllib.request.Request(url, data=data, method="POST")
+            req.add_header("Content-Type", "application/json")
+            
+            with urllib.request.urlopen(req, timeout=5) as res:
+                result = json.loads(res.read().decode())
+                return result
+        except Exception as e:
+            print(f"{C_RED}[!] Failed to send command: {e}{C_END}")
+            return {"success": False}
+    
+    def compromise_drone(self, drone_id):
+        """Chiếm quyền một drone"""
+        if drone_id in self.compromised_drones:
+            print(f"{C_YELLOW}[!] Drone {drone_id} already compromised!{C_END}")
+            return False
+            
+        print(f"\n{C_RED}{C_BOLD}")
+        print("╔════════════════════════════════════════════════════════════════╗")
+        print(f"║  🔴 COMPROMISING DRONE: {drone_id}                              ║")
+        print("╠════════════════════════════════════════════════════════════════╣")
+        print("║  📡 Sending compromise payload...                              ║")
+        print("║  🔑 Establishing backdoor channel...                           ║")
+        print("╚════════════════════════════════════════════════════════════════╝")
+        print(f"{C_END}")
+        
+        result = self.send_command_to_drone(drone_id, "compromise")
+        
+        if result.get("success"):
+            self.compromised_drones.append(drone_id)
+            print(f"{C_GREEN}✅ Drone {drone_id} has been compromised!{C_END}")
+            return True
+        else:
+            print(f"{C_RED}❌ Failed to compromise {drone_id}{C_END}")
+            return False
+    
+    def launch_attack(self, drone_id, attack_type, params=None):
+        """Phát động tấn công lên drone"""
+        
+        attack_names = {
+            "gps_spoof": "GPS SPOOFING",
+            "battery_drain": "BATTERY DRAIN",
+            "imu_drift": "IMU DRIFT",
+            "lidar_jamming": "LIDAR JAMMING",
+            "collision": "COLLISION",
+            "emergency_land": "EMERGENCY LANDING"
+        }
+        
+        mitre_ids = {
+            "gps_spoof": "T0831",
+            "battery_drain": "T0879",
+            "imu_drift": "T0832",
+            "lidar_jamming": "T0831",
+            "collision": "T0831",
+            "emergency_land": "T0831"
+        }
+        
+        name = attack_names.get(attack_type, attack_type.upper())
+        mitre_id = mitre_ids.get(attack_type, "Unknown")
+        
+        # Tính chiều dài khung
+        title = f"LAUNCHING {name} ({mitre_id})"
+        border_len = len(title) + 12
+        if border_len < 60:
+            border_len = 60
+        
+        print(f"\n{C_RED}{C_BOLD}")
+        print("┌" + "─" * border_len + "┐")
+        
+        def print_line(msg):
+            print(f"│{msg.ljust(border_len)}│")
+            
+        print_line(f"  {title}")
+        print("├" + "─" * border_len + "┤")
+        print_line(f"  Target: {drone_id}")
+        
+        # Thông tin thêm theo loại tấn công
+        if attack_type == "gps_spoof":
+            lat = params.get("lat", "10.900") if params else "10.900"
+            lng = params.get("lng", "106.700") if params else "106.700"
+            print_line(f"  Parameter: lat={lat}, lng={lng}")
+        elif attack_type == "battery_drain":
+            rate = params.get("rate", 5.0) if params else 5.0
+            print_line(f"  Parameter: rate={rate}%/second")
+        elif attack_type == "imu_drift":
+            rate = params.get("drift_rate", 15) if params else 15
+            print_line(f"  Parameter: drift_rate={rate} deg/s")
+        elif attack_type == "collision":
+            target = params.get("target", "DRONE-999") if params else "DRONE-999"
+            print_line(f"  Parameter: target={target}")
+        
+        print("├" + "─" * border_len + "┤")
+        
+        # Gửi lệnh
+        result = self.send_command_to_drone(drone_id, attack_type, params)
+        
+        if result.get("success"):
+            print_line("  Result: SUCCESS")
+            print_line(f"  Command sent to {drone_id}")
+        else:
+            print_line("  Result: FAILED")
+            error = result.get("error", "Unknown error")[:40]
+            print_line(f"  Error: {error}")
+        
+        print("└" + "─" * border_len + "┘")
+        print(f"{C_END}")
+        
+        time.sleep(2)
+        return result.get("success", False)
+    
+    def show_menu(self, drones):
+        """Hiển thị menu tương tác"""
+        os.system('clear' if os.name == 'posix' else 'cls')
+        
+        print(f"{C_CYAN}{C_BOLD}")
+        print("╔════════════════════════════════════════════════════════════════════════════════════╗")
+        print("║                         🔥 DRONEFLOOD ATTACK CONTROLLER 🔥                          ║")
+        print("╠════════════════════════════════════════════════════════════════════════════════════╣")
+        print(f"║  📡 C2 Target: {self.c2_ip}:{self.c2_port}                                           ║")
+        print(f"║  🆔 Attacker ID: {self.attacker_id}                                                 ║")
+        print(f"║  🤖 Compromised drones: {len(self.compromised_drones)}                              ║")
+        print("╚════════════════════════════════════════════════════════════════════════════════════╝")
+        print(f"{C_END}")
+        
+        # Hiển thị danh sách drone
+        print(f"\n{C_CYAN}📡 AVAILABLE DRONES:{C_END}")
+        print("┌────┬──────────────────┬──────────────┬──────────────────┬──────────┐")
+        print("│ #  │ Drone ID         │ Status       │ Threat Score     │ Select   │")
+        print("├────┼──────────────────┼──────────────┼──────────────────┼──────────┤")
+        
+        for i, drone in enumerate(drones[:15]):
+            drone_id = drone.get("id", "Unknown")
+            if drone_id in self.compromised_drones:
+                status = f"{C_RED}COMPROMISED{C_END}"
+                status_text = "🔴 COMPROMISED"
+                selected = "✓"
+            else:
+                status = f"{C_GREEN}CLEAN{C_END}"
+                status_text = "🟢 CLEAN"
+                selected = " "
+            threat = drone.get("threat_score", 0)
+            print(f"│ {i+1:2} │ {drone_id:16} │ {status_text:12} │ {threat:16} │ [{selected}] │")
+        
+        print("└────┴──────────────────┴──────────────┴──────────────────┴──────────┘")
+        
+        # Hiển thị menu tấn công
+        print(f"\n{C_YELLOW}⚔️ ATTACK OPTIONS:{C_END}")
+        print("  1. GPS Spoof (T0831)     - Làm sai lệch tọa độ GPS")
+        print("  2. Battery Drain (T0879) - Rút cạn pin nhanh chóng")
+        print("  3. IMU Drift (T0832)     - Làm nhiễu cảm biến góc")
+        print("  4. LiDAR Jamming (T0831) - Vô hiệu hóa tránh vật cản")
+        print("  5. Collision (T0831)     - Gây va chạm với drone khác")
+        print("  6. Emergency Land        - Hạ cánh khẩn cấp")
+        print("  7. Compromise New        - Chiếm quyền drone mới")
+        print("  0. Exit")
+        
+        print(f"\n{C_CYAN}[i] Compromised drones: {len(self.compromised_drones)}{C_END}")
+        if self.compromised_drones:
+            print(f"{C_CYAN}[i] Compromised list: {', '.join(self.compromised_drones)}{C_END}")
+    
+    def run_interactive(self):
+        """Chạy chế độ tương tác"""
+        print(f"{C_GREEN}[+] DroneFlood Simulator started{C_END}")
+        print(f"{C_CYAN}[i] Listening for commands from C2 on port {self.http_port}{C_END}")
+        
+        # Start HTTP server để nhận lệnh
+        threading.Thread(target=self.run_http_server, daemon=True).start()
+        
+        while self.running:
+            # Fetch drone list
+            drones = self.fetch_drones()
+            
+            if not drones:
+                print(f"{C_YELLOW}[!] No drones found. Make sure drone_client is running!{C_END}")
+                time.sleep(5)
+                continue
+            
+            # Hiển thị menu
+            self.show_menu(drones)
+            
+            # Nhận lựa chọn
+            choice = input(f"\n{C_BOLD}>>> Select action: {C_END}").strip()
+            
+            if choice == "0":
+                print(f"{C_YELLOW}[!] Shutting down...{C_END}")
+                self.running = False
+                break
+            
+            elif choice == "7":
+                # Compromise new drone(s) - HỖ TRỢ NHIỀU DRONE CÙNG LÚC
+                print("\n" + "=" * 60)
+                print("📡 SELECT DRONE(S) TO COMPROMISE")
+                print("=" * 60)
+                print("  Format: 1,2,3  hoac 1 2 3  hoac 1-3  hoac all")
+                print("-" * 60)
                 
-            if battery <= 0:
-                vprint(f"\n{C_RED}{C_BOLD}[!] BATTERY DEPLETED. DRONE OFFLINE: {drone_id}{C_END}", flush=True)
-                sys.exit(0)
-            time.sleep(3)
+                for i, drone in enumerate(drones):
+                    drone_id = drone.get("id", "Unknown")
+                    if drone_id not in self.compromised_drones:
+                        status_text = "CLEAN"
+                        print(f"  {i+1}. {drone_id} [{status_text}]")
+                    else:
+                        status_text = "COMPROMISED"
+                        print(f"  {i+1}. {drone_id} [{status_text}] - ALREADY DONE")
+                
+                print("-" * 60)
+                drone_choice = input(">>> Enter numbers (ex: 1,2,3 or 1-3 or all): ").strip()
+                
+                if drone_choice.lower() == "all":
+                    # Chọn tất cả drone chưa bị compromise
+                    indices_to_compromise = [i for i, d in enumerate(drones) 
+                                              if d.get("id", "Unknown") not in self.compromised_drones]
+                else:
+                    # Xử lý các định dạng: "1,2,3" hoặc "1 2 3" hoặc "1-3"
+                    indices_to_compromise = []
+                    
+                    # Thay thế dấu phẩy và khoảng trắng
+                    cleaned = drone_choice.replace(",", " ").replace("  ", " ")
+                    
+                    for part in cleaned.split():
+                        if "-" in part:
+                            # Xử lý range: 1-3
+                            start, end = map(int, part.split("-"))
+                            indices_to_compromise.extend(range(start - 1, end))
+                        else:
+                            # Xử lý số đơn lẻ
+                            try:
+                                idx = int(part) - 1
+                                if 0 <= idx < len(drones):
+                                    indices_to_compromise.append(idx)
+                            except ValueError:
+                                pass
+                    
+                    # Loại bỏ trùng lặp và sắp xếp
+                    indices_to_compromise = sorted(set(indices_to_compromise))
+                
+                # Lọc chỉ lấy drone chưa bị compromise
+                valid_indices = []
+                for idx in indices_to_compromise:
+                    if 0 <= idx < len(drones):
+                        target = drones[idx].get("id", "Unknown")
+                        if target not in self.compromised_drones:
+                            valid_indices.append(idx)
+                        else:
+                            print(f"{C_YELLOW}[!] Drone {target} already compromised, skipped{C_END}")
+                
+                if not valid_indices:
+                    print(f"{C_RED}[!] No valid drones selected!{C_END}")
+                    time.sleep(2)
+                    continue
+                
+                # Tiến hành compromise từng drone
+                print(f"\n{C_CYAN}[i] Starting compromise on {len(valid_indices)} drone(s)...{C_END}\n")
+                
+                success_count = 0
+                for idx in valid_indices:
+                    target = drones[idx].get("id", "Unknown")
+                    if self.compromise_drone(target):
+                        success_count += 1
+                    time.sleep(0.5)  # Delay nhẹ giữa các lần compromise
+                
+                print(f"\n{C_GREEN}[+] Compromise completed! Success: {success_count}/{len(valid_indices)}{C_END}")
+                time.sleep(2)
+            
+            elif choice in ["1", "2", "3", "4", "5", "6"]:
+                # Attack
+                if not self.compromised_drones:
+                    print(f"{C_RED}[!] No compromised drones! Compromise one first (option 7).{C_END}")
+                    time.sleep(2)
+                    continue
+                
+                print("\n🎯 Select target drone (compromised only):")
+                for i, drone_id in enumerate(self.compromised_drones):
+                    print(f"  {i+1}. {drone_id}")
+                
+                drone_choice = input(">>> Enter number (or 0 to cancel): ").strip()
+                if drone_choice == "0":
+                    continue
+                    
+                try:
+                    idx = int(drone_choice) - 1
+                    if 0 <= idx < len(self.compromised_drones):
+                        target = self.compromised_drones[idx]
+                        
+                        attack_map = {
+                            "1": ("gps_spoof", {"lat": 10.900, "lng": 106.700}),
+                            "2": ("battery_drain", {"rate": 5.0}),
+                            "3": ("imu_drift", {"drift_rate": 15}),
+                            "4": ("lidar_jamming", {}),
+                            "5": ("collision", {"target": "DRONE-999"}),
+                            "6": ("emergency_land", {})
+                        }
+                        
+                        attack_type, params = attack_map.get(choice, (None, None))
+                        if attack_type:
+                            self.launch_attack(target, attack_type, params)
+                    else:
+                        print(f"{C_RED}[!] Invalid choice{C_END}")
+                except ValueError:
+                    print(f"{C_RED}[!] Invalid input{C_END}")
+                
+                time.sleep(2)
+            
+            else:
+                print(f"{C_YELLOW}[!] Invalid option. Choose 0-7.{C_END}")
+                time.sleep(1)
+    
+    def run_http_server(self):
+        """HTTP server để nhận lệnh từ C2"""
+        from http.server import HTTPServer, BaseHTTPRequestHandler
+        
+        class CommandHandler(BaseHTTPRequestHandler):
+            def log_message(self, format, *args):
+                pass
+            
+            def do_POST(self):
+                if self.path == "/execute":
+                    content_length = int(self.headers.get('Content-Length', 0))
+                    post_data = self.rfile.read(content_length)
+                    
+                    try:
+                        cmd = json.loads(post_data.decode())
+                        drone_id = cmd.get("drone_id")
+                        attack_type = cmd.get("attack_type")
+                        params = cmd.get("params", {})
+                        
+                        # Execute attack
+                        success = self.server.simulator.launch_attack(drone_id, attack_type, params)
+                        
+                        self.send_response(200)
+                        self.send_header("Content-type", "application/json")
+                        self.end_headers()
+                        self.wfile.write(json.dumps({"success": success}).encode())
+                    except Exception as e:
+                        self.send_response(500)
+                        self.end_headers()
+                else:
+                    self.send_response(404)
+                    self.end_headers()
+            
+            def do_GET(self):
+                if self.path == "/status":
+                    self.send_response(200)
+                    self.send_header("Content-type", "application/json")
+                    self.end_headers()
+                    status = {
+                        "compromised_drones": self.server.simulator.compromised_drones,
+                        "attacker_id": self.server.simulator.attacker_id
+                    }
+                    self.wfile.write(json.dumps(status).encode())
+                else:
+                    self.send_response(404)
+                    self.end_headers()
+        
+        server = HTTPServer(("0.0.0.0", self.http_port), CommandHandler)
+        server.simulator = self
+        print(f"{C_GREEN}[+] Attack HTTP server running on port {self.http_port}{C_END}")
+        server.serve_forever()
+
 
 def main():
-    global beacon_mode, args
-    
-    parser = argparse.ArgumentParser(description="DroneFlood Campaign Simulator")
-    parser.add_argument("c2_ip", type=str, help="IP address of the C2 Server")
-    parser.add_argument("c2_port", type=int, nargs='?', default=5555, help="C2 Server Port (default 5555)")
-    parser.add_argument("--scenario", type=str, choices=["clean", "persistence", "custom_c2", "fleet_takeover", "gps_drift", "mission_failure", "full_campaign"], default="full_campaign", help="Scenario to execute")
-    parser.add_argument("--speed", type=str, choices=["fast", "demo", "slow"], default="demo", help="Speed of the campaign simulation")
-    parser.add_argument("--pause-after", type=str, default="", help="Pause the simulation after a specific stage (e.g., 'Persistence')")
-    parser.add_argument("--repeat", type=int, default=1, help="Number of times to repeat the scenario")
-    parser.add_argument("--verbose", action="store_true", help="Print detailed telemetry logs")
+    parser = argparse.ArgumentParser(description="DroneFlood Attack Simulator")
+    parser.add_argument("c2_ip", help="C2 Server IP")
+    parser.add_argument("c2_port", type=int, nargs='?', default=5555, help="C2 Server Port")
+    parser.add_argument("--web-port", type=int, default=9000, help="Web UI Port")
     args = parser.parse_args()
     
-    speed_map = {"fast": 1, "demo": 5, "slow": 10}
-    delay_seconds = speed_map.get(args.speed, 5)
+    print(f"{C_RED}{C_BOLD}")
+    print("   _____                      _ _____           _ ")
+    print("  |  __ \\                    | |  ___|         | |")
+    print("  | |  \\/ _ __  _ __ ___   __| | |__  _ __   __| |")
+    print("  | | __ | '_ \\| '_ ` _ \\ / _` |  __|| '_ \\ / _` |")
+    print("  | |_\\ \\| | | | | | | | | (_| | |___| | | | (_| |")
+    print("   \\____/|_| |_|_| |_| |_|\\__,_\\____/|_| |_|\\__,_|")
+    print("                                                 ")
+    print(f"{C_END}")
     
-    c2_ip = args.c2_ip
-    port = args.c2_port
+    simulator = DroneFloodSimulator(args.c2_ip, args.c2_port, args.web_port)
     
-    if args.scenario == "clean":
-        MALWARE_PROFILE["family"] = "CleanDrone"
-        MALWARE_PROFILE["campaign"] = "Baseline"
-    
-    scenario_map = {
-        "clean": "Clean Drone",
-        "persistence": "Persistence Only",
-        "custom_c2": "Custom C2",
-        "fleet_takeover": "Fleet Takeover",
-        "gps_drift": "GPS Drift",
-        "mission_failure": "Mission Failure",
-        "full_campaign": "Full Campaign"
-    }
-    selected_scenario = scenario_map[args.scenario]
-    
-    vprint(r"""
-   __  __ _  _ _    _ __  __ ___ ___ ___  ___  
-  | |  | | \| | |  | |  |  |  |  |__ |  \ |__  
-  |_|  |_| |  |_|_ |_|  |_|  |  |___ |_ / |___ (_) [ BOTNET INFILTRATION TERMINAL ]
-    """)
-    
-    vprint(f"{C_YELLOW}[*] Executing OS Fingerprint & Telemetry Spy modules...{C_END}")
-    time.sleep(1)
-    vprint(f"{C_RED}[!] Exploiting Zero-Day Vulnerability in Drone Fleet Management System...{C_END}")
-    time.sleep(1.5)
-    vprint(f"{C_GREEN}[+] Access Granted. Privilege Escalation Successful.{C_END}")
-    time.sleep(1)
-    vprint(f"{C_CYAN}[+] Injecting DroneFlood Botnet Payload into System Memory (Scenario: {selected_scenario})...{C_END}\n")
-    time.sleep(1)
-    
-    c2_ip = args.c2_ip
-    port = args.c2_port
-    num_drones = 3
-        
-    MALWARE_CONFIG["c2_port"] = port
-    beacon_mode = random.choice(["NORMAL", "ABUSE"])
-    vprint(f"\n {C_BLUE}[i]{C_END} Swarm profile calibrated to beacon mode: {C_BOLD}{beacon_mode}{C_END}")
-    
-    # Start monitor thread
-    threading.Thread(
-        target=active_drones_monitor,
-        args=(c2_ip, 9000),
-        daemon=True
-    ).start()
-    
-    # FETCH ACTIVE CLEAN DRONES TO INFECT
-    active_drones = []
     try:
-        req = urllib.request.Request(f"http://{c2_ip}:9000/api/drones")
-        with urllib.request.urlopen(req, timeout=3) as response:
-            data = json.loads(response.read().decode())
-            fleet = data.get("fleet", {})
-            active_drones = [d for d, info in fleet.items() if info.get("status") == "ACTIVE"]
-    except Exception as e:
-        vprint(f" {C_YELLOW}[!] Could not fetch active drones from C2 REST API. Fallback to random IDs.{C_END}")
-        
-    if active_drones:
-        num_drones = len(active_drones)
-        vprint(f" {C_GREEN}[+] Found {num_drones} active drones. Adapting payload to hijack them...{C_END}")
-        
-    for repeat_idx in range(args.repeat):
-        vprint(f"\n {C_RED}{C_BOLD}{'='*60}{C_END}")
-        vprint(f" {C_RED}{C_BOLD}🚀 LAUNCHING BOTNET SWARM ITERATION {repeat_idx + 1}/{args.repeat} (Targets: {num_drones}){C_END}")
-        vprint(f" {C_RED}{C_BOLD}{'='*60}{C_END}")
-        
-        # Pre-generate drone IDs so we can print them cleanly
-        swarm_drones = [f"DRONE-{random.randint(100,999)}" for _ in range(num_drones)]
-        
-        for drone_id in swarm_drones:
-            codename_list = ["Specter-Alpha", "Valkyrie-X1", "ShadowHawk-V", "Predator-C2", "Horizon-Zero", "SkyRanger-M9"]
-            codename = codename_list[hash(drone_id) % len(codename_list)]
-            vprint(f" {C_GREEN}[+] Hooking stream for: {drone_id} (Codename: {codename}){C_END}")
-            
-        vprint(f" {C_RED}{C_BOLD}{'='*60}{C_END}\n")
-        
-        threads = []
-        for drone_id in swarm_drones:
-            t = threading.Thread(target=run_drone_agent, args=(c2_ip, port, drone_id, selected_scenario, delay_seconds), daemon=True)
-            t.start()
-            threads.append(t)
-            time.sleep(0.5)
-            
-        # Monitor threads and print telemetry buffer
-        while any(t.is_alive() for t in threads):
-            time.sleep(0.5)
-            active_threads = sum(1 for t in threads if t.is_alive())
-            
-            with print_lock:
-                # Wait until all currently active drones have dumped their telemetry into the buffer
-                if len(shared_telemetry_buffer) >= active_threads and active_threads > 0:
-                    vprint(f"\n {C_BLUE}{'='*60}{C_END}")
-                    for d_id, log in shared_telemetry_buffer.items():
-                        vprint(log)
-                        vprint("") # Blank line between drone logs for readability
-                    vprint(f" {C_BLUE}{'='*60}{C_END}")
-                    shared_telemetry_buffer.clear()
-            
-        if repeat_idx < args.repeat - 1:
-            vprint(f" {C_CYAN}[i] Waiting 5 seconds before next iteration...{C_END}")
-            time.sleep(5)
-            
-    vprint(f"\n{C_GREEN}{C_BOLD}[+] All iterations completed successfully.{C_END}")
+        simulator.run_interactive()
+    except KeyboardInterrupt:
+        print(f"\n{C_YELLOW}[!] Shutting down...{C_END}")
 
-if __name__ == "__main__": main()
+
+if __name__ == "__main__":
+    main()
