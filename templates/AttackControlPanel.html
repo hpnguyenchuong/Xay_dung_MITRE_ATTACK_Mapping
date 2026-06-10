@@ -203,37 +203,51 @@ window.AttackControlPanel = ({ drones = [] }) => {
                         <span className="material-symbols-outlined text-[16px] animate-pulse">sensors</span>
                         ACTIVE CAMPAIGNS ({activeAttacks.length})
                     </div>
-                    <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar p-1 box-border w-full max-w-full">
-                        <table className="w-full text-[12px] table-fixed">
-                            <thead className="text-[#94a3b8] sticky top-0 bg-[#1e293b]">
-                                <tr>
-                                    <th className="text-left p-2 border-b border-[#334155]">Attack ID</th>
-                                    <th className="text-left p-2 border-b border-[#334155]">Target</th>
-                                    <th className="text-left p-2 border-b border-[#334155]">Type</th>
-                                    <th className="text-left p-2 border-b border-[#334155]">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {activeAttacks.length === 0 ? (
-                                    <tr>
-                                        <td colSpan="4" className="text-center p-4 text-[#64748b] italic">No active attacks detected</td>
-                                    </tr>
-                                ) : (
-                                    activeAttacks.map((atk, idx) => (
-                                        <tr key={idx} className="hover:bg-[#334155]/50 border-b border-[#334155]/30">
-                                            <td className="p-2 font-mono text-[#cbd5e1] truncate max-w-[100px]">{atk.attack_id.substring(0, 15)}...</td>
-                                            <td className="p-2 font-mono text-[#89ceff]">{atk.drone_id}</td>
-                                            <td className="p-2 text-[#f43f5e] font-bold">{atk.attack_type.toUpperCase()}</td>
-                                            <td className="p-2">
-                                                <span className="bg-[#fbbf24]/20 text-[#fbbf24] border border-[#fbbf24]/50 px-2 py-0.5 rounded text-[10px] animate-pulse">
-                                                    {atk.status.toUpperCase()}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
+                    {/* FIXED HEADER */}
+                    <div 
+                        className="bg-[#1e293b] text-[#94a3b8] text-[12px] font-bold border-b border-[#334155] w-full max-w-full box-border overflow-x-hidden"
+                        style={{ paddingRight: '8px' }} // Approximate scrollbar width to keep alignment
+                    >
+                        <div className="grid grid-cols-[minmax(180px,1.5fr)_minmax(120px,1fr)_minmax(150px,1.2fr)_120px] w-full box-border">
+                            <div className="p-2 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">Attack ID</div>
+                            <div className="p-2 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">Target</div>
+                            <div className="p-2 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">Type</div>
+                            <div className="p-2 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">Status</div>
+                        </div>
+                    </div>
+
+                    {/* SCROLLABLE BODY */}
+                    <div 
+                        className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar w-full max-w-full box-border" 
+                        style={{ scrollbarGutter: 'stable' }}
+                    >
+                        <div className="flex flex-col w-full box-border">
+                            {activeAttacks.length === 0 ? (
+                                <div className="text-center p-4 text-[#64748b] text-[12px] italic w-full">No active attacks detected</div>
+                            ) : (
+                                activeAttacks.map((atk, idx) => (
+                                    <div 
+                                        key={idx} 
+                                        className="grid grid-cols-[minmax(180px,1.5fr)_minmax(120px,1fr)_minmax(150px,1.2fr)_120px] w-full box-border text-[12px] hover:bg-[#334155]/50 border-b border-[#334155]/30 transition-colors"
+                                    >
+                                        <div className="p-2 font-mono text-[#cbd5e1] min-w-0 overflow-hidden text-ellipsis whitespace-nowrap" title={atk.attack_id}>
+                                            {atk.attack_id}
+                                        </div>
+                                        <div className="p-2 font-mono text-[#89ceff] min-w-0 overflow-hidden text-ellipsis whitespace-nowrap" title={atk.drone_id}>
+                                            {atk.drone_id}
+                                        </div>
+                                        <div className="p-2 text-[#f43f5e] font-bold min-w-0 overflow-hidden text-ellipsis whitespace-nowrap" title={atk.attack_type.toUpperCase()}>
+                                            {atk.attack_type.toUpperCase()}
+                                        </div>
+                                        <div className="p-2 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap flex items-center">
+                                            <span className="bg-[#fbbf24]/20 text-[#fbbf24] border border-[#fbbf24]/50 px-2 py-0.5 rounded text-[10px] animate-pulse">
+                                                {atk.status.toUpperCase()}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
