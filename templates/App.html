@@ -97,6 +97,46 @@ Date.now() - b.t < 2000)); } } }, 50); return ()=> clearInterval(intv);
         fetch('/api/fleet_health').then(r => r.json()).then(data => {
         if (!demoModeRef.current) setFleetHealth(data.health_score || 100);
         }).catch(e => console.log('API Error: fleet_health', e));
+        
+        // Sync simulator attacks to terminal
+        fetch('/api/attacks').then(r => r.json()).then(data => {
+            const isFirstLoad = !window.hasInitializedAttacks;
+            window.hasInitializedAttacks = true;
+            
+            if (data.attacks && data.attacks.length > 0) {
+                const latest = data.attacks[0];
+                
+                if (window.lastProcessedSimulatorAttack !== latest.attack_id) {
+                    window.lastProcessedSimulatorAttack = latest.attack_id;
+                    
+                    if (!isFirstLoad) {
+                        const timeStr = new Date().toTimeString().split(' ')[0];
+                        const logMsg = `\n[${timeStr}] >_ [SIMULATOR] Executed ${latest.attack_type.toUpperCase()} on ${latest.drone_id}`;
+                        
+                        setAttackStates(prev => {
+                            const st = prev[latest.drone_id] || { terminalOutput: "Analysis Engine Terminal Ready...\n" };
+                            return { 
+                                ...prev, 
+                                [latest.drone_id]: { 
+                                    ...st, 
+                                    terminalOutput: st.terminalOutput + logMsg,
+                                    lastSimulatorAttack: latest.attack_id
+                                } 
+                            };
+                        });
+                        
+                        // Automatically switch the UI to view the drone that was just attacked
+                        setDrones(currentDrones => {
+                            const targetDrone = currentDrones.find(d => d.drone_id === latest.drone_id);
+                            if (targetDrone) {
+                                setSelectedDrone(targetDrone);
+                            }
+                            return currentDrones;
+                        });
+                    }
+                }
+            }
+        }).catch(e => console.log('API Error: attacks', e));
         };
 
         fetchDrones();
@@ -221,6 +261,7 @@ Date.now() - b.t < 2000)); } } }, 50); return ()=> clearInterval(intv);
             ICSImpactMatrixPanel, MappingTrendPanel, ResearchQuestionsPanel, AcademicConclusionPanel,
             ArtifactProvenancePanel, EvidenceCorrelationPanel, ComparativeAnalysisPanel, MappingValidationPanel,
             TranslationEnginePanel, FleetInfectionPanel, ArtifactDrawer, C2MonitorPanel, DatasetStatisticsPanel,
+            ActiveAttacksPanel,
             REEvidencePanel, ICSImpactScorePanel, LimitationsPanel, ResearchContributionsPanel, ResearchConclusionPanel,
             ThreatCoverageHeatmapPanel, DatasetProvenancePanel, AttackControlPanel,
             ArtifactMatrixPanel, MalwareExecutionFlowPanel, BehavioralSummaryPanel,
@@ -329,6 +370,9 @@ Date.now() - b.t < 2000)); } } }, 50); return ()=> clearInterval(intv);
                             <div className="flex gap-4 flex-[1.0] min-h-0">
                                 <div className="flex-[1.5] flex min-w-0">
                                     <C2MonitorPanel drones={drones} droneId={droneId} setSelectedDrone={setSelectedDrone} logsEndRef={logsEndRef} currentState={currentState} handleCommand={handleCommand} />
+                                </div>
+                                <div className="flex-[0.8] flex min-w-0">
+                                    <ActiveAttacksPanel />
                                 </div>
                                 <div className="flex-[1.0] flex min-w-0">
                                     <ICSImpactScorePanel drones={drones} droneId={droneId} />

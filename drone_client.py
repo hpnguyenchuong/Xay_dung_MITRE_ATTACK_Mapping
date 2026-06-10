@@ -171,10 +171,19 @@ class DroneVictim:
                 self.active_artifacts.append("gps_spoof")
             self.campaign_stage = "GPS_SPOOF"
             self.threat_score = 65
-            target_str = f"lat={self.target_gps.get('lat')}, lng={self.target_gps.get('lng')}"
+            
+            # LƯU LẠI GPS GỐC VÀ HƯỚNG BAN ĐẦU
+            self.spoof_start_gps = {"lat": self.gps["lat"], "lng": self.gps["lng"]}
+            self.spoof_heading = self.heading
+            
+            # TẠO QUỸ ĐẠO BAY GIẢ (hình tròn hoặc đường thẳng)
+            self.spoof_path_type = "circle"  # có thể là "line" hoặc "circle"
+            self.spoof_step = 0
+            
+            target_str = f"lat={self.target_gps.get('lat', 'N/A')}, lng={self.target_gps.get('lng', 'N/A')}"
             print_line("  Status: GPS spoofing activated")
             print_line(f"  Target: {target_str}")
-            print_line("  Effect: Drone will fly to fake coordinates")
+            print_line(f"  Trajectory: {self.spoof_path_type}")
             
         # Lệnh IMU Drift
         elif cmd_type == "imu_drift":
@@ -266,20 +275,57 @@ class DroneVictim:
                     print(f"{C_RED}[!] Listener error: {e}{C_END}")
                 break
     
+    def calculate_spoof_position(self, step, speed, heading):
+        """Tính tọa độ spoof theo quỹ đạo"""
+        if not hasattr(self, 'spoof_start_gps'):
+            self.spoof_start_gps = {"lat": self.gps["lat"], "lng": self.gps["lng"]}
+            
+        # Quỹ đạo hình tròn (bay vòng tròn)
+        if hasattr(self, 'spoof_path_type') and self.spoof_path_type == "circle":
+            radius = 0.005  # Bán kính ~500m
+            center_lat = self.spoof_start_gps["lat"]
+            center_lng = self.spoof_start_gps["lng"]
+            
+            angle = step * 0.05  # Tốc độ góc
+            new_lat = center_lat + radius * math.cos(angle)
+            new_lng = center_lng + radius * math.sin(angle)
+            
+            return {"lat": new_lat, "lng": new_lng}
+        
+        # Quỹ đạo đường thẳng (bay thẳng)
+        else:
+            distance_km = speed / 3600
+            distance_deg = distance_km / 111
+            heading_rad = math.radians(heading)
+            
+            delta_lat = distance_deg * math.cos(heading_rad)
+            delta_lng = distance_deg * math.sin(heading_rad) / math.cos(math.radians(self.spoof_start_gps["lat"]))
+            
+            new_lat = self.spoof_start_gps["lat"] + delta_lat * step
+            new_lng = self.spoof_start_gps["lng"] + delta_lng * step
+            
+            return {"lat": new_lat, "lng": new_lng}
+
     def update_telemetry(self):
         """Cập nhật dữ liệu telemetry dựa trên trạng thái"""
         
-        # GPS Spoof effect
+        # ========== GPS SPOOF EFFECT ==========
         if self.gps_spoof_active and self.target_gps:
-            self.gps = self.target_gps
+            # Tăng bước nhảy cho quỹ đạo
+            if not hasattr(self, 'spoof_step'):
+                self.spoof_step = 0
+            self.spoof_step += 1
+            
+            # Tính toán vị trí mới
+            self.gps = self.calculate_spoof_position(self.spoof_step, self.speed, self.heading)
         else:
-            # Normal movement
+            # NORMAL MODE: GPS di chuyển tự nhiên
             self.gps["lat"] += random.uniform(-0.00012, 0.00012)
             self.gps["lng"] += random.uniform(-0.00012, 0.00012)
         
         # Battery drain effect
         if self.battery_drain_active:
-            self.battery -= self.battery_drain_rate * 5
+            self.battery -= self.battery_drain_rate
         else:
             self.battery -= 0.1
         

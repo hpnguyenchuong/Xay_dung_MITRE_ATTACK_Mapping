@@ -5,14 +5,34 @@ window.C2MonitorPanel = ({ drones, droneId, setSelectedDrone, logsEndRef, curren
             C2 LIVE MONITOR
         </div>
         <div className="flex-1 flex min-h-0 p-2 gap-2">
-            <div className="w-[160px] shrink-0 border border-[#334155] bg-[#090d16] rounded flex flex-col overflow-y-auto overflow-x-hidden custom-scrollbar p-1 box-border">
+            <div className="w-[220px] shrink-0 border border-[#334155] bg-[#090d16] rounded flex flex-col overflow-y-auto overflow-x-hidden custom-scrollbar p-1 box-border">
                 <div className="text-[15px] font-bold text-[#34d399] px-1 py-1 border-b border-[#334155] mb-1">● ONLINE</div>
-                {drones.map(d => (
-                    <div key={d.drone_id} className={`flex items-center gap-2 p-1 rounded cursor-pointer ${droneId === d.drone_id ? 'bg-[#334155]' : 'hover:bg-[#1e293b]'}`} onClick={() => setSelectedDrone(d)}>
-                        <div className={`w-2 h-2 shrink-0 rounded-full ${d.battery < 20 ? 'bg-[#f43f5e] animate-pulse' : 'bg-[#34d399]'}`}></div>
-                        <span className="text-[15px] font-mono truncate">{d.drone_id}</span>
-                    </div>
-                ))}
+                {drones.map(d => {
+                    const threatScore = d.threat_score || 0;
+                    const threatColor = threatScore >= 80 ? 'text-[#f43f5e]' : threatScore >= 40 ? 'text-[#fbbf24]' : 'text-[#34d399]';
+                    
+                    return (
+                        <div key={d.drone_id} className={`flex flex-col p-2 mb-1 rounded cursor-pointer border border-[#334155] transition-colors ${droneId === d.drone_id ? 'bg-[#1e293b] border-[#89ceff]' : 'bg-[#090d16] hover:bg-[#1e293b]'}`} onClick={() => setSelectedDrone(d)}>
+                            <div className="flex justify-between items-center mb-1">
+                                <div className="flex items-center gap-2">
+                                    <div className={`w-2 h-2 shrink-0 rounded-full ${d.battery < 20 ? 'bg-[#f43f5e] animate-pulse' : 'bg-[#34d399]'}`}></div>
+                                    <span className="text-[14px] font-mono font-bold text-[#e2e8f0] truncate">{d.drone_id}</span>
+                                </div>
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded ${d.status === 'ACTIVE' ? 'bg-[#34d399]/20 text-[#34d399]' : 'bg-[#64748b]/20 text-[#94a3b8]'}`}>
+                                    {d.status || 'UNKNOWN'}
+                                </span>
+                            </div>
+                            <div className="flex justify-between items-center text-[11px] font-mono">
+                                <span className="text-[#94a3b8]">Batt: <span className={d.battery < 20 ? 'text-[#f43f5e]' : 'text-[#e2e8f0]'}>{Math.round(d.battery || 0)}%</span></span>
+                                <span className="text-[#94a3b8]">Alt: <span className="text-[#e2e8f0]">{Math.round(d.altitude || 0)}m</span></span>
+                            </div>
+                            <div className="flex justify-between items-center text-[11px] font-mono mt-0.5">
+                                <span className={`font-bold ${threatColor}`}>Threat: {threatScore}</span>
+                                <span className="text-[#64748b]">Art: {d.active_artifacts || 0}</span>
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
             <div className="flex-1 border border-[#334155] bg-[#090d16] rounded overflow-y-auto custom-scrollbar p-2 font-mono text-[16px] whitespace-pre-wrap text-[#34d399]" ref={logsEndRef}>
                 {currentState.terminalOutput}
