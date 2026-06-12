@@ -11,153 +11,55 @@ window.FleetInfectionPanel = ({ drones = [], selectedDrone, onDroneSelect }) => 
         { t: 60, label: "T+60m", title: "Mission failure", color: "#ef4444", icon: "warning", desc: "Trigger Physical Damage", backendCmd: "physical_damage" }
     ];
 
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-    const triggerReplayCommand = (cmd) => {
-        fetch('/api/command', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ cmd: cmd, drone_id: 'ALL_DRONES' })
-        }).catch(e => console.error("Replay command failed", e));
-    };
-
-    useEffect(() => {
-        let timer;
-        if (isPlaying) {
-            timer = setInterval(() => {
-                setCurrentTime(prev => {
-                    const nextTime = prev + 1;
-                    if (nextTime < timelineEvents.length) {
-                        triggerReplayCommand(timelineEvents[nextTime].backendCmd);
-                    }
-                    if (nextTime >= timelineEvents.length - 1) {
-                        setIsPlaying(false);
-                        return timelineEvents.length - 1;
-                    }
-                    return nextTime;
-                });
-            }, 1500); // Tăng lên 1.5s để terminal kịp in ra đẹp mắt
-        }
-        return () => clearInterval(timer);
-    }, [isPlaying]);
-
-    const handlePlay = () => {
-        setCurrentTime(-1);
-        setIsPlaying(true);
-    };
-
     const activeDronesCount = drones.length > 0 ? drones.filter(d => d.status === 'ACTIVE').length : 10;
     const totalDrones = drones.length || 10;
-    const affectedDrones = drones.length > 0 ? drones.filter(d => d.status === 'OFFLINE' || d.drone_state === 'COMPROMISED').length : 7;
-    const compromiseRate = Math.round((affectedDrones / totalDrones) * 100);
     
-    let missionCompletion = 100;
-    if (selectedDrone && selectedDrone.status && selectedDrone.status.mission_context) {
-        const ctx = selectedDrone.status.mission_context;
-        if (ctx.mission_phase === 'OFF_ROUTE') {
-            missionCompletion = 35; // Dropped heavily during GPS drift
-        } else {
-            missionCompletion = Math.round((ctx.current_waypoint / ctx.waypoints) * 100);
-        }
+    // Group drones by ATT&CK Stage
+    const stageCounts = {
+        "Normal": 0,
+        "Beaconing": 0,
+        "Controlled": 0,
+        "Collection": 0,
+        "Exfiltration": 0,
+        "Impact": 0
+    };
+    
+    if (drones.length > 0) {
+        drones.forEach(d => {
+            const stage = d.campaign_stage || "Normal";
+            if (stageCounts[stage] !== undefined) stageCounts[stage]++;
+            else stageCounts["Normal"]++;
+        });
+    } else {
+        // Mock data if no connection
+        stageCounts["Normal"] = 3;
+        stageCounts["Beaconing"] = 2;
+        stageCounts["Controlled"] = 2;
+        stageCounts["Impact"] = 3;
     }
+
+    const affectedDrones = totalDrones - stageCounts["Normal"];
+    const compromiseRate = Math.round((affectedDrones / totalDrones) * 100);
 
     return (
         <div className="panel flex-1 w-full max-w-full min-w-0 min-h-0 flex flex-col box-border overflow-hidden">
-            <style>
-                {`
-                @keyframes slideInFade {
-                    0% { opacity: 0; transform: translateY(-10px); }
-                    100% { opacity: 1; transform: translateY(0); }
-                }
-                .animate-slide-in-fade {
-                    animation: slideInFade 250ms ease-out forwards;
-                }
-                `}
-            </style>
             <div className="panel-header text-[#f43f5e] flex justify-between items-center">
                 <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-[17px]">device_hub</span>
-                    FLEET IMPACT STATISTICS
-                </div>
-                {/* Nút PLAY Demo */}
-                <div 
-                    className="relative"
-                    onMouseEnter={() => setIsMenuOpen(true)}
-                    onMouseLeave={() => setIsMenuOpen(false)}
-                >
-                    <button 
-                        onClick={handlePlay}
-                        disabled={isPlaying}
-                        className={`flex items-center gap-1 px-2 py-0.5 rounded border transition-colors ${
-                            isPlaying 
-                                ? 'bg-[#34d399]/20 border-[#34d399] text-[#34d399] cursor-not-allowed' 
-                                : 'bg-[#1e293b] border-[#334155] text-[#e2e8f0] hover:border-[#89ceff] hover:text-[#89ceff] hover:shadow-[0_0_8px_rgba(137,206,255,0.4)]'
-                        }`}
-                    >
-                        <span className="material-symbols-outlined text-[15px]">play_arrow</span>
-                        {isPlaying ? 'PLAYING...' : 'REPLAY'}
-                    </button>
-
-                    {isMenuOpen && !isPlaying && (
-                        <div className="absolute right-0 top-[110%] w-72 bg-[#090d16]/90 backdrop-blur-md border border-[#89ceff] rounded shadow-[0_0_15px_rgba(137,206,255,0.2)] z-50 animate-slide-in-fade overflow-hidden">
-                            <div className="text-[13px] font-bold text-[#89ceff] bg-[#1e293b]/60 px-3 py-2 border-b border-[#334155] flex items-center gap-2 tracking-wider">
-                                <span className="material-symbols-outlined text-[16px]">movie</span>
-                                ATTACK REPLAY CENTER
-                            </div>
-                            <div className="flex flex-col p-1">
-                                <button 
-                                    onClick={() => { handlePlay(); setIsMenuOpen(false); }}
-                                    className="flex items-center gap-3 px-2 py-2 text-left text-white hover:bg-[#c084fc]/20 hover:shadow-[inset_0_0_10px_rgba(192,132,252,0.3)] border border-transparent hover:border-[#c084fc]/50 transition-all rounded group"
-                                >
-                                    <span className="material-symbols-outlined text-[20px] text-[#34d399] group-hover:scale-110 transition-transform">fast_forward</span>
-                                    <div>
-                                        <div className="font-bold text-[13px] text-[#34d399]">Full Campaign</div>
-                                        <div className="text-[11px] text-slate-400">Launch complete Threat Storyline</div>
-                                    </div>
-                                </button>
-                                
-                                <div className="h-px bg-[#334155] my-1 mx-2"></div>
-                                
-                                {timelineEvents.map((ev, i) => (
-                                    <button 
-                                        key={i}
-                                        onClick={() => { 
-                                            setCurrentTime(i); 
-                                            setIsPlaying(false); 
-                                            setIsMenuOpen(false); 
-                                            triggerReplayCommand(ev.backendCmd);
-                                        }}
-                                        className="flex items-center gap-3 px-2 py-1.5 text-left text-slate-300 hover:text-white hover:bg-[#c084fc]/20 hover:shadow-[inset_0_0_10px_rgba(192,132,252,0.3)] border border-transparent hover:border-[#c084fc]/50 transition-all rounded group"
-                                    >
-                                        <span 
-                                            className="material-symbols-outlined text-[18px] transition-transform group-hover:scale-110"
-                                            style={{ color: ev.color }}
-                                        >
-                                            {ev.icon}
-                                        </span>
-                                        <div>
-                                            <div className="font-bold text-[12px]" style={{ color: ev.color }}>{ev.title}</div>
-                                            <div className="text-[10px] opacity-70">{ev.desc}</div>
-                                        </div>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    )}
+                    KILL CHAIN PROGRESSION
                 </div>
             </div>
             
-            <div className="flex-1 flex flex-col min-w-0 min-h-0 p-2 gap-2 overflow-y-auto overflow-x-hidden custom-scrollbar box-border w-full max-w-full">
+            <div className="flex-1 flex flex-col min-w-0 min-h-0 p-3 gap-3 overflow-y-auto overflow-x-hidden custom-scrollbar box-border w-full max-w-full">
                 
-                {/* 1. Fleet Impact Metrics */}
                 <div className="flex justify-between items-end mb-1">
                     <div className="text-[16px] font-bold text-[#94a3b8]">FLEET SUMMARY</div>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-2 mb-2">
                     <div className="bg-[#1e293b] p-2 rounded border border-[#334155] flex flex-col items-center justify-center">
-                        <span className="text-[16px] text-[#38bdf8] font-mono font-bold">ACTIVE DRONES</span>
-                        <span className="text-[18px] font-bold text-[#38bdf8]">{activeDronesCount}</span>
+                        <span className="text-[16px] text-[#38bdf8] font-mono font-bold">TOTAL ASSETS</span>
+                        <span className="text-[18px] font-bold text-[#38bdf8]">{totalDrones}</span>
                     </div>
                     <div className="bg-[#1e293b] p-2 rounded border border-[#f43f5e]/30 flex flex-col items-center justify-center shadow-[0_0_10px_rgba(244,63,94,0.1)]">
                         <span className="text-[16px] text-[#f43f5e] font-mono font-bold">AFFECTED</span>
@@ -165,84 +67,38 @@ window.FleetInfectionPanel = ({ drones = [], selectedDrone, onDroneSelect }) => 
                     </div>
                 </div>
 
-                <div className="bg-[#090d16] p-2 rounded border border-[#334155] mb-2 flex flex-col gap-1.5">
-                    <div className="flex justify-between items-center text-[17px] font-mono">
-                        <span className="text-[#94a3b8]">Compromise Rate:</span>
-                        <span className="font-bold text-[#f43f5e]">{compromiseRate}%</span>
-                    </div>
-                    <div className="w-full h-1.5 bg-[#1e293b] rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-[#fbbf24] to-[#f43f5e]" style={{ width: `${compromiseRate}%` }}></div>
-                    </div>
-                </div>
-
-                <div className="bg-[#090d16] p-2 rounded border border-[#334155] mb-2 flex flex-col gap-1.5">
-                    <div className="flex justify-between items-center text-[17px] font-mono">
-                        <span className="text-[#94a3b8]">Mission Completion Rate (Estimated):</span>
-                        <span className={`font-bold ${missionCompletion < 50 ? 'text-[#f43f5e]' : 'text-[#10b981]'}`}>{missionCompletion}%</span>
-                    </div>
-                    <div className="w-full h-1.5 bg-[#1e293b] rounded-full overflow-hidden">
-                        <div className={`h-full ${missionCompletion < 50 ? 'bg-[#f43f5e]' : 'bg-[#10b981]'}`} style={{ width: `${missionCompletion}%` }}></div>
-                    </div>
-                    {missionCompletion < 50 && (
-                        <div className="mt-1 text-[15px] text-[#f43f5e] italic border-l-2 border-[#f43f5e] pl-2">
-                            Conclusion: Mission capability was significantly degraded due to cyber-physical impact.
-                        </div>
-                    )}
-                </div>
-
-                <div className="bg-[#f43f5e]/10 border border-[#f43f5e] p-2 rounded flex items-center justify-between shadow-[0_0_15px_rgba(244,63,94,0.2)] mb-3">
-                    <span className="text-[17px] font-bold text-[#f43f5e] tracking-widest">OVERALL MISSION RISK</span>
-                    <span className="text-[17px] font-black text-white bg-[#f43f5e] px-2 py-0.5 rounded">HIGH</span>
-                </div>
-
-                {/* 1.5 Fleet Graph */}
-                <div className="text-[15px] font-bold text-[#38bdf8] mt-1 mb-1 tracking-widest">FLEET TOPOLOGY</div>
-                <div className="bg-[#0f172a] p-2 rounded border border-[#334155] mb-3 flex flex-col items-center justify-center relative font-mono text-[16px]">
-                    <div className={`px-2 py-1 border rounded z-10 transition-colors duration-500 ${currentTime >= 3 || compromiseRate >= 50 ? 'border-red-500 text-red-500 bg-red-500/10' : 'border-slate-500 text-slate-300 bg-slate-800'}`}>Leader Drone</div>
-                    <div className={`w-0.5 h-3 transition-colors duration-500 ${currentTime >= 3 || compromiseRate >= 50 ? 'bg-red-500/50' : 'bg-slate-600'}`}></div>
-                    <div className={`w-32 h-0.5 transition-colors duration-500 ${currentTime >= 3 || compromiseRate >= 30 ? 'bg-orange-500/50' : 'bg-slate-600'}`}></div>
-                    <div className="flex justify-between w-32">
-                        <div className={`w-0.5 h-3 transition-colors duration-500 ${currentTime >= 3 || compromiseRate >= 30 ? 'bg-orange-500/50' : 'bg-slate-600'}`}></div>
-                        <div className={`w-0.5 h-3 transition-colors duration-500 ${currentTime >= 3 || compromiseRate >= 30 ? 'bg-orange-500/50' : 'bg-slate-600'}`}></div>
-                    </div>
-                    <div className="flex justify-between w-40 mt-0">
-                        <div className={`px-2 py-1 border rounded z-10 transition-colors duration-500 ${currentTime >= 3 || compromiseRate >= 30 ? 'border-orange-500 text-orange-500 bg-orange-500/10' : 'border-slate-500 text-slate-300 bg-slate-800'}`}>Drone 01</div>
-                        <div className={`px-2 py-1 border rounded z-10 transition-colors duration-500 ${currentTime >= 3 || compromiseRate >= 30 ? 'border-orange-500 text-orange-500 bg-orange-500/10' : 'border-slate-500 text-slate-300 bg-slate-800'}`}>Drone 02</div>
-                    </div>
-                    <div className="flex justify-end w-32 mt-0">
-                        <div className={`w-0.5 h-3 mr-4 transition-colors duration-500 ${currentTime >= 3 || compromiseRate >= 30 ? 'bg-orange-500/50' : 'bg-slate-600'}`}></div>
-                    </div>
-                    <div className="flex justify-end w-40 mt-0">
-                        <div className={`px-2 py-1 border rounded z-10 mr-1 transition-colors duration-500 ${currentTime >= 3 || compromiseRate >= 30 ? 'border-orange-500 text-orange-500 bg-orange-500/10' : 'border-slate-500 text-slate-300 bg-slate-800'}`}>Drone 03</div>
-                    </div>
-                </div>
-
-                {/* 2. Threat Storyline */}
-                <div className="text-[15px] font-bold text-[#f97316] mt-1 mb-1 tracking-widest">THREAT STORYLINE</div>
-                <div className="relative border-l border-[#334155] ml-2 pl-4 py-1 flex flex-col gap-2">
-                    {timelineEvents.map((ev, i) => {
-                        const isHighlighted = currentTime >= i;
+                {/* Kill Chain Progression Bars */}
+                <div className="text-[15px] font-bold text-[#f97316] mt-2 mb-1 tracking-widest uppercase">ATT&CK Stages</div>
+                
+                <div className="flex flex-col gap-3">
+                    {Object.entries(stageCounts).map(([stage, count], idx) => {
+                        const percent = totalDrones > 0 ? (count / totalDrones) * 100 : 0;
+                        let colorClass = "bg-[#34d399]";
+                        let textClass = "text-[#34d399]";
+                        
+                        if (stage === "Beaconing") { colorClass = "bg-[#89ceff]"; textClass = "text-[#89ceff]"; }
+                        if (stage === "Controlled") { colorClass = "bg-[#c084fc]"; textClass = "text-[#c084fc]"; }
+                        if (stage === "Collection") { colorClass = "bg-[#fbbf24]"; textClass = "text-[#fbbf24]"; }
+                        if (stage === "Exfiltration") { colorClass = "bg-[#f97316]"; textClass = "text-[#f97316]"; }
+                        if (stage === "Impact") { colorClass = "bg-[#f43f5e]"; textClass = "text-[#f43f5e]"; }
+                        
                         return (
-                            <div key={i} className={`relative transition-opacity duration-500 ${isHighlighted ? 'opacity-100' : 'opacity-30'}`}>
-                                <div 
-                                    className={`absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full transition-colors duration-500`}
-                                    style={{ 
-                                        backgroundColor: isHighlighted ? ev.color : '#334155',
-                                        boxShadow: isHighlighted ? `0 0 10px ${ev.color}` : 'none'
-                                    }}
-                                ></div>
-                                <div className="flex gap-2 items-center">
-                                    <span 
-                                        className="text-[15px] font-mono font-bold"
-                                        style={{ color: isHighlighted ? ev.color : '#94a3b8' }}
-                                    >
-                                        {ev.label}
-                                    </span>
-                                    <span className="text-[15px] text-[#e2e8f0] font-bold">{ev.title}</span>
+                            <div key={stage} className="flex flex-col gap-1">
+                                <div className="flex justify-between items-center font-mono text-[13px]">
+                                    <span className={`${textClass} font-bold`}>{stage}</span>
+                                    <span className="text-slate-400">{count} Drones ({percent.toFixed(0)}%)</span>
+                                </div>
+                                <div className="w-full h-2 bg-[#1e293b] rounded-full overflow-hidden border border-[#334155]">
+                                    <div className={`h-full ${colorClass} transition-all duration-1000`} style={{ width: `${percent}%` }}></div>
                                 </div>
                             </div>
                         );
                     })}
+                </div>
+
+                <div className="bg-[#f43f5e]/10 border border-[#f43f5e] p-2 rounded flex items-center justify-between shadow-[0_0_15px_rgba(244,63,94,0.2)] mt-4">
+                    <span className="text-[15px] font-bold text-[#f43f5e] tracking-widest">THREAT PROPAGATION</span>
+                    <span className="text-[15px] font-black text-white bg-[#f43f5e] px-2 py-0.5 rounded">{compromiseRate}%</span>
                 </div>
             </div>
         </div>

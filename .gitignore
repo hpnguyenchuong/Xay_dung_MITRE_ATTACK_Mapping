@@ -28,3 +28,7 @@ navigator_exports/
 scratch_logs/
 extract_logs.py
 drone_backup.py
+*.sqlite
+*.csv
+*.json
+.env  

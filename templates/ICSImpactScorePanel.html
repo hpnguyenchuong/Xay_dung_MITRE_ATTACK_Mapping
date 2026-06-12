@@ -1,19 +1,27 @@
 window.ICSImpactScorePanel = ({ drones, droneId }) => {
-    // Dynamic calculation based on current drone state
-    const currentDrone = drones.find(d => d.drone_id === droneId) || drones[0] || {};
-    
-    // Simulate active effects based on drone threat score or specific parameters
-    const hasNavDrift = currentDrone.gps && currentDrone.gps !== '10.841,106.654';
-    const hasLossTelemetry = currentDrone.status === 'OFFLINE' || currentDrone.network_speed < 50;
-    const hasMissionFailure = currentDrone.status === 'OFFLINE' && currentDrone.battery <= 20;
+    const [scores, setScores] = useState(null);
 
-    const effects = [
-        { name: "Loss of Telemetry", active: hasLossTelemetry || currentDrone.threat_score > 30, weight: 20, severity: "Medium" },
-        { name: "Navigation Drift", active: hasNavDrift || currentDrone.threat_score > 60, weight: 30, severity: "High" },
-        { name: "Mission Failure", active: hasMissionFailure || currentDrone.threat_score > 85, weight: 50, severity: "Critical" }
-    ];
+    useEffect(() => {
+        fetch('/api/threat_score')
+            .then(res => res.json())
+            .then(data => {
+                if (data.rankings && data.rankings.length > 0) {
+                    // Pick the selected drone or the highest ranked one
+                    let target = data.rankings.find(r => r.drone_id === droneId);
+                    if (!target) target = data.rankings[0];
+                    setScores(target.segmented);
+                }
+            })
+            .catch(err => console.error(err));
+    }, [droneId, drones]); // re-fetch when drone changes
 
-    const currentScore = effects.filter(e => e.active).reduce((sum, e) => sum + e.weight, 0);
+    // Default simulation if API fails or no data
+    const segmented = scores || {
+        "Loss of Control": 95,
+        "Loss of View": 40,
+        "Mission Degradation": 88,
+        "Property Damage": 10
+    };
 
     return (
         <div className="panel flex-1 w-full min-w-0 min-h-0 flex flex-col relative overflow-hidden">
@@ -21,46 +29,37 @@ window.ICSImpactScorePanel = ({ drones, droneId }) => {
             
             <div className="panel-header">
                 <span className="material-symbols-outlined text-[16px]">warning</span>
-                <span className="panel-title">ICS IMPACT SCORE</span>
+                <span className="panel-title">ICS CYBER-PHYSICAL IMPACT</span>
             </div>
             
-            <div className="flex-1 p-2 flex flex-col gap-2 overflow-y-auto custom-scrollbar relative z-10">
+            <div className="flex-1 p-3 flex flex-col gap-4 overflow-y-auto custom-scrollbar relative z-10">
                 
-                {/* Score Display */}
-                <div className="flex justify-center items-center py-2">
-                    <div className="relative flex items-center justify-center w-24 h-24 rounded-full border-4 border-[#1e293b] shadow-[0_0_15px_rgba(0,0,0,0.5)]">
-                        <svg className="absolute w-full h-full -rotate-90" viewBox="0 0 100 100">
-                            <circle cx="50" cy="50" r="45" fill="none" stroke="#1e293b" strokeWidth="8" />
-                            <circle cx="50" cy="50" r="45" fill="none" stroke={currentScore > 70 ? "#f43f5e" : currentScore > 40 ? "#fbbf24" : "#34d399"} strokeWidth="8" strokeDasharray="282.7" strokeDashoffset={282.7 - (282.7 * currentScore) / 100} style={{ transition: "stroke-dashoffset 1s ease-in-out" }} />
-                        </svg>
-                        <div className="flex flex-col items-center">
-                            <span className="score-value text-[32px] font-mono leading-none">{currentScore}</span>
-                            <span className="text-[16px] text-[#94a3b8] font-mono mt-1">/ 100</span>
-                        </div>
-                    </div>
+                <div className="text-[12px] text-slate-400 font-bold uppercase tracking-widest border-b border-slate-700 pb-1">
+                    Operational Effect Assessment
                 </div>
 
-                {/* Effect Breakdown */}
-                <div className="flex flex-col gap-1.5 mt-2">
-                    <div className="flex justify-between text-[15px] text-[#94a3b8] uppercase tracking-widest border-b border-[#334155] pb-1">
-                        <span>Effect</span>
-                        <span>Severity</span>
-                    </div>
-                    
-                    {effects.map((effect, idx) => (
-                        <div key={idx} className={`flex justify-between items-center p-1.5 rounded border ${effect.active ? 'bg-[#1e293b] border-[#334155]' : 'bg-[#090d16] border-transparent opacity-50'}`}>
-                            <div className="flex items-center gap-2">
-                                <span className={`w-2 h-2 rounded-full ${effect.active ? 'bg-[#38bdf8] shadow-[0_0_5px_#38bdf8]' : 'bg-[#334155]'}`}></span>
-                                <span className={`text-[17px] ${effect.active ? 'text-[#e2e8f0]' : 'text-[#64748b]'}`}>{effect.name}</span>
+                <div className="flex flex-col gap-3 mt-1">
+                    {Object.entries(segmented).map(([effect, score], idx) => {
+                        let color = "bg-[#34d399]";
+                        let glow = "shadow-[0_0_10px_rgba(52,211,153,0.4)]";
+                        if (score >= 80) { color = "bg-[#f43f5e]"; glow = "shadow-[0_0_10px_rgba(244,63,94,0.4)]"; }
+                        else if (score >= 60) { color = "bg-[#f97316]"; glow = "shadow-[0_0_10px_rgba(249,115,22,0.4)]"; }
+                        else if (score >= 40) { color = "bg-[#fbbf24]"; glow = "shadow-[0_0_10px_rgba(251,191,36,0.4)]"; }
+
+                        return (
+                            <div key={idx} className="flex flex-col gap-1">
+                                <div className="flex justify-between items-end">
+                                    <span className="text-[14px] font-bold text-slate-200">{effect}</span>
+                                    <span className={`text-[15px] font-mono font-bold ${color.replace('bg-', 'text-')}`}>
+                                        {score}%
+                                    </span>
+                                </div>
+                                <div className="w-full h-2.5 bg-[#1e293b] rounded-full overflow-hidden border border-[#334155]">
+                                    <div className={`h-full ${color} ${glow} transition-all duration-1000`} style={{ width: `${score}%` }}></div>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <span className={`text-[16px] font-bold ${effect.active ? (effect.severity === 'Critical' ? 'text-[#f43f5e]' : effect.severity === 'High' ? 'text-[#f97316]' : 'text-[#fbbf24]') : 'text-[#64748b]'}`}>
-                                    {effect.severity}
-                                </span>
-                                <span className={`text-[16px] font-mono ${effect.active ? 'text-white' : 'text-[#64748b]'}`}>+{effect.weight}</span>
-                            </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
                 
             </div>

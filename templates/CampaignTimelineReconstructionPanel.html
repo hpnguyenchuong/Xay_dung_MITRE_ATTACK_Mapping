@@ -1,0 +1,75 @@
+window.CampaignTimelineReconstructionPanel = () => {
+    const [timelineData, setTimelineData] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetch('/api/campaign_timeline')
+            .then(res => res.json())
+            .then(data => {
+                setTimelineData(data.campaign_timeline || []);
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error(err);
+                setLoading(false);
+            });
+    }, []);
+
+    if (loading) {
+        return <div className="panel p-4 animate-pulse"><div className="h-4 bg-slate-700 rounded w-1/4 mb-4"></div><div className="h-32 bg-slate-800 rounded"></div></div>;
+    }
+
+    return (
+        <div className="panel flex-1 w-full flex flex-col box-border">
+            <div className="panel-header text-[#c084fc] flex items-center gap-2">
+                <span className="material-symbols-outlined text-[17px]">timeline</span>
+                CAMPAIGN RECONSTRUCTION
+            </div>
+            
+            <div className="flex-1 p-4 overflow-y-auto custom-scrollbar flex flex-col bg-[#0B1020] relative">
+                {timelineData.length === 0 ? (
+                    <div className="text-slate-400 text-center mt-10">Waiting for campaign data...</div>
+                ) : (
+                    <div className="relative border-l-2 border-[#334155] ml-4 pl-6 py-2 flex flex-col gap-6">
+                        {timelineData.map((ev, i) => (
+                            <div key={i} className="relative">
+                                <div className="absolute -left-[31px] top-1 w-4 h-4 rounded-full bg-[#0B1020] border-2 border-[#c084fc] flex items-center justify-center shadow-[0_0_10px_rgba(192,132,252,0.4)]">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-[#c084fc]"></div>
+                                </div>
+                                
+                                <div className="flex flex-col gap-1">
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-[14px] font-mono font-bold text-[#c084fc] bg-[#c084fc]/10 px-2 py-0.5 rounded border border-[#c084fc]/30">
+                                            {ev.time || "00:00:00"}
+                                        </span>
+                                        <span className="text-[13px] text-slate-300 font-mono bg-[#1e293b] px-2 py-0.5 rounded border border-[#334155]">
+                                            Drone: {ev.drone_id || "ALL"}
+                                        </span>
+                                        <span className="text-[13px] font-bold text-white uppercase">
+                                            {ev.stage || "Event"}
+                                        </span>
+                                    </div>
+                                    
+                                    <div className="ml-2 mt-2 bg-[#1e293b]/60 border border-[#334155] rounded p-3 flex flex-col gap-2">
+                                        {ev.artifact && (
+                                            <div className="flex gap-2">
+                                                <span className="text-[#94a3b8] text-[12px] font-bold uppercase w-20 shrink-0">Artifact:</span>
+                                                <span className="text-[#38bdf8] font-mono text-[13px] break-words">{ev.artifact}</span>
+                                            </div>
+                                        )}
+                                        {ev.technique && (
+                                            <div className="flex gap-2">
+                                                <span className="text-[#94a3b8] text-[12px] font-bold uppercase w-20 shrink-0">Mapped To:</span>
+                                                <span className="text-[#f97316] font-mono text-[13px] bg-[#f97316]/10 px-1 border border-[#f97316]/20 rounded break-words">{ev.technique}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};

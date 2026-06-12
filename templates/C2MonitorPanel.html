@@ -12,23 +12,23 @@ window.C2MonitorPanel = ({ drones, droneId, setSelectedDrone, logsEndRef, curren
                     const threatColor = threatScore >= 80 ? 'text-[#f43f5e]' : threatScore >= 40 ? 'text-[#fbbf24]' : 'text-[#34d399]';
                     
                     return (
-                        <div key={d.drone_id} className={`flex flex-col p-2 mb-1 rounded cursor-pointer border border-[#334155] transition-colors ${droneId === d.drone_id ? 'bg-[#1e293b] border-[#89ceff]' : 'bg-[#090d16] hover:bg-[#1e293b]'}`} onClick={() => setSelectedDrone(d)}>
+                        <div key={d.drone_id} className={`drone-card flex flex-col p-2 mb-1 rounded cursor-pointer border border-[#334155] transition-colors ${droneId === d.drone_id ? 'bg-[#1e293b] border-[#89ceff]' : 'bg-[#090d16] hover:bg-[#1e293b]'}`} onClick={() => setSelectedDrone(d)}>
                             <div className="flex justify-between items-center mb-1">
                                 <div className="flex items-center gap-2">
                                     <div className={`w-2 h-2 shrink-0 rounded-full ${d.battery < 20 ? 'bg-[#f43f5e] animate-pulse' : 'bg-[#34d399]'}`}></div>
-                                    <span className="text-[14px] font-mono font-bold text-[#e2e8f0] truncate">{d.drone_id}</span>
+                                    <span className="drone-name text-[14px] font-mono font-bold text-[#e2e8f0] truncate">{d.drone_id}</span>
                                 </div>
                                 <span className={`text-[10px] px-1.5 py-0.5 rounded ${d.status === 'ACTIVE' ? 'bg-[#34d399]/20 text-[#34d399]' : 'bg-[#64748b]/20 text-[#94a3b8]'}`}>
                                     {d.status || 'UNKNOWN'}
                                 </span>
                             </div>
                             <div className="flex justify-between items-center text-[11px] font-mono">
-                                <span className="text-[#94a3b8]">Batt: <span className={d.battery < 20 ? 'text-[#f43f5e]' : 'text-[#e2e8f0]'}>{Math.round(d.battery || 0)}%</span></span>
-                                <span className="text-[#94a3b8]">Alt: <span className="text-[#e2e8f0]">{Math.round(d.altitude || 0)}m</span></span>
+                                <span className="drone-battery text-[#94a3b8]">Battery: <span className={d.battery < 20 ? 'text-[#f43f5e]' : 'text-[#e2e8f0]'}>{Math.round(d.battery || 0)}%</span></span>
+                                <span className="drone-altitude text-[#94a3b8]">Altitude: <span className="text-[#e2e8f0]">{Math.round(d.altitude || 0)}m</span></span>
                             </div>
                             <div className="flex justify-between items-center text-[11px] font-mono mt-0.5">
-                                <span className={`font-bold ${threatColor}`}>Threat: {threatScore}</span>
-                                <span className="text-[#64748b]">Art: {d.active_artifacts || 0}</span>
+                                <span className={`drone-threat font-bold ${threatColor}`}>Threat Score: {threatScore}</span>
+                                <span className="drone-artifacts text-[#64748b]">Artifacts: {d.active_artifacts || 0}</span>
                             </div>
                         </div>
                     );
@@ -51,6 +51,9 @@ window.C2MonitorPanel = ({ drones, droneId, setSelectedDrone, logsEndRef, curren
             <button onClick={() => handleCommand('restore_control', droneId)} className="bg-[#34d399]/20 hover:bg-[#34d399]/40 border border-[#34d399]/50 text-[#34d399] py-1 text-[15px] font-bold font-mono rounded transition-colors">RESTORE</button>
             <button onClick={() => handleCommand('stop_gps_spoof', droneId)} className="bg-[#38bdf8]/20 hover:bg-[#38bdf8]/40 border border-[#38bdf8]/50 text-[#38bdf8] py-1 text-[15px] font-bold font-mono rounded transition-colors">STOP_GPS</button>
             <button onClick={() => handleCommand('physical_damage', droneId)} className="bg-[#fbbf24]/20 hover:bg-[#fbbf24]/40 border border-[#fbbf24]/50 text-[#fbbf24] py-1 text-[15px] font-bold font-mono rounded transition-colors col-span-2 shadow-[0_0_8px_rgba(251,191,36,0.5)] animate-pulse">BATTERY_DRAIN</button>
+            
+            <button onClick={() => fetch('/api/summary_report').then(r=>r.json()).then(d=>{if(d.status==='success') window.open(`/${d.file}`, '_blank')})} className="bg-[#0ea5e9]/20 hover:bg-[#0ea5e9]/40 border border-[#0ea5e9] text-white py-1 text-[15px] font-bold font-mono rounded transition-colors col-span-2 shadow-[0_0_8px_rgba(14,165,233,0.5)]">FLEET REPORT</button>
+            <button onClick={() => fetch('/api/export_csv').then(r=>r.json()).then(d=>{if(d.status==='success') window.open(`/${d.file}`, '_blank')})} className="bg-[#10b981]/20 hover:bg-[#10b981]/40 border border-[#10b981] text-white py-1 text-[15px] font-bold font-mono rounded transition-colors col-span-2 shadow-[0_0_8px_rgba(16,185,129,0.5)]">EXPORT CSV</button>
         </div>
     </div>
 );

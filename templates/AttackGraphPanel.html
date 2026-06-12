@@ -1,0 +1,98 @@
+window.AttackGraphPanel = () => {
+    const [graphData, setGraphData] = useState({ nodes: [], edges: [] });
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetch('/api/attack_graph')
+            .then(res => res.json())
+            .then(data => {
+                setGraphData(data);
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error(err);
+                setLoading(false);
+            });
+    }, []);
+
+    if (loading) {
+        return <div className="panel p-4 animate-pulse"><div className="h-4 bg-slate-700 rounded w-1/4 mb-4"></div><div className="h-32 bg-slate-800 rounded"></div></div>;
+    }
+
+    const typeColors = {
+        asset: "border-[#34d399] bg-[#34d399]/10 text-[#34d399]",
+        communication: "border-[#89ceff] bg-[#89ceff]/10 text-[#89ceff]",
+        command: "border-[#c084fc] bg-[#c084fc]/10 text-[#c084fc]",
+        artifact: "border-[#fbbf24] bg-[#fbbf24]/10 text-[#fbbf24]",
+        technique: "border-[#f97316] bg-[#f97316]/10 text-[#f97316]",
+        impact: "border-[#f43f5e] bg-[#f43f5e]/10 text-[#f43f5e]"
+    };
+
+    // We will simulate a simple horizontal flowchart using flexbox since nodes are structured sequentially per drone
+    // Group edges by drone (asset)
+    const chains = [];
+    const assets = graphData.nodes.filter(n => n.type === 'asset');
+    
+    assets.forEach(asset => {
+        let currentId = asset.id;
+        const chain = [asset];
+        
+        // Follow the edges
+        for (let i = 0; i < 5; i++) {
+            const edge = graphData.edges.find(e => e.source === currentId);
+            if (edge) {
+                const nextNode = graphData.nodes.find(n => n.id === edge.target);
+                if (nextNode) {
+                    chain.push(nextNode);
+                    currentId = nextNode.id;
+                } else break;
+            } else break;
+        }
+        chains.push(chain);
+    });
+
+    return (
+        <div className="panel flex-1 w-full flex flex-col box-border">
+            <div className="panel-header text-[#f43f5e] flex items-center gap-2">
+                <span className="material-symbols-outlined text-[17px]">account_tree</span>
+                ATTACK GRAPH RECONSTRUCTION
+            </div>
+            
+            <div className="flex-1 p-4 overflow-y-auto overflow-x-auto custom-scrollbar flex flex-col gap-8 bg-[#0B1020]">
+                {chains.length === 0 ? (
+                    <div className="text-slate-400 text-center mt-10">Waiting for attack mapping data...</div>
+                ) : (
+                    chains.map((chain, idx) => (
+                        <div key={idx} className="flex items-center gap-2 min-w-max">
+                            {chain.map((node, nIdx) => (
+                                <React.Fragment key={node.id}>
+                                    <div className={`flex flex-col items-center justify-center p-3 border rounded-xl shadow-lg transition-transform hover:-translate-y-1 hover:shadow-xl w-40 text-center ${typeColors[node.type] || 'border-slate-500 text-slate-300'}`}>
+                                        <div className="text-[10px] uppercase opacity-70 mb-1 font-bold tracking-widest">{node.type}</div>
+                                        <div className="text-[13px] font-mono font-bold leading-tight break-words w-full">{node.label}</div>
+                                    </div>
+                                    
+                                    {nIdx < chain.length - 1 && (
+                                        <div className="flex items-center justify-center w-8">
+                                            <div className="w-full h-0.5 bg-slate-600 relative">
+                                                <div className="absolute -right-1 -top-1.5 border-t-4 border-b-4 border-l-6 border-transparent border-l-slate-500"></div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </React.Fragment>
+                            ))}
+                        </div>
+                    ))
+                )}
+            </div>
+            
+            <div className="bg-[#1e293b]/50 p-2 border-t border-[#334155] flex justify-center gap-6 text-[11px] font-mono uppercase tracking-wider">
+                <div className="flex items-center gap-1"><div className="w-3 h-3 bg-[#34d399]/20 border border-[#34d399] rounded-sm"></div> Asset</div>
+                <div className="flex items-center gap-1"><div className="w-3 h-3 bg-[#89ceff]/20 border border-[#89ceff] rounded-sm"></div> Comm</div>
+                <div className="flex items-center gap-1"><div className="w-3 h-3 bg-[#c084fc]/20 border border-[#c084fc] rounded-sm"></div> Payload</div>
+                <div className="flex items-center gap-1"><div className="w-3 h-3 bg-[#fbbf24]/20 border border-[#fbbf24] rounded-sm"></div> Evidence</div>
+                <div className="flex items-center gap-1"><div className="w-3 h-3 bg-[#f97316]/20 border border-[#f97316] rounded-sm"></div> Technique</div>
+                <div className="flex items-center gap-1"><div className="w-3 h-3 bg-[#f43f5e]/20 border border-[#f43f5e] rounded-sm"></div> ICS Impact</div>
+            </div>
+        </div>
+    );
+};

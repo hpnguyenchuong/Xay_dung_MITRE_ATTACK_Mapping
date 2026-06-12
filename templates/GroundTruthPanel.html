@@ -98,12 +98,23 @@ window.GroundTruthPanel = () => {
                     </div>
                 </div>
 
+                {/* Ground Truth Sources */}
+                <div className="shrink-0 bg-[#0f172a] border border-[#38bdf8]/30 p-2 rounded text-[13px] flex flex-col gap-1 mt-1">
+                    <div className="text-[#38bdf8] font-bold uppercase tracking-widest text-[12px] mb-1">Ground Truth Construction Sources</div>
+                    {gt.sources && gt.sources.map((src, i) => (
+                        <div key={i} className="flex justify-between items-center text-slate-300 border-b border-[#1e293b] pb-1 last:border-0 last:pb-0">
+                            <span className="font-mono">{src.Source}</span>
+                            <span className="text-slate-400 italic text-[11px]">{src.Purpose}</span>
+                        </div>
+                    ))}
+                </div>
+
                 {/* Academic Conclusion */}
-                <div className="shrink-0 bg-[#34d399]/10 border border-[#34d399]/30 p-2 rounded text-[16px] flex gap-2 items-start mt-1">
+                <div className="shrink-0 bg-[#34d399]/10 border border-[#34d399]/30 p-2 rounded text-[14px] flex gap-2 items-start mt-1">
                     <span className="material-symbols-outlined text-[17px] text-[#34d399]">verified</span>
                     <div>
                         <span className="text-[#34d399] font-bold">Conclusion: </span>
-                        <span className="text-[#cbd5e1] italic">The mapping engine achieved a high level of agreement with the ground truth dataset, demonstrating the feasibility of accurately mapping RE findings to MITRE ATT&CK techniques.</span>
+                        <span className="text-[#cbd5e1] italic">High level of agreement with multi-source ground truth demonstrates accuracy.</span>
                     </div>
                 </div>
             </div>
