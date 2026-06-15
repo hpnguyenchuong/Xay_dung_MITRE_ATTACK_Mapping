@@ -1,34 +1,27 @@
-node_modules/
-build/
-dist/
-coverage/
-.DS_Store
-*.log
-.env*
-!.env.example
-
 # Python
 __pycache__/
-*.py[cod]
-*$py.class
-.venv/
-env/
-venv/
+*.pyc
+*.pyo
 
-# SQLite databases (Không nên đẩy database thật lên Github)
+# Database
 *.db
-*.sqlite3
-
-# Thư mục logs của dự án
+*.sqlite
 logs/
+
+# Reports & Exports
 reports/
 navigator_exports/
-
-# Temporary files
-scratch_logs/
-extract_logs.py
-drone_backup.py
-*.sqlite
 *.csv
 *.json
-.env  
+*.html
+
+# Scratch scripts (local only)
+scratch/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
