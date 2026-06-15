@@ -274,7 +274,8 @@ Date.now() - b.t < 2000)); } } }, 50); return ()=> clearInterval(intv);
                 { id: 2, name: "RE Findings", icon: "bug_report" },
                 { id: 3, name: "MITRE Mapping", icon: "account_tree" },
                 { id: 4, name: "Simulation", icon: "sports_esports" },
-                { id: 5, name: "Evaluation & Limitations", icon: "gavel" }
+                { id: 5, name: "Evaluation & Limitations", icon: "gavel" },
+                { id: 6, name: "Forensic Reports", icon: "manage_search" }
             ];
 
             const renderTabContent = () => {
@@ -383,13 +384,8 @@ Date.now() - b.t < 2000)); } } }, 50); return ()=> clearInterval(intv);
                                     <div className="flex-[1.0] flex min-w-0">
                                         <CampaignTimelineReconstructionPanel />
                                     </div>
-                                    <div className="flex-[1.0] flex flex-col gap-4 min-w-0 min-h-0">
-                                        <div className="flex-[1.0] flex min-w-0 min-h-0">
-                                            <ICSImpactScorePanel drones={drones} droneId={droneId} />
-                                        </div>
-                                        <div className="flex-[1.0] flex min-w-0 min-h-0">
-                                            <AttackReportsPanel />
-                                        </div>
+                                    <div className="flex-[1.0] flex min-w-0">
+                                        <ICSImpactScorePanel drones={drones} droneId={droneId} />
                                     </div>
                                 </div>
                             </div>
@@ -409,6 +405,13 @@ Date.now() - b.t < 2000)); } } }, 50); return ()=> clearInterval(intv);
                                         <LimitationsPanel />
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    );
+                    case 6: return (
+                        <div className="flex gap-4 h-full animate-slide-in-fade">
+                            <div className="flex-[1.0] flex flex-col min-w-0 h-full">
+                                <AttackReportsPanel />
                             </div>
                         </div>
                     );
