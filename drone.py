@@ -1323,7 +1323,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     self._send_json({"attacks": attacks})
                     
                 elif endpoint == "attack_reports":
-                    import os, datetime
                     files = []
                     if os.path.exists(ATTACKS_DIR):
                         all_files = [f for f in os.listdir(ATTACKS_DIR) if f.endswith(".json")]
@@ -1335,7 +1334,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                                 files.append({
                                     "filename": f,
                                     "size": stat.st_size,
-                                    "created_at": datetime.datetime.fromtimestamp(stat.st_ctime).strftime("%Y-%m-%d %H:%M:%S")
+                                    "created_at": datetime.fromtimestamp(stat.st_ctime).strftime("%Y-%m-%d %H:%M:%S")
                                 })
                             except Exception:
                                 pass
