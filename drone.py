@@ -944,44 +944,6 @@ class MITREMappingEngine:
                     cursor.execute("INSERT INTO ioc_attack_mapping (drone_id, ioc_value, technique_id, description, timestamp, confidence, campaign) VALUES (?, ?, ?, ?, ?, ?, ?)", (drone_id, "DF_MUTEX + C2 Domain", "T0885 + Persistence Evidence", "Correlated DroneFlood Campaign (Multiple High-Fidelity IOCs)", t_str, 95, "DroneFlood"))
                     cursor.execute("INSERT INTO timeline (drone_id, event_type, message, timestamp) VALUES (?, ?, ?, ?)", (drone_id, "CORRELATION", "IOCs Correlated to DroneFlood Campaign (95% Confidence)", t_str))
             
-            # --- ATTACK REPORT JSON EXPORT ---
-            if packet.get("attack_phase") or packet.get("re_findings") or packet.get("cmd"):
-                try:
-                    attack_type = packet.get("attack_phase") or packet.get("cmd", "unknown_attack")
-                    
-                    cursor.execute("SELECT * FROM attack_mapping WHERE drone_id=? ORDER BY id DESC LIMIT 5", (drone_id,))
-                    mitre_maps = [dict(r) for r in cursor.fetchall()]
-                    
-                    cursor.execute("SELECT * FROM re_findings WHERE drone_id=? ORDER BY id DESC LIMIT 5", (drone_id,))
-                    arts = [dict(r) for r in cursor.fetchall()]
-                    
-                    report_data = {
-                        "attack_metadata": {
-                            "attack_id": f"ATK-{drone_id}-{int(now)}",
-                            "timestamp": t_str,
-                            "attack_type": attack_type,
-                            "mitre_technique": mitre_maps[0]["technique_id"] if mitre_maps else "Unknown",
-                            "ics_technique": mitre_maps[0].get("ics_tech_id", "Unknown") if mitre_maps else "Unknown"
-                        },
-                        "target": {
-                            "drone_id": drone_id,
-                            "state_before": "COMPROMISED" if "re_findings" in packet else "UNKNOWN",
-                            "state_after": "UNDER_ATTACK"
-                        },
-                        "artifacts": arts,
-                        "telemetry_before": {"lat": 0, "lng": 0, "speed": 0, "altitude": 0}, 
-                        "telemetry_after": packet,
-                        "mitre_mapping": mitre_maps
-                    }
-                    
-                    filename = f"attack_{drone_id}_{int(now)}.json"
-                    filepath = os.path.join(ATTACKS_DIR, filename)
-                    with open(filepath, "w", encoding="utf-8") as f:
-                        json.dump(report_data, f, indent=2, ensure_ascii=False)
-                except Exception as e:
-                    print(f"Error exporting attack JSON: {e}")
-            # --- END ATTACK REPORT JSON EXPORT ---
-            
             if server_processed_packets > 0 and server_processed_packets % 100 == 0:
                 cursor.execute("DELETE FROM timeline WHERE id NOT IN (SELECT id FROM timeline ORDER BY id DESC LIMIT 5000)")
             
@@ -1209,6 +1171,43 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     "INSERT INTO active_attacks (attack_id, drone_id, attack_type, status, started_at, params) VALUES (?, ?, ?, ?, ?, ?)",
                     (attack_id, drone_id, command, "IN PROGRESS", t_str, json.dumps(params))
                 )
+                
+                # --- AUTO-GENERATE FORENSIC JSON REPORT ---
+                try:
+                    cursor.execute("SELECT * FROM attack_mapping WHERE drone_id=? ORDER BY id DESC LIMIT 1", (drone_id,))
+                    mitre_map = cursor.fetchone()
+                    mitre_maps = [dict(mitre_map)] if mitre_map else []
+                    
+                    incident_entry = {
+                        "attack_id": attack_id,
+                        "timestamp": t_str,
+                        "attack_type": command,
+                        "mitre_technique": mitre_maps[0]["technique_id"] if mitre_maps else "Unknown",
+                        "ics_technique": mitre_maps[0].get("ics_tech_id", "Unknown") if mitre_maps else "Unknown",
+                        "state_transition": "NORMAL -> UNDER_ATTACK",
+                        "mitre_mapping": mitre_maps
+                    }
+                    
+                    filename = f"attack_{drone_id}_report.json"
+                    filepath = os.path.join(ATTACKS_DIR, filename)
+                    
+                    if os.path.exists(filepath):
+                        with open(filepath, "r", encoding="utf-8") as f:
+                            try:
+                                existing_report = json.load(f)
+                            except:
+                                existing_report = {"target_drone": drone_id, "incidents": []}
+                    else:
+                        existing_report = {"target_drone": drone_id, "incidents": []}
+                        
+                    existing_report["incidents"].append(incident_entry)
+                    
+                    with open(filepath, "w", encoding="utf-8") as f:
+                        json.dump(existing_report, f, indent=2, ensure_ascii=False)
+                except Exception as e:
+                    print(f"Error exporting attack JSON from API: {e}")
+                # ------------------------------------------
+
                 conn.commit()
                 result = {"success": True, "attack_id": attack_id}
                 

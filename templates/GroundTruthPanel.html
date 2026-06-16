@@ -22,50 +22,57 @@ window.GroundTruthPanel = () => {
             <div className="p-2 flex flex-col h-full min-h-0">
                 <div className="flex gap-2 mb-3 shrink-0">
                     {/* Confusion Matrix Panel */}
-                    <div className="flex-[0.4] bg-[#0f172a] p-2 rounded border border-[#38bdf8]/30 flex flex-col justify-between">
-                        <div className="text-[16px] text-[#38bdf8] uppercase font-bold mb-1 border-b border-[#38bdf8]/30 pb-1">Confusion Matrix</div>
-                        <div className="grid grid-cols-3 gap-1 text-[16px] text-center mt-1 font-mono items-center h-full">
+                    <div className="flex-[0.5] bg-gradient-to-br from-[#0f172a] to-[#1e293b]/50 p-3 rounded-lg border border-[#38bdf8]/30 flex flex-col justify-between shadow-inner">
+                        <div className="text-[14px] tracking-wider text-[#38bdf8] uppercase font-bold mb-2 border-b border-[#38bdf8]/20 pb-1.5 flex justify-between items-center">
+                            <span>Confusion Matrix</span>
+                            <span className="material-symbols-outlined text-[16px]">grid_on</span>
+                        </div>
+                        <div className="grid grid-cols-[auto_1fr_1fr] gap-2 text-[14px] text-center mt-1 font-mono items-center h-full">
                             <div></div>
-                            <div className="text-[#94a3b8]">Pred Pos</div>
-                            <div className="text-[#94a3b8]">Pred Neg</div>
+                            <div className="text-[#94a3b8] uppercase text-[11px] font-bold tracking-widest">Pred Pos</div>
+                            <div className="text-[#94a3b8] uppercase text-[11px] font-bold tracking-widest">Pred Neg</div>
                             
-                            <div className="text-[#94a3b8] text-right pr-1">Act Pos</div>
-                            <div className="bg-[#10b981]/20 border border-[#10b981]/50 text-[#10b981] rounded py-1">TP={gt.details?.TP || 0}</div>
-                            <div className="bg-[#f43f5e]/20 border border-[#f43f5e]/50 text-[#f43f5e] rounded py-1">FN={gt.details?.FN || 0}</div>
+                            <div className="text-[#94a3b8] text-right pr-2 uppercase text-[11px] font-bold tracking-widest">Act Pos</div>
+                            <div className="bg-[#10b981]/20 border border-[#10b981]/50 text-[#10b981] rounded-md py-2 font-bold text-[18px] shadow-[0_0_10px_rgba(16,185,129,0.1)]">TP={gt.details?.TP || 0}</div>
+                            <div className="bg-[#f43f5e]/20 border border-[#f43f5e]/50 text-[#f43f5e] rounded-md py-2 font-bold text-[18px] shadow-[0_0_10px_rgba(244,63,94,0.1)]">FN={gt.details?.FN || 0}</div>
                             
-                            <div className="text-[#94a3b8] text-right pr-1">Act Neg</div>
-                            <div className="bg-[#f43f5e]/20 border border-[#f43f5e]/50 text-[#f43f5e] rounded py-1">FP={gt.details?.FP || 0}</div>
-                            <div className="bg-[#10b981]/20 border border-[#10b981]/50 text-[#10b981] rounded py-1">TN={0}</div>
+                            <div className="text-[#94a3b8] text-right pr-2 uppercase text-[11px] font-bold tracking-widest">Act Neg</div>
+                            <div className="bg-[#f43f5e]/20 border border-[#f43f5e]/50 text-[#f43f5e] rounded-md py-2 font-bold text-[18px] shadow-[0_0_10px_rgba(244,63,94,0.1)]">FP={gt.details?.FP || 0}</div>
+                            <div className="bg-[#10b981]/20 border border-[#10b981]/50 text-[#10b981] rounded-md py-2 font-bold text-[18px] shadow-[0_0_10px_rgba(16,185,129,0.1)]">TN={0}</div>
                         </div>
                     </div>
                     
                     {/* Metrics Grid */}
-                    <div className="flex-[0.6] grid grid-cols-2 gap-2">
-                        <div className="bg-[#0f172a] p-1.5 rounded text-center border border-[#1e293b] flex flex-col justify-center">
-                            <div className="text-[15px] text-[#94a3b8] uppercase mb-0.5">Accuracy</div>
-                            <div className="text-[#10b981] font-bold text-[16px]">{gt.metrics.Accuracy || '0%'}</div>
+                    <div className="flex-[0.5] grid grid-cols-2 gap-3">
+                        <div className="bg-[#0f172a]/80 p-2 rounded-lg text-center border border-[#10b981]/30 flex flex-col justify-center relative overflow-hidden group hover:border-[#10b981] transition-colors shadow-lg">
+                            <div className="absolute -right-4 -top-4 w-16 h-16 bg-[#10b981]/10 rounded-full blur-xl group-hover:bg-[#10b981]/20 transition-all"></div>
+                            <div className="text-[12px] text-[#94a3b8] tracking-widest uppercase mb-1 z-10 font-bold">Accuracy</div>
+                            <div className="text-[#10b981] font-mono font-bold text-[24px] z-10">{gt.metrics.Accuracy || '0%'}</div>
                         </div>
-                        <div className="bg-[#0f172a] p-1.5 rounded text-center border border-[#1e293b] flex flex-col justify-center">
-                            <div className="text-[15px] text-[#94a3b8] uppercase mb-0.5">Precision</div>
-                            <div className="text-[#38bdf8] font-bold text-[16px]">{gt.metrics.Precision || '0%'}</div>
+                        <div className="bg-[#0f172a]/80 p-2 rounded-lg text-center border border-[#38bdf8]/30 flex flex-col justify-center relative overflow-hidden group hover:border-[#38bdf8] transition-colors shadow-lg">
+                            <div className="absolute -right-4 -top-4 w-16 h-16 bg-[#38bdf8]/10 rounded-full blur-xl group-hover:bg-[#38bdf8]/20 transition-all"></div>
+                            <div className="text-[12px] text-[#94a3b8] tracking-widest uppercase mb-1 z-10 font-bold">Precision</div>
+                            <div className="text-[#38bdf8] font-mono font-bold text-[24px] z-10">{gt.metrics.Precision || '0%'}</div>
                         </div>
-                        <div className="bg-[#0f172a] p-1.5 rounded text-center border border-[#1e293b] flex flex-col justify-center">
-                            <div className="text-[15px] text-[#94a3b8] uppercase mb-0.5">Recall</div>
-                            <div className="text-[#a855f7] font-bold text-[16px]">{gt.metrics.Recall || '0%'}</div>
+                        <div className="bg-[#0f172a]/80 p-2 rounded-lg text-center border border-[#a855f7]/30 flex flex-col justify-center relative overflow-hidden group hover:border-[#a855f7] transition-colors shadow-lg">
+                            <div className="absolute -right-4 -top-4 w-16 h-16 bg-[#a855f7]/10 rounded-full blur-xl group-hover:bg-[#a855f7]/20 transition-all"></div>
+                            <div className="text-[12px] text-[#94a3b8] tracking-widest uppercase mb-1 z-10 font-bold">Recall</div>
+                            <div className="text-[#a855f7] font-mono font-bold text-[24px] z-10">{gt.metrics.Recall || '0%'}</div>
                         </div>
-                        <div className="bg-[#0f172a] p-1.5 rounded text-center border border-[#1e293b] flex flex-col justify-center">
-                            <div className="text-[15px] text-[#94a3b8] uppercase mb-0.5">F1 Score</div>
-                            <div className="text-[#f43f5e] font-bold text-[16px]">{gt.metrics.F1 || '0%'}</div>
+                        <div className="bg-[#0f172a]/80 p-2 rounded-lg text-center border border-[#f43f5e]/30 flex flex-col justify-center relative overflow-hidden group hover:border-[#f43f5e] transition-colors shadow-lg">
+                            <div className="absolute -right-4 -top-4 w-16 h-16 bg-[#f43f5e]/10 rounded-full blur-xl group-hover:bg-[#f43f5e]/20 transition-all"></div>
+                            <div className="text-[12px] text-[#94a3b8] tracking-widest uppercase mb-1 z-10 font-bold">F1 Score</div>
+                            <div className="text-[#f43f5e] font-mono font-bold text-[24px] z-10">{gt.metrics.F1 || '0%'}</div>
                         </div>
                     </div>
                 </div>
                 
-                <div style={{ height: '280px', maxHeight: '280px', overflowY: 'auto', overflowX: 'hidden' }} className="custom-scrollbar border border-[#1e293b] rounded mb-2 shrink-0 flex flex-col">
-                    <div className="bg-[#334155] text-[#94a3b8] grid items-center" style={{ gridTemplateColumns: 'minmax(150px, 2fr) minmax(80px, 1fr) minmax(90px, 1fr) minmax(80px, 1fr)', columnGap: '12px', position: 'sticky', top: 0, zIndex: 10 }}>
-                        <div className="p-2 border-b border-[#1e293b] font-normal uppercase text-[13px] tracking-[1px] min-w-0">Artifact</div>
-                        <div className="p-2 border-b border-[#1e293b] font-normal uppercase text-[13px] tracking-[1px] text-center min-w-0">Expected</div>
-                        <div className="p-2 border-b border-[#1e293b] font-normal uppercase text-[13px] tracking-[1px] text-center min-w-0">Predicted</div>
-                        <div className="p-2 border-b border-[#1e293b] font-normal uppercase text-[13px] tracking-[1px] text-center min-w-0">Result</div>
+                <div style={{ height: '280px', maxHeight: '280px', overflowY: 'auto', overflowX: 'hidden' }} className="custom-scrollbar border border-[#1e293b] rounded-lg mb-3 shrink-0 flex flex-col bg-[#090d16]/50 shadow-md">
+                    <div className="bg-gradient-to-r from-[#1e293b] to-[#0f172a] text-[#89ceff] grid items-center border-b border-[#38bdf8]/30 shadow-sm" style={{ gridTemplateColumns: 'minmax(150px, 2fr) minmax(80px, 1fr) minmax(90px, 1fr) minmax(80px, 1fr)', columnGap: '12px', position: 'sticky', top: 0, zIndex: 10 }}>
+                        <div className="p-2 font-bold uppercase text-[12px] tracking-widest min-w-0 pl-4">Artifact</div>
+                        <div className="p-2 font-bold uppercase text-[12px] tracking-widest text-center min-w-0">Expected</div>
+                        <div className="p-2 font-bold uppercase text-[12px] tracking-widest text-center min-w-0">Predicted</div>
+                        <div className="p-2 font-bold uppercase text-[12px] tracking-widest text-center min-w-0 pr-4">Result</div>
                     </div>
                     <div className="text-[#f8fafc] flex flex-col">
                         {gt.results.map((row, idx) => {
@@ -73,24 +80,29 @@ window.GroundTruthPanel = () => {
                             let resultClass = '';
                             
                             if (row.result === 'Correct') {
-                                resultIcon = '✅';
-                                resultClass = 'text-green-400';
+                                resultIcon = 'check_circle';
+                                resultClass = 'text-emerald-400 bg-emerald-400/10 border-emerald-400/30';
                             } else if (row.result === 'Incorrect') {
-                                resultIcon = '❌';
-                                resultClass = 'text-red-400';
+                                resultIcon = 'cancel';
+                                resultClass = 'text-rose-400 bg-rose-400/10 border-rose-400/30';
                             } else if (row.result === 'Missed') {
-                                resultIcon = '⚠️';
-                                resultClass = 'text-yellow-400';
+                                resultIcon = 'warning';
+                                resultClass = 'text-amber-400 bg-amber-400/10 border-amber-400/30';
                             }
                             
                             return (
-                                <div key={idx} className="grid border-b border-[#1e293b] hover:bg-[#334155]/30 items-center" style={{ gridTemplateColumns: 'minmax(150px, 2fr) minmax(80px, 1fr) minmax(90px, 1fr) minmax(80px, 1fr)', columnGap: '12px' }}>
-                                    <div className="p-2 text-[#a855f7] font-mono text-[16px] min-w-0" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={row.artifact}>{row.artifact}</div>
-                                    <div className="p-2 font-mono text-center min-w-0">{row.expected}</div>
-                                    <div className="p-2 font-mono text-center min-w-0">{row.predicted}</div>
-                                    <div className={`p-2 text-center flex flex-col justify-center items-center min-w-0 ${resultClass}`}>
-                                        <span>{resultIcon}</span>
-                                        <span className="text-[15px]">{row.result}</span>
+                                <div key={idx} className="grid border-b border-[#1e293b] hover:bg-[#334155]/40 items-center transition-colors" style={{ gridTemplateColumns: 'minmax(150px, 2fr) minmax(80px, 1fr) minmax(90px, 1fr) minmax(80px, 1fr)', columnGap: '12px' }}>
+                                    <div className="p-3 text-[#c084fc] font-mono text-[14px] min-w-0 pl-4 flex items-center gap-2" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={row.artifact}>
+                                        <span className="material-symbols-outlined text-[16px] text-[#64748b]">data_object</span>
+                                        {row.artifact}
+                                    </div>
+                                    <div className="p-3 font-mono text-center min-w-0 text-[#e2e8f0]">{row.expected}</div>
+                                    <div className="p-3 font-mono text-center min-w-0 text-[#e2e8f0]">{row.predicted || <span className="text-[#64748b] italic">None</span>}</div>
+                                    <div className="p-2 text-center flex flex-col justify-center items-center min-w-0 pr-4">
+                                        <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded border ${resultClass}`}>
+                                            <span className="material-symbols-outlined text-[15px]">{resultIcon}</span>
+                                            <span className="text-[13px] font-bold">{row.result}</span>
+                                        </div>
                                     </div>
                                 </div>
                             );

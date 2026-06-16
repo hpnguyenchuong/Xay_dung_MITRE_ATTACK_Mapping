@@ -67,11 +67,17 @@ class DroneFloodSimulator:
                 # Chuyển đổi dict thành list với drone_id được giữ lại
                 drone_list = []
                 for drone_id, drone_info in fleet.items():
+                    battery = drone_info.get("battery", 0)
+                    
+                    # ⚡ CHỈ LẤY DRONE CÒN PIN (> 0)
+                    if battery <= 0:
+                        continue
+                    
                     drone_list.append({
                         "id": drone_id,
                         "status": drone_info.get("status", "UNKNOWN"),
                         "threat_score": drone_info.get("threat_score", 0),
-                        "battery": drone_info.get("battery", 0),
+                        "battery": battery,
                         "campaign_stage": drone_info.get("campaign_stage", "NORMAL")
                     })
                 return drone_list
@@ -106,22 +112,22 @@ class DroneFloodSimulator:
             return False
             
         print(f"\n{C_RED}{C_BOLD}")
-        print("╔════════════════════════════════════════════════════════════════╗")
-        print(f"║  🔴 COMPROMISING DRONE: {drone_id}                              ║")
-        print("╠════════════════════════════════════════════════════════════════╣")
-        print("║  📡 Sending compromise payload...                              ║")
-        print("║  🔑 Establishing backdoor channel...                           ║")
-        print("╚════════════════════════════════════════════════════════════════╝")
+        print("+" + "="*64 + "+")
+        print(f"|  [X] COMPROMISING DRONE: {drone_id}                              |")
+        print("+" + "-"*64 + "+")
+        print("|  [~] Sending compromise payload...                              |")
+        print("|  [~] Establishing backdoor channel...                           |")
+        print("+" + "="*64 + "+")
         print(f"{C_END}")
         
         result = self.send_command_to_drone(drone_id, "compromise")
         
         if result.get("success"):
             self.compromised_drones.append(drone_id)
-            print(f"{C_GREEN}✅ Drone {drone_id} has been compromised!{C_END}")
+            print(f"{C_GREEN}[OK] Drone {drone_id} has been compromised!{C_END}")
             return True
         else:
-            print(f"{C_RED}❌ Failed to compromise {drone_id}{C_END}")
+            print(f"{C_RED}[FAIL] Failed to compromise {drone_id}{C_END}")
             return False
     
     def launch_attack(self, drone_id, attack_type, params=None):
@@ -199,201 +205,280 @@ class DroneFloodSimulator:
         return result.get("success", False)
     
     def show_menu(self, drones):
-        """Hiển thị menu tương tác"""
+        """Hiển thị menu tương tác (gọn hơn)"""
         os.system('clear' if os.name == 'posix' else 'cls')
         
         print(f"{C_CYAN}{C_BOLD}")
-        print("╔════════════════════════════════════════════════════════════════════════════════════╗")
-        print("║                         🔥 DRONEFLOOD ATTACK CONTROLLER 🔥                          ║")
-        print("╠════════════════════════════════════════════════════════════════════════════════════╣")
-        print(f"║  📡 C2 Target: {self.c2_ip}:{self.c2_port}                                           ║")
-        print(f"║  🆔 Attacker ID: {self.attacker_id}                                                 ║")
-        print(f"║  🤖 Compromised drones: {len(self.compromised_drones)}                              ║")
-        print("╚════════════════════════════════════════════════════════════════════════════════════╝")
+        print("+" + "="*84 + "+")
+        print("|                           DRONEFLOOD ATTACK CONTROLLER                            |")
+        print("+" + "="*84 + "+")
+        print(f"|  [C2] Target: {self.c2_ip}:{self.c2_port}                                           |")
+        print(f"|  [ID] Attacker ID: {self.attacker_id}                                                 |")
+        print(f"|  [OK] Compromised: {len(self.compromised_drones)} | Auto-refresh: 5s              |")
+        print("+" + "="*84 + "+")
         print(f"{C_END}")
         
-        # Hiển thị danh sách drone
-        print(f"\n{C_CYAN}📡 AVAILABLE DRONES:{C_END}")
-        print("┌────┬──────────────────┬──────────────┬──────────────────┬──────────┐")
-        print("│ #  │ Drone ID         │ Status       │ Threat Score     │ Select   │")
-        print("├────┼──────────────────┼──────────────┼──────────────────┼──────────┤")
+        # Hiển thị danh sách drone với cột Battery
+        print(f"\n{C_CYAN}[+] AVAILABLE DRONES:{C_END}")
+        print("+" + "-"*4 + "+" + "-"*18 + "+" + "-"*14 + "+" + "-"*10 + "+" + "-"*18 + "+" + "-"*10 + "+")
+        print("| #  | Drone ID         | Status       | Battery  | Threat Score     | Select   |")
+        print("+" + "-"*4 + "+" + "-"*18 + "+" + "-"*14 + "+" + "-"*10 + "+" + "-"*18 + "+" + "-"*10 + "+")
         
         for i, drone in enumerate(drones[:15]):
             drone_id = drone.get("id", "Unknown")
-            if drone_id in self.compromised_drones:
-                status = f"{C_RED}COMPROMISED{C_END}"
-                status_text = "🔴 COMPROMISED"
-                selected = "✓"
+            battery = drone.get("battery", 0)
+            
+            # Màu battery
+            if battery <= 15:
+                batt_color = C_RED
+            elif battery <= 40:
+                batt_color = C_YELLOW
             else:
-                status = f"{C_GREEN}CLEAN{C_END}"
-                status_text = "🟢 CLEAN"
+                batt_color = C_GREEN
+            
+            if drone_id in self.compromised_drones:
+                status_text = "[X] COMPROMISED"
+                selected = "X"
+            else:
+                status_text = "[ ] CLEAN"
                 selected = " "
+            
             threat = drone.get("threat_score", 0)
-            print(f"│ {i+1:2} │ {drone_id:16} │ {status_text:12} │ {threat:16} │ [{selected}] │")
+            print(f"| {i+1:2} | {drone_id:16} | {status_text:12} | {batt_color}{battery:3}%{C_END} | {threat:16} | [{selected}] |")
         
-        print("└────┴──────────────────┴──────────────┴──────────────────┴──────────┘")
+        print("+" + "-"*4 + "+" + "-"*18 + "+" + "-"*14 + "+" + "-"*10 + "+" + "-"*18 + "+" + "-"*10 + "+")
         
         # Hiển thị menu tấn công
-        print(f"\n{C_YELLOW}⚔️ ATTACK OPTIONS:{C_END}")
-        print("  1. GPS Spoof (T0831)     - Làm sai lệch tọa độ GPS")
-        print("  2. Battery Drain (T0879) - Rút cạn pin nhanh chóng")
-        print("  3. IMU Drift (T0832)     - Làm nhiễu cảm biến góc")
-        print("  4. LiDAR Jamming (T0831) - Vô hiệu hóa tránh vật cản")
-        print("  5. Collision (T0831)     - Gây va chạm với drone khác")
-        print("  6. Emergency Land        - Hạ cánh khẩn cấp")
-        print("  7. Compromise New        - Chiếm quyền drone mới")
+        print(f"\n{C_YELLOW}[!] ATTACK OPTIONS:{C_END}")
+        print("  1. GPS Spoof (T0831)     - Lam sai lech toa do GPS")
+        print("  2. Battery Drain (T0879) - Rut can pin nhanh chong")
+        print("  3. IMU Drift (T0832)     - Lam nhieu cam bien goc")
+        print("  4. LiDAR Jamming (T0831) - Vo hieu hoa tranh vat can")
+        print("  5. Collision (T0831)     - Gay va cham voi drone khac")
+        print("  6. Emergency Land        - Ha canh khan cap")
+        print("  7. Compromise New        - Chiem quyen drone moi")
         print("  0. Exit")
         
         print(f"\n{C_CYAN}[i] Compromised drones: {len(self.compromised_drones)}{C_END}")
         if self.compromised_drones:
-            print(f"{C_CYAN}[i] Compromised list: {', '.join(self.compromised_drones)}{C_END}")
-    
+            print(f"{C_CYAN}[i] Compromised list: {', '.join(self.compromised_drones[:5])}{'...' if len(self.compromised_drones) > 5 else ''}{C_END}")
+
+    def handle_compromise(self, drones):
+        """Xử lý chức năng compromise (tách ra để code gọn)"""
+        print("\n" + "=" * 60)
+        print("[+] SELECT DRONE(S) TO COMPROMISE")
+        print("=" * 60)
+        print("  Format: 1,2,3  hoac 1 2 3  hoac 1-3  hoac all")
+        print("-" * 60)
+        
+        for i, drone in enumerate(drones):
+            drone_id = drone.get("id", "Unknown")
+            if drone_id not in self.compromised_drones:
+                status_text = "CLEAN"
+                print(f"  {i+1}. {drone_id} [{status_text}]")
+            else:
+                status_text = "COMPROMISED"
+                print(f"  {i+1}. {drone_id} [{status_text}] - ALREADY DONE")
+        
+        print("-" * 60)
+        drone_choice = input(">>> Enter numbers (ex: 1,2,3 or 1-3 or all): ").strip()
+        
+        if drone_choice.lower() == "all":
+            # Chọn tất cả drone chưa bị compromise
+            indices_to_compromise = [i for i, d in enumerate(drones) 
+                                      if d.get("id", "Unknown") not in self.compromised_drones]
+        else:
+            # Xử lý các định dạng: "1,2,3" hoặc "1 2 3" hoặc "1-3"
+            indices_to_compromise = []
+            
+            # Thay thế dấu phẩy và khoảng trắng
+            cleaned = drone_choice.replace(",", " ").replace("  ", " ")
+            
+            for part in cleaned.split():
+                if "-" in part:
+                    # Xử lý range: 1-3
+                    try:
+                        start, end = map(int, part.split("-"))
+                        indices_to_compromise.extend(range(start - 1, end))
+                    except ValueError:
+                        pass
+                else:
+                    # Xử lý số đơn lẻ
+                    try:
+                        idx = int(part) - 1
+                        if 0 <= idx < len(drones):
+                            indices_to_compromise.append(idx)
+                    except ValueError:
+                        pass
+            
+            # Loại bỏ trùng lặp và sắp xếp
+            indices_to_compromise = sorted(set(indices_to_compromise))
+        
+        # Lọc chỉ lấy drone chưa bị compromise
+        valid_indices = []
+        for idx in indices_to_compromise:
+            if 0 <= idx < len(drones):
+                target = drones[idx].get("id", "Unknown")
+                if target not in self.compromised_drones:
+                    valid_indices.append(idx)
+                else:
+                    print(f"{C_YELLOW}[!] Drone {target} already compromised, skipped{C_END}")
+        
+        if not valid_indices:
+            print(f"{C_RED}[!] No valid drones selected!{C_END}")
+            time.sleep(2)
+            return
+        
+        # Tiến hành compromise từng drone
+        print(f"\n{C_CYAN}[i] Starting compromise on {len(valid_indices)} drone(s)...{C_END}\n")
+        
+        success_count = 0
+        for idx in valid_indices:
+            target = drones[idx].get("id", "Unknown")
+            if self.compromise_drone(target):
+                success_count += 1
+            time.sleep(0.5)  # Delay nhẹ giữa các lần compromise
+        
+        print(f"\n{C_GREEN}[+] Compromise completed! Success: {success_count}/{len(valid_indices)}{C_END}")
+        time.sleep(2)
+
+    def handle_attack(self, choice):
+        """Xử lý chọn attack"""
+        if not self.compromised_drones:
+            print(f"{C_RED}[!] No compromised drones! Compromise one first (option 7).{C_END}")
+            time.sleep(2)
+            return
+        
+        print("\n🎯 Select target drone (compromised only):")
+        for i, drone_id in enumerate(self.compromised_drones):
+            print(f"  {i+1}. {drone_id}")
+        
+        drone_choice = input(">>> Enter number (or 0 to cancel): ").strip()
+        if drone_choice == "0":
+            return
+            
+        try:
+            idx = int(drone_choice) - 1
+            if 0 <= idx < len(self.compromised_drones):
+                target = self.compromised_drones[idx]
+                
+                attack_map = {
+                    "1": ("gps_spoof", {"lat": 10.900, "lng": 106.700}),
+                    "2": ("battery_drain", {"rate": 5.0}),
+                    "3": ("imu_drift", {"drift_rate": 15}),
+                    "4": ("lidar_jamming", {}),
+                    "5": ("collision", {"target": "DRONE-999"}),
+                    "6": ("emergency_land", {})
+                }
+                
+                attack_type, params = attack_map.get(choice, (None, None))
+                if attack_type:
+                    self.launch_attack(target, attack_type, params)
+            else:
+                print(f"{C_RED}[!] Invalid choice{C_END}")
+        except ValueError:
+            print(f"{C_RED}[!] Invalid input{C_END}")
+        
+        time.sleep(2)
+
     def run_interactive(self):
-        """Chạy chế độ tương tác"""
+        """Chạy chế độ tương tác với auto-refresh mỗi 5 giây"""
         print(f"{C_GREEN}[+] DroneFlood Simulator started{C_END}")
-        print(f"{C_CYAN}[i] Listening for commands from C2 on port {self.http_port}{C_END}")
+        print(f"{C_CYAN}[i] Auto-refresh every 5 seconds | Press ENTER to interact{C_END}\n")
         
         # Start HTTP server để nhận lệnh
         threading.Thread(target=self.run_http_server, daemon=True).start()
         
+        # Biến để theo dõi input không block
+        import select
+        import sys
+        
+        last_refresh = 0
+        drones = []  # Lưu danh sách drone hiện tại
+        
         while self.running:
-            # Fetch drone list
-            drones = self.fetch_drones()
+            current_time = time.time()
             
-            if not drones:
-                print(f"{C_YELLOW}[!] No drones found. Make sure drone_client is running!{C_END}")
-                time.sleep(5)
-                continue
-            
-            # Hiển thị menu
-            self.show_menu(drones)
-            
-            # Nhận lựa chọn
-            choice = input(f"\n{C_BOLD}>>> Select action: {C_END}").strip()
-            
-            if choice == "0":
-                print(f"{C_YELLOW}[!] Shutting down...{C_END}")
-                self.running = False
-                break
-            
-            elif choice == "7":
-                # Compromise new drone(s) - HỖ TRỢ NHIỀU DRONE CÙNG LÚC
-                print("\n" + "=" * 60)
-                print("📡 SELECT DRONE(S) TO COMPROMISE")
-                print("=" * 60)
-                print("  Format: 1,2,3  hoac 1 2 3  hoac 1-3  hoac all")
-                print("-" * 60)
+            # Refresh danh sách drone mỗi 5 giây
+            if current_time - last_refresh >= 5:
+                # Fetch danh sách drone mới (đã lọc hết pin)
+                new_drones = self.fetch_drones()
                 
-                for i, drone in enumerate(drones):
-                    drone_id = drone.get("id", "Unknown")
-                    if drone_id not in self.compromised_drones:
-                        status_text = "CLEAN"
-                        print(f"  {i+1}. {drone_id} [{status_text}]")
-                    else:
-                        status_text = "COMPROMISED"
-                        print(f"  {i+1}. {drone_id} [{status_text}] - ALREADY DONE")
+                # Lấy danh sách drone_id còn sống
+                active_ids = {d.get("id") for d in new_drones}
                 
-                print("-" * 60)
-                drone_choice = input(">>> Enter numbers (ex: 1,2,3 or 1-3 or all): ").strip()
+                # ⚡ XÓA DRONE HẾT pin KHỎI COMPROMISED LIST
+                self.compromised_drones = [
+                    d_id for d_id in self.compromised_drones 
+                    if d_id in active_ids
+                ]
                 
-                if drone_choice.lower() == "all":
-                    # Chọn tất cả drone chưa bị compromise
-                    indices_to_compromise = [i for i, d in enumerate(drones) 
-                                              if d.get("id", "Unknown") not in self.compromised_drones]
+                if new_drones:
+                    # Cập nhật danh sách drone (giữ nguyên compromised)
+                    old_compromised = self.compromised_drones.copy()
+                    drones = new_drones
+                    # Khôi phục compromised status cho drone đã biết
+                    for drone in drones:
+                        drone_id = drone.get("id", "Unknown")
+                        if drone_id in old_compromised and drone_id not in self.compromised_drones:
+                            self.compromised_drones.append(drone_id)
                 else:
-                    # Xử lý các định dạng: "1,2,3" hoặc "1 2 3" hoặc "1-3"
-                    indices_to_compromise = []
-                    
-                    # Thay thế dấu phẩy và khoảng trắng
-                    cleaned = drone_choice.replace(",", " ").replace("  ", " ")
-                    
-                    for part in cleaned.split():
-                        if "-" in part:
-                            # Xử lý range: 1-3
-                            start, end = map(int, part.split("-"))
-                            indices_to_compromise.extend(range(start - 1, end))
-                        else:
-                            # Xử lý số đơn lẻ
-                            try:
-                                idx = int(part) - 1
-                                if 0 <= idx < len(drones):
-                                    indices_to_compromise.append(idx)
-                            except ValueError:
-                                pass
-                    
-                    # Loại bỏ trùng lặp và sắp xếp
-                    indices_to_compromise = sorted(set(indices_to_compromise))
+                    print(f"{C_YELLOW}[!] No active drones found (all may be offline/dead).{C_END}")
                 
-                # Lọc chỉ lấy drone chưa bị compromise
-                valid_indices = []
-                for idx in indices_to_compromise:
-                    if 0 <= idx < len(drones):
-                        target = drones[idx].get("id", "Unknown")
-                        if target not in self.compromised_drones:
-                            valid_indices.append(idx)
-                        else:
-                            print(f"{C_YELLOW}[!] Drone {target} already compromised, skipped{C_END}")
+                # Hiển thị menu mới
+                if drones:
+                    self.show_menu(drones)
+                    print(f"\n{C_BOLD}>>> Select action (0-7): {C_END}", end="", flush=True)
                 
-                if not valid_indices:
-                    print(f"{C_RED}[!] No valid drones selected!{C_END}")
-                    time.sleep(2)
-                    continue
-                
-                # Tiến hành compromise từng drone
-                print(f"\n{C_CYAN}[i] Starting compromise on {len(valid_indices)} drone(s)...{C_END}\n")
-                
-                success_count = 0
-                for idx in valid_indices:
-                    target = drones[idx].get("id", "Unknown")
-                    if self.compromise_drone(target):
-                        success_count += 1
-                    time.sleep(0.5)  # Delay nhẹ giữa các lần compromise
-                
-                print(f"\n{C_GREEN}[+] Compromise completed! Success: {success_count}/{len(valid_indices)}{C_END}")
-                time.sleep(2)
+                last_refresh = current_time
             
-            elif choice in ["1", "2", "3", "4", "5", "6"]:
-                # Attack
-                if not self.compromised_drones:
-                    print(f"{C_RED}[!] No compromised drones! Compromise one first (option 7).{C_END}")
-                    time.sleep(2)
-                    continue
-                
-                print("\n🎯 Select target drone (compromised only):")
-                for i, drone_id in enumerate(self.compromised_drones):
-                    print(f"  {i+1}. {drone_id}")
-                
-                drone_choice = input(">>> Enter number (or 0 to cancel): ").strip()
-                if drone_choice == "0":
-                    continue
+            # Kiểm tra input từ người dùng (không block), dùng timeout ngắn
+            if sys.platform == 'win32':
+                import msvcrt
+                if msvcrt.kbhit():
+                    choice = sys.stdin.readline().strip()
                     
-                try:
-                    idx = int(drone_choice) - 1
-                    if 0 <= idx < len(self.compromised_drones):
-                        target = self.compromised_drones[idx]
-                        
-                        attack_map = {
-                            "1": ("gps_spoof", {"lat": 10.900, "lng": 106.700}),
-                            "2": ("battery_drain", {"rate": 5.0}),
-                            "3": ("imu_drift", {"drift_rate": 15}),
-                            "4": ("lidar_jamming", {}),
-                            "5": ("collision", {"target": "DRONE-999"}),
-                            "6": ("emergency_land", {})
-                        }
-                        
-                        attack_type, params = attack_map.get(choice, (None, None))
-                        if attack_type:
-                            self.launch_attack(target, attack_type, params)
+                    if choice == "0":
+                        print(f"{C_YELLOW}[!] Shutting down...{C_END}")
+                        self.running = False
+                        break
+                    
+                    elif choice == "7":
+                        # Compromise new drone(s)
+                        self.handle_compromise(drones)
+                        last_refresh = 0 # force refresh
+                    
+                    elif choice in ["1", "2", "3", "4", "5", "6"]:
+                        self.handle_attack(choice)
+                        last_refresh = 0 # force refresh
+                    
                     else:
-                        print(f"{C_RED}[!] Invalid choice{C_END}")
-                except ValueError:
-                    print(f"{C_RED}[!] Invalid input{C_END}")
-                
-                time.sleep(2)
-            
+                        print(f"{C_YELLOW}[!] Invalid option. Choose 0-7.{C_END}")
+                        time.sleep(1)
             else:
-                print(f"{C_YELLOW}[!] Invalid option. Choose 0-7.{C_END}")
-                time.sleep(1)
+                if select.select([sys.stdin], [], [], 0.1)[0]:
+                    choice = sys.stdin.readline().strip()
+                    
+                    if choice == "0":
+                        print(f"{C_YELLOW}[!] Shutting down...{C_END}")
+                        self.running = False
+                        break
+                    
+                    elif choice == "7":
+                        # Compromise new drone(s)
+                        self.handle_compromise(drones)
+                        last_refresh = 0 # force refresh
+                    
+                    elif choice in ["1", "2", "3", "4", "5", "6"]:
+                        self.handle_attack(choice)
+                        last_refresh = 0 # force refresh
+                    
+                    else:
+                        print(f"{C_YELLOW}[!] Invalid option. Choose 0-7.{C_END}")
+                        time.sleep(1)
+            
+            # Không sleep quá lâu để vẫn nhận input
+            time.sleep(0.1)
     
     def run_http_server(self):
         """HTTP server để nhận lệnh từ C2"""

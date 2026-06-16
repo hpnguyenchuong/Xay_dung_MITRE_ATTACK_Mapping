@@ -336,21 +336,21 @@ Date.now() - b.t < 2000)); } } }, 50); return ()=> clearInterval(intv);
                         </div>
                     );
                     case 3: return (
-                        <div className="flex flex-col gap-4 h-full animate-slide-in-fade">
-                            <div className="flex gap-4 flex-[1.0] min-h-0">
-                                <div className="flex-[1.0] flex min-w-0">
+                        <div className="flex flex-col gap-4 min-h-full animate-slide-in-fade">
+                            <div className="flex gap-4 shrink-0 h-[240px] min-h-0">
+                                <div className="flex-1 flex min-w-0 min-h-0">
                                     <AttackGraphPanel />
                                 </div>
                             </div>
-                            <div className="flex gap-4 flex-[1.2] min-h-0">
-                                <div className="flex-[1.8] flex min-w-0">
+                            <div className="flex gap-4 shrink-0 h-[280px] min-h-0">
+                                <div className="flex-[1.4] flex min-w-0 min-h-0">
                                     <EvidenceChainPanel />
                                 </div>
-                                <div className="flex-[1.0] flex min-w-0">
+                                <div className="flex-[1.0] flex min-w-0 min-h-0">
                                     <TranslationEnginePanel />
                                 </div>
                             </div>
-                            <div className="flex gap-4 flex-[1.0] min-h-0">
+                            <div className="flex gap-4 shrink-0 min-h-[260px] pb-4">
                                 <div className="flex-[1.0] flex min-w-0">
                                     <ATTACKTacticCoveragePanel />
                                 </div>
@@ -459,7 +459,7 @@ Date.now() - b.t < 2000)); } } }, 50); return ()=> clearInterval(intv);
                 </div>
 
                 {/* Main Content Area */}
-                <div className="flex-1 p-4 overflow-hidden flex flex-col min-h-0 relative">
+                <div className="flex-1 p-4 overflow-y-auto custom-scrollbar flex flex-col min-h-0 relative">
                     {/* Ambient Background Glows */}
                     <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#38bdf8]/5 rounded-full blur-[100px] pointer-events-none"></div>
                     <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#a855f7]/5 rounded-full blur-[100px] pointer-events-none"></div>

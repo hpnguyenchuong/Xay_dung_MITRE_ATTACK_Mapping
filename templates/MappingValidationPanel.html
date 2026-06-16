@@ -92,49 +92,68 @@ window.MappingValidationPanel = ({ onArtifactClick }) => {
                 )}
 
                 {/* Reasoning Tree Visual */}
-                <div className="flex flex-col min-w-0 relative h-full">
-                    <div className="absolute left-[20px] top-[20px] bottom-[20px] w-px bg-[#334155] z-0"></div>
-                    
-                    <div className="relative z-10 flex gap-2 mb-4">
-                        <div className="w-[40px] h-[40px] rounded-full bg-[#1e293b] border-2 border-[#89ceff] flex items-center justify-center shrink-0 shadow-[0_0_10px_rgba(137,206,255,0.2)]">
-                            <span className="material-symbols-outlined text-[#89ceff] text-[18px]">bug_report</span>
+                <div className="flex flex-col min-w-0 h-full overflow-y-auto custom-scrollbar pr-2 pb-2 pt-2">
+                    {/* Node 1 */}
+                    <div className="flex gap-3">
+                        <div className="flex flex-col items-center shrink-0">
+                            <div className="w-[40px] h-[40px] rounded-full bg-[#1e293b] border-2 border-[#89ceff] flex items-center justify-center shadow-[0_0_10px_rgba(137,206,255,0.2)]">
+                                <span className="material-symbols-outlined text-[#89ceff] text-[18px]">bug_report</span>
+                            </div>
+                            <div className="w-px bg-gradient-to-b from-[#89ceff]/50 to-[#334155] flex-1 my-1 min-h-[20px]"></div>
                         </div>
-                        <div className="flex flex-col justify-center">
-                            <span className="text-[15px] text-[#94a3b8] font-bold">ARTIFACT EXTRACTED</span>
-                            <span className="text-[15px] font-mono font-bold text-white bg-[#090d16] px-2 py-0.5 rounded border border-[#334155]">{gtDemo.artifact}</span>
-                        </div>
-                    </div>
-
-                    <div className="relative z-10 flex gap-2 mb-4">
-                        <div className="w-[40px] h-[40px] rounded-full bg-[#1e293b] border-2 border-[#fbbf24] flex items-center justify-center shrink-0">
-                            <span className="material-symbols-outlined text-[#fbbf24] text-[18px]">search</span>
-                        </div>
-                        <div className="flex flex-col justify-center">
-                            <span className="text-[15px] text-[#94a3b8] font-bold">EVIDENCE FOUND</span>
-                            <span className="text-[17px] text-[#e2e8f0]">{gtDemo.evidence_source}</span>
+                        <div className="flex flex-col justify-start pb-4">
+                            <span className="text-[13px] text-[#94a3b8] font-bold tracking-wider uppercase mb-0.5">Artifact Extracted</span>
+                            <span className="text-[15px] font-mono font-bold text-[#89ceff] bg-[#89ceff]/10 px-2 py-0.5 rounded border border-[#89ceff]/30 w-max mt-1">{gtDemo.artifact}</span>
                         </div>
                     </div>
 
-                    <div className="relative z-10 flex gap-2 mb-4">
-                        <div className="w-[40px] h-[40px] rounded-full bg-[#1e293b] border-2 border-[#c084fc] flex items-center justify-center shrink-0">
-                            <span className="material-symbols-outlined text-[#c084fc] text-[18px]">psychology</span>
+                    {/* Node 2 */}
+                    <div className="flex gap-3">
+                        <div className="flex flex-col items-center shrink-0">
+                            <div className="w-[40px] h-[40px] rounded-full bg-[#1e293b] border-2 border-[#fbbf24] flex items-center justify-center shadow-[0_0_10px_rgba(251,191,36,0.2)]">
+                                <span className="material-symbols-outlined text-[#fbbf24] text-[18px]">search</span>
+                            </div>
+                            <div className="w-px bg-gradient-to-b from-[#fbbf24]/50 to-[#334155] flex-1 my-1 min-h-[20px]"></div>
                         </div>
-                        <div className="flex flex-col justify-center">
-                            <span className="text-[15px] text-[#94a3b8] font-bold">BEHAVIOR DETECTED</span>
-                            <span className="text-[17px] text-[#e2e8f0]">{gtDemo.behavior}</span>
+                        <div className="flex flex-col justify-start pb-4 pt-1">
+                            <span className="text-[13px] text-[#94a3b8] font-bold tracking-wider uppercase mb-0.5">Evidence Found</span>
+                            <span className="text-[16px] text-[#e2e8f0] font-medium">{gtDemo.evidence_source}</span>
                         </div>
                     </div>
 
-                    <div className="relative z-10 flex gap-2">
-                        <div className="w-[40px] h-[40px] rounded-full bg-[#1e293b] border-2 border-[#34d399] flex items-center justify-center shrink-0 shadow-[0_0_10px_rgba(52,211,153,0.2)]">
-                            <span className="material-symbols-outlined text-[#34d399] text-[18px]">gavel</span>
+                    {/* Node 3 */}
+                    <div className="flex gap-3">
+                        <div className="flex flex-col items-center shrink-0">
+                            <div className="w-[40px] h-[40px] rounded-full bg-[#1e293b] border-2 border-[#c084fc] flex items-center justify-center shadow-[0_0_10px_rgba(192,132,252,0.2)]">
+                                <span className="material-symbols-outlined text-[#c084fc] text-[18px]">psychology</span>
+                            </div>
+                            <div className="w-px bg-gradient-to-b from-[#c084fc]/50 to-[#334155] flex-1 my-1 min-h-[20px]"></div>
                         </div>
-                        <div className="flex flex-col justify-center">
-                            <span className="text-[15px] text-[#94a3b8] font-bold">DECISION</span>
-                            <div className="flex items-center gap-2 mt-1">
-                                <span className="text-[17px] font-mono font-bold text-[#34d399]">{gtDemo.expected_ent}</span>
-                                <span className="material-symbols-outlined text-[15px] text-[#94a3b8]">arrow_forward</span>
-                                <span className="text-[17px] font-mono font-bold text-[#f43f5e]">{gtDemo.expected_ics}</span>
+                        <div className="flex flex-col justify-start pb-4 pt-1">
+                            <span className="text-[13px] text-[#94a3b8] font-bold tracking-wider uppercase mb-0.5">Behavior Detected</span>
+                            <span className="text-[16px] text-[#e2e8f0] font-medium">{gtDemo.behavior}</span>
+                        </div>
+                    </div>
+
+                    {/* Node 4 */}
+                    <div className="flex gap-3">
+                        <div className="flex flex-col items-center shrink-0">
+                            <div className="w-[40px] h-[40px] rounded-full bg-[#1e293b] border-2 border-[#34d399] flex items-center justify-center shadow-[0_0_15px_rgba(52,211,153,0.3)]">
+                                <span className="material-symbols-outlined text-[#34d399] text-[18px]">gavel</span>
+                            </div>
+                        </div>
+                        <div className="flex flex-col justify-start pt-1">
+                            <span className="text-[13px] text-[#94a3b8] font-bold tracking-wider uppercase mb-0.5">Decision Matrix</span>
+                            <div className="flex items-center gap-2 mt-1 bg-[#090d16]/80 border border-[#334155] p-2.5 rounded-lg w-fit shadow-inner">
+                                <div className="flex flex-col items-center">
+                                    <span className="text-[10px] text-[#94a3b8] uppercase mb-1 tracking-widest font-bold">Enterprise</span>
+                                    <span className="text-[18px] font-mono font-bold text-[#34d399]">{gtDemo.expected_ent}</span>
+                                </div>
+                                <span className="material-symbols-outlined text-[24px] text-[#64748b] mx-2">arrow_right_alt</span>
+                                <div className="flex flex-col items-center">
+                                    <span className="text-[10px] text-[#94a3b8] uppercase mb-1 tracking-widest font-bold">Cyber-Physical</span>
+                                    <span className="text-[18px] font-mono font-bold text-[#f43f5e]">{gtDemo.expected_ics}</span>
+                                </div>
                             </div>
                         </div>
                     </div>

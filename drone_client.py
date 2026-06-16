@@ -434,17 +434,17 @@ class DroneVictim:
                 
                 # Tạo thanh battery bar
                 batt_bar_len = int(batt_pct / 5)
-                batt_bar = "█" * batt_bar_len + "░" * (20 - batt_bar_len)
+                batt_bar = "#" * batt_bar_len + "-" * (20 - batt_bar_len)
                 
                 # Tạo thanh altitude bar (0-500m)
                 alt_bar_len = int(altitude / 25)  # 500/20 = 25
                 alt_bar_len = min(20, max(0, alt_bar_len))
-                alt_bar = "█" * alt_bar_len + "░" * (20 - alt_bar_len)
+                alt_bar = "#" * alt_bar_len + "-" * (20 - alt_bar_len)
                 
                 # Tạo thanh speed bar (0-200km/h)
                 speed_bar_len = int(speed / 10)  # 200/20 = 10
                 speed_bar_len = min(20, max(0, speed_bar_len))
-                speed_bar = "█" * speed_bar_len + "░" * (20 - speed_bar_len)
+                speed_bar = "#" * speed_bar_len + "-" * (20 - speed_bar_len)
                 
                 # Chọn màu cho battery
                 if batt_pct <= 15:
