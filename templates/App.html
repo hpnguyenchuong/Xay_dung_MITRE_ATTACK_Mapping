@@ -339,7 +339,7 @@ Date.now() - b.t < 2000)); } } }, 50); return ()=> clearInterval(intv);
                     case 3: return (
                         <div className="flex flex-col gap-4 h-full overflow-y-auto custom-scrollbar animate-slide-in-fade pr-2 pb-4 box-border">
                             {/* TOP ROW: Large Visualizations (Full Viewport Height) */}
-                            <div className="shrink-0 flex gap-4 min-h-[calc(100vh-140px)]">
+                            <div className="shrink-0 flex flex-col gap-4 min-h-[calc(100vh-140px)]">
                                 <div className="flex-[1.4] flex min-w-0 min-h-0">
                                     <AttackGraphPanel />
                                 </div>
