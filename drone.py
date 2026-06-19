@@ -1258,6 +1258,16 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         json.dump(existing_report, f, indent=2, ensure_ascii=False)
                 except Exception as e:
                     print(f"Error exporting attack JSON from API: {e}")
+                
+                # --- SYNC TO CAMPAIGN TIMELINE ---
+                try:
+                    time_str = datetime.now().strftime("%H:%M:%S")
+                    stage_name = "Active Attack Execution"
+                    artifact_name = command.replace("_", " ").title()
+                    tech_val = mitre_maps[0]["technique_id"] if mitre_maps else "Unknown"
+                    cursor.execute("INSERT INTO campaign_timeline (drone_id, time, stage, artifact, technique) VALUES (?, ?, ?, ?, ?)", (drone_id, time_str, stage_name, artifact_name, tech_val))
+                except Exception as e:
+                    print(f"Error syncing to campaign timeline: {e}")
                 # ------------------------------------------
 
                 conn.commit()
