@@ -1216,6 +1216,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             t_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             
             conn = sqlite3.connect(DB_FILE_PATH, timeout=30)
+            conn.row_factory = sqlite3.Row
             try:
                 cursor = conn.cursor()
                 cursor.execute(
