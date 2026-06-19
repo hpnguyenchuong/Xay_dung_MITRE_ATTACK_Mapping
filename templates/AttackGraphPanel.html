@@ -52,13 +52,13 @@ window.AttackGraphPanel = () => {
     });
 
     return (
-        <div className="panel h-full w-full flex flex-col box-border">
+        <div className="panel w-full flex flex-col box-border">
             <div className="panel-header text-[#f43f5e] flex items-center gap-2">
                 <span className="material-symbols-outlined text-[17px]">account_tree</span>
                 ATTACK GRAPH RECONSTRUCTION
             </div>
             
-            <div className="flex-1 p-4 overflow-y-auto overflow-x-auto custom-scrollbar flex flex-col gap-8 bg-[#0B1020]">
+            <div className="p-4 overflow-x-auto custom-scrollbar flex flex-col gap-8 bg-[#0B1020]">
                 {chains.length === 0 ? (
                     <div className="text-slate-400 text-center mt-10">Waiting for attack mapping data...</div>
                 ) : (
