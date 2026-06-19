@@ -72,8 +72,8 @@ window.EvidenceChainPanel = () => {
 
                                 <div className="flex flex-col items-center min-w-[120px]">
                                     <div className="text-[#94a3b8] text-[10px] font-bold uppercase mb-2 tracking-widest">L5: ATT&CK Mapping</div>
-                                    <div className="bg-[#f97316]/10 border border-[#f97316] p-2 rounded text-[#f97316] font-bold text-[14px] text-center w-full shadow-[0_0_10px_rgba(249,115,22,0.2)]">
-                                        {chain.technique}
+                                    <div className="bg-[#f97316]/10 border border-[#f97316] p-2 rounded text-[#f97316] font-mono text-[12px] text-center w-full shadow-inner break-words font-bold">
+                                        {chain.technique || "UNMAPPED"}
                                     </div>
                                 </div>
                                 
