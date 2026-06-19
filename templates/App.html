@@ -337,29 +337,30 @@ Date.now() - b.t < 2000)); } } }, 50); return ()=> clearInterval(intv);
                         </div>
                     );
                     case 3: return (
-                        <div className="flex flex-col gap-4 min-h-full animate-slide-in-fade">
-                            <div className="flex gap-4 shrink-0 h-[240px] min-h-0">
-                                <div className="flex-1 flex min-w-0 min-h-0">
-                                    <AttackGraphPanel />
-                                </div>
-                            </div>
-                            <div className="flex gap-4 shrink-0 h-[280px] min-h-0">
-                                <div className="flex-[1.4] flex min-w-0 min-h-0">
-                                    <EvidenceChainPanel />
-                                </div>
-                                <div className="flex-[1.0] flex min-w-0 min-h-0">
+                        <div className="flex gap-4 h-full animate-slide-in-fade">
+                            {/* LEFT COLUMN - Context, Translation & Coverage */}
+                            <div className="flex-[1.0] flex flex-col gap-4 min-w-0 h-full">
+                                <div className="flex-[0.8] flex min-w-0 min-h-0">
                                     <TranslationEnginePanel />
                                 </div>
-                            </div>
-                            <div className="flex gap-4 shrink-0 min-h-[260px] pb-4">
-                                <div className="flex-[1.0] flex min-w-0">
+                                <div className="flex-[1.0] flex min-w-0 min-h-0">
                                     <ATTACKTacticCoveragePanel />
                                 </div>
-                                <div className="flex-[1.2] flex min-w-0">
-                                    <MappingTrendPanel />
-                                </div>
-                                <div className="flex-[0.8] flex min-w-0">
+                                <div className="flex-[0.5] flex min-w-0 min-h-0">
                                     <ICSContextCard />
+                                </div>
+                            </div>
+                            
+                            {/* RIGHT COLUMN - Graph, Chains & Trends */}
+                            <div className="flex-[2.2] flex flex-col gap-4 min-w-0 h-full">
+                                <div className="flex-[1.2] flex min-w-0 min-h-0">
+                                    <AttackGraphPanel />
+                                </div>
+                                <div className="flex-[1.0] flex min-w-0 min-h-0">
+                                    <EvidenceChainPanel />
+                                </div>
+                                <div className="flex-[0.8] flex min-w-0 min-h-0">
+                                    <MappingTrendPanel />
                                 </div>
                             </div>
                         </div>
