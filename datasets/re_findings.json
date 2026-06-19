@@ -1,0 +1,135 @@
+{
+  "metadata": {
+    "malware_name": "DroneFlood",
+    "analysis_date": "2026-06-17",
+    "attack_vectors": [
+      "Persistence",
+      "C2 Communication",
+      "GPS Spoof",
+      "Battery Drain",
+      "IMU Drift",
+      "LiDAR Jamming",
+      "Collision",
+      "Swarm Takeover",
+      "Emergency Landing"
+    ]
+  },
+  "artifacts_by_attack_type": {
+    "Persistence": [
+      {
+        "name": "DF_MUTEX_01",
+        "type": "Mutex",
+        "evidence": "Mutex object in kernel space",
+        "source": "Memory Dump",
+        "validation_level": "L3",
+        "confidence": 95,
+        "enterprise": "T1547.001",
+        "ics": "T0866"
+      },
+      {
+        "name": "DF_REG_RUN",
+        "type": "Registry",
+        "evidence": "HKLM\\Run registry write",
+        "source": "Process Memory",
+        "validation_level": "L3",
+        "confidence": 90,
+        "enterprise": "T1547.001",
+        "ics": "T0866"
+      }
+    ],
+    "GPS Spoof": [
+      {
+        "name": "gps_spoof",
+        "type": "Function",
+        "evidence": "GPS coordinate injection",
+        "source": "Decompiled Code",
+        "validation_level": "L2",
+        "confidence": 90,
+        "enterprise": "T0831",
+        "ics": "T0831"
+      }
+    ],
+    "Battery Drain": [
+      {
+        "name": "battery_drain",
+        "type": "Function",
+        "evidence": "Battery sensor alteration",
+        "source": "Decompiled Code",
+        "validation_level": "L2",
+        "confidence": 85,
+        "enterprise": "T1498",
+        "ics": "T0879"
+      }
+    ],
+    "IMU Drift": [
+      {
+        "name": "imu_drift_injection",
+        "type": "Function",
+        "evidence": "Gyroscope data corruption",
+        "source": "Decompiled Code",
+        "validation_level": "L2",
+        "confidence": 85,
+        "enterprise": "T0832",
+        "ics": "T0832"
+      }
+    ],
+    "LiDAR Jamming": [
+      {
+        "name": "lidar_jamming",
+        "type": "Function",
+        "evidence": "LiDAR signal manipulation",
+        "source": "Decompiled Code",
+        "validation_level": "L2",
+        "confidence": 80,
+        "enterprise": "T0831",
+        "ics": "T0831"
+      }
+    ],
+    "Collision": [
+      {
+        "name": "collision_vector",
+        "type": "Command",
+        "evidence": "Waypoint override",
+        "source": "Network PCAP",
+        "validation_level": "L3",
+        "confidence": 95,
+        "enterprise": "T0831",
+        "ics": "T0831"
+      }
+    ],
+    "Swarm Takeover": [
+      {
+        "name": "FLEET_SYNC",
+        "type": "String",
+        "evidence": "Broadcast sync header",
+        "source": "Memory Dump",
+        "validation_level": "L3",
+        "confidence": 95,
+        "enterprise": "T1489",
+        "ics": "T0869"
+      },
+      {
+        "name": "FLEET_COMMAND_PUSH",
+        "type": "Function",
+        "evidence": "P2P command relay",
+        "source": "Decompiled Code",
+        "validation_level": "L3",
+        "confidence": 95,
+        "enterprise": "T1059",
+        "ics": "T0885"
+      }
+    ],
+    "Emergency Land": [
+      {
+        "name": "forced_landing",
+        "type": "Command",
+        "evidence": "Emergency landing command",
+        "source": "Network PCAP",
+        "validation_level": "L3",
+        "confidence": 95,
+        "enterprise": "T0831",
+        "ics": "T0831"
+      }
+    ]
+  }
+}

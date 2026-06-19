@@ -29,3 +29,5 @@ Thumbs.db
 # Logs
 *.log
 client_log.txt
+
+!datasets/re_findings.json

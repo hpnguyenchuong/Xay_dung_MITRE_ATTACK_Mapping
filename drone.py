@@ -130,6 +130,56 @@ def get_breakdown(row):
             return {}
     return {}
 
+def load_re_findings_from_json():
+    """Load RE findings từ file JSON vào database theo cấu trúc phân loại attack_type"""
+    try:
+        file_path = os.path.join(BASE_DIR, "datasets", "re_findings.json")
+        if not os.path.exists(file_path):
+            file_path = "datasets/re_findings.json"
+            
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        
+        cursor = db_conn.cursor()
+        
+        # Prevent duplication
+        cursor.execute("SELECT COUNT(*) as count FROM re_findings WHERE mapping_reason LIKE 'RE Finding:%'")
+        if cursor.fetchone()["count"] > 0:
+            return True
+            
+        total_loaded = 0
+        for attack_type, artifact_list in data.get("artifacts_by_attack_type", {}).items():
+            for artifact in artifact_list:
+                cursor.execute("""
+                    INSERT INTO re_findings 
+                    (finding, artifact_type, evidence, source, validation_level, 
+                     confidence, enterprise_tech_id, ics_tech_id, behavior, 
+                     mapping_reason, timestamp, drone_id, artifact_address)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    artifact.get("name"),
+                    artifact.get("type"),
+                    artifact.get("evidence"),
+                    artifact.get("source", "Telemetry/RE Analysis"),
+                    artifact.get("validation_level", "L3"),
+                    artifact.get("confidence", 95),
+                    artifact.get("enterprise") or artifact.get("enterprise_tech"),
+                    artifact.get("ics") or artifact.get("ics_tech"),
+                    attack_type.replace("_", " ").title(),
+                    f"RE Finding: {attack_type} attack vector",
+                    datetime.now().isoformat(),
+                    "DRONE-ALL",
+                    artifact.get("address", "Unknown")
+                ))
+                total_loaded += 1
+                
+        db_conn.commit()
+        print(f"[+] Loaded {total_loaded} RE findings categorized by attack types")
+        return True
+    except Exception as e:
+        print(f"[!] Failed to load RE findings: {e}")
+        return False
+
 def init_forensic_db():
     with db_write_lock:
         try:
@@ -374,6 +424,7 @@ def init_forensic_db():
 
             
             db_conn.commit()
+            
         except Exception as e:
             import traceback
             traceback.print_exc()
@@ -2760,6 +2811,7 @@ def http_server():
 
 if __name__ == "__main__":
     init_forensic_db()
+    load_re_findings_from_json()
     threading.Thread(target=db_worker, daemon=True).start()
     threading.Thread(target=tcp_server, daemon=True).start()
     threading.Thread(target=terminal_dashboard_thread, daemon=True).start()
