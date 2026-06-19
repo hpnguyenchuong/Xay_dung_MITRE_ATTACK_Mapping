@@ -1570,8 +1570,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
                             r["breakdown"] = json.loads(r["confidence_breakdown"]) if r["confidence_breakdown"] else {}
                         except Exception:
                             r["breakdown"] = {}
-                        if "confidence_breakdown" in r:
-                            del r["confidence_breakdown"]
                             
                         r["evidence_strength"] = r["breakdown"].get("evidence_strength", 70) if r["breakdown"] else 70
                         
@@ -1582,17 +1580,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
                             "breakdown": r["breakdown"]
                         }
                         
-                        del r["selected_technique"]
-                        del r["confidence"]
-                        del r["reason"]
-                        del r["breakdown"]
-                        
                         try:
                             r["rejected"] = json.loads(r["rejected_candidates"]) if r["rejected_candidates"] else []
                         except Exception:
                             r["rejected"] = []
-                        if "rejected_candidates" in r:
-                            del r["rejected_candidates"]
+                            
                             
                         findings.append(r)
                     self._send_json({"findings": findings})
@@ -1913,10 +1905,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     
                     self._send_json({"recommendations": recs})
 
-                elif endpoint == "re_findings":
-                    cursor.execute("SELECT * FROM re_findings ORDER BY id DESC LIMIT 50")
-                    findings = [dict(row) for row in cursor.fetchall()]
-                    self._send_json({"findings": findings})
                     
                 elif endpoint == "evidence_correlation":
                     cursor.execute("SELECT evidence, finding as artifact, mapping_reason as reason, technique_id as technique, confidence FROM re_findings ORDER BY id DESC LIMIT 50")
