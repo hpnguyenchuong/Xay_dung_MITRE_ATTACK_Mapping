@@ -11,34 +11,34 @@ window.FleetInfectionPanel = ({ drones = [], selectedDrone, onDroneSelect }) => 
  { t: 60, label:"T+60m", title:"Mission failure", color:"#ef4444", icon:"warning", desc:"Trigger Physical Damage", backendCmd:"physical_damage" }
  ];
 
- const activeDronesCount = drones.length > 0 ? drones.filter(d => d.status === 'ACTIVE').length : 10;
- const totalDrones = drones.length || 10;
- 
- // Group drones by ATT&CK Stage
- const stageCounts = {
-"Normal": 0,
-"Beaconing": 0,
-"Controlled": 0,
-"Collection": 0,
-"Exfiltration": 0,
-"Impact": 0
- };
- 
- if (drones.length > 0) {
- drones.forEach(d => {
- const stage = d.campaign_stage ||"Normal";
- if (stageCounts[stage] !== undefined) stageCounts[stage]++;
- else stageCounts["Normal"]++;
- });
- } else {
- // Mock data if no connection
- stageCounts["Normal"] = 3;
- stageCounts["Beaconing"] = 2;
- stageCounts["Controlled"] = 2;
- stageCounts["Impact"] = 3;
- }
+  const activeDrones = drones.filter(d => d.status !== 'OFFLINE');
+  const totalDrones = drones.length > 0 ? activeDrones.length : 10;
+  
+  // Group drones by ATT&CK Stage
+  const stageCounts = {
+    "Normal": 0,
+    "Beaconing": 0,
+    "Controlled": 0,
+    "Collection": 0,
+    "Exfiltration": 0,
+    "Impact": 0
+  };
+  
+  if (drones.length > 0) {
+    activeDrones.forEach(d => {
+      const stage = d.campaign_stage || "Normal";
+      if (stageCounts[stage] !== undefined) stageCounts[stage]++;
+      else stageCounts["Normal"]++;
+    });
+  } else {
+    // Mock data if no connection
+    stageCounts["Normal"] = 3;
+    stageCounts["Beaconing"] = 2;
+    stageCounts["Controlled"] = 2;
+    stageCounts["Impact"] = 3;
+  }
 
- const affectedDrones = totalDrones - stageCounts["Normal"];
+  const affectedDrones = totalDrones - stageCounts["Normal"];
  const compromiseRate = Math.round((affectedDrones / totalDrones) * 100);
 
  return (
