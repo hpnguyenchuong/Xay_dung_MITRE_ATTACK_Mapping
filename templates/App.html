@@ -84,8 +84,8 @@ Date.now() - b.t < 2000)); } } }, 50); return ()=> clearInterval(intv);
  fetch('/api/drones')
  .then(r => r.json())
  .then(data => {
- if(data.fleet && !demoModeRef.current) {
- const fleetArr = Object.values(data.fleet);
+ if(data.drones && !demoModeRef.current) {
+ const fleetArr = data.drones;
  setDrones(fleetArr);
  setSelectedDrone(prev => {
  if (!prev && fleetArr.length > 0) return fleetArr[0];
