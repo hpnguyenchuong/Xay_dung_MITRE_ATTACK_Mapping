@@ -1528,6 +1528,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     })
 
                 elif endpoint == "evaluation_metrics":
+                    # CLO7: Ground Truth Evaluation Metrics (Precision, Recall, F1-Score)
                     cursor.execute("SELECT r.finding, r.enterprise_tech_id, g.expected_enterprise FROM re_findings r JOIN ground_truth_mapping g ON r.finding = g.artifact_pattern")
                     rows = cursor.fetchall()
                     
@@ -2558,6 +2559,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     self._send_json({"status": "success", "file": f"navigator_exports/{filename}"})
 
                 elif endpoint == "evaluation_metrics":
+                    # CLO7: Ground Truth Evaluation Metrics (Precision, Recall, F1-Score)
                     cursor.execute("SELECT expected_enterprise, expected_ics, artifact_pattern FROM ground_truth_mapping")
                     gt_rows = cursor.fetchall()
                     

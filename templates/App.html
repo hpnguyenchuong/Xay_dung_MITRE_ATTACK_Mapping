@@ -283,21 +283,21 @@ Date.now() - b.t < 2000)); } } }, 50); return ()=> clearInterval(intv);
                     case 1: return (
                         <div className="flex flex-col gap-4 h-full animate-slide-in-fade">
                             <div className="flex gap-4">
-                                <div className="flex-1 panel p-4 flex flex-col justify-center items-center bg-[#111827] border border-[#334155] rounded shadow-lg">
-                                    <span className="text-[12px] text-[#94a3b8] font-bold tracking-widest uppercase mb-1">DroneFlood Samples</span>
-                                    <span className="text-3xl font-mono font-bold text-[#38bdf8]">45</span>
+                                <div className="flex-[1.0] panel p-4 flex flex-col justify-center items-center bg-[#0f172a] border border-slate-700 rounded shadow-md">
+                                    <span className="text-[12px] text-slate-400 font-bold tracking-widest uppercase mb-1 flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">science</span> DroneFlood Samples</span>
+                                    <span className="text-3xl font-mono font-bold text-slate-200">45</span>
                                 </div>
-                                <div className="flex-1 panel p-4 flex flex-col justify-center items-center bg-[#111827] border border-[#334155] rounded shadow-lg">
-                                    <span className="text-[12px] text-[#94a3b8] font-bold tracking-widest uppercase mb-1">RE Artifacts</span>
-                                    <span className="text-3xl font-mono font-bold text-[#a855f7]">187</span>
+                                <div className="flex-[1.0] panel p-4 flex flex-col justify-center items-center bg-[#0f172a] border border-slate-700 rounded shadow-md">
+                                    <span className="text-[12px] text-slate-400 font-bold tracking-widest uppercase mb-1 flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">bug_report</span> RE Artifacts</span>
+                                    <span className="text-3xl font-mono font-bold text-slate-200">187</span>
                                 </div>
-                                <div className="flex-1 panel p-4 flex flex-col justify-center items-center bg-[#111827] border border-[#334155] rounded shadow-lg">
-                                    <span className="text-[12px] text-[#94a3b8] font-bold tracking-widest uppercase mb-1">Mapped Techniques</span>
-                                    <span className="text-3xl font-mono font-bold text-[#fbbf24]">12</span>
+                                <div className="flex-[1.0] panel p-4 flex flex-col justify-center items-center bg-[#0f172a] border border-slate-700 rounded shadow-md">
+                                    <span className="text-[12px] text-slate-400 font-bold tracking-widest uppercase mb-1 flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">account_tree</span> Mapped Techniques</span>
+                                    <span className="text-3xl font-mono font-bold text-slate-200">12</span>
                                 </div>
-                                <div className="flex-1 panel p-4 flex flex-col justify-center items-center bg-[#111827] border border-[#334155] rounded shadow-lg">
-                                    <span className="text-[12px] text-[#94a3b8] font-bold tracking-widest uppercase mb-1">ATT&CK Coverage</span>
-                                    <span className="text-3xl font-mono font-bold text-[#34d399]">91%</span>
+                                <div className="flex-[1.0] panel p-4 flex flex-col justify-center items-center bg-[#0f172a] border border-slate-700 rounded shadow-md">
+                                    <span className="text-[12px] text-slate-400 font-bold tracking-widest uppercase mb-1 flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">analytics</span> ATT&CK Coverage</span>
+                                    <span className="text-3xl font-mono font-bold text-[#0ea5e9]">91%</span>
                                 </div>
                             </div>
                             <div className="flex gap-4 flex-1 min-h-0">
@@ -449,9 +449,9 @@ Date.now() - b.t < 2000)); } } }, 50); return ()=> clearInterval(intv);
                                 <button 
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
-                                    className={`flex flex-col items-center gap-2 px-4 transition-all duration-300 transform bg-[#111827] ${isActive ? 'scale-110 text-[#38bdf8]' : (isPast ? 'text-[#34d399]' : 'text-[#64748b] hover:text-white hover:scale-105')}`}
+                                    className={`flex flex-col items-center gap-2 px-4 transition-colors duration-200 bg-[#111827] ${isActive ? 'text-[#0ea5e9]' : (isPast ? 'text-slate-400' : 'text-slate-500 hover:text-slate-300')}`}
                                 >
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${isActive ? 'border-[#38bdf8] bg-[#38bdf8]/20 shadow-[0_0_15px_rgba(56,189,248,0.5)]' : (isPast ? 'border-[#34d399] bg-[#34d399]/10' : 'border-[#334155] bg-[#0B1020]')}`}>
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors duration-200 ${isActive ? 'border-[#0ea5e9] bg-[#0ea5e9]/10' : (isPast ? 'border-slate-600 bg-slate-800' : 'border-slate-700 bg-[#0B1020]')}`}>
                                         {isPast ? <span className="material-symbols-outlined text-[20px]">check</span> : <span className="material-symbols-outlined text-[20px]">{tab.icon}</span>}
                                     </div>
                                     <span className={`text-[13px] font-bold tracking-wide ${isActive ? '' : 'opacity-80'}`}>{tab.name}</span>
@@ -463,9 +463,7 @@ Date.now() - b.t < 2000)); } } }, 50); return ()=> clearInterval(intv);
 
                 {/* Main Content Area */}
                 <div className="flex-1 p-4 overflow-y-auto custom-scrollbar flex flex-col min-h-0 relative">
-                    {/* Ambient Background Glows */}
-                    <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#38bdf8]/5 rounded-full blur-[100px] pointer-events-none"></div>
-                    <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#a855f7]/5 rounded-full blur-[100px] pointer-events-none"></div>
+                    {/* Ambient Background Glows Removed for Enterprise UI */}
                     
                     {renderTabContent()}
                 </div>
