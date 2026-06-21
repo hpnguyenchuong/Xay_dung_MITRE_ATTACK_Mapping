@@ -1809,7 +1809,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                             "minValue": 0,
                             "maxValue": 100
                         },
-                        "techniques": list(techniques_map.values())
+                        "techniques": [t for t in list(techniques_map.values()) if t.get("techniqueID")]
                     }
                     self._send_json(navigator_layer)
                     
@@ -2000,11 +2000,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         self._send_json({"processed_packets": server_processed_packets})
                     
                 elif endpoint == "navigator_export":
-                    cursor.execute("SELECT DISTINCT technique_id FROM attack_mapping")
-                    techs = [row["technique_id"] for row in cursor.fetchall()]
+                    cursor.execute("SELECT DISTINCT technique_id FROM attack_mapping WHERE technique_id IS NOT NULL")
+                    techs = [row["technique_id"] for row in cursor.fetchall() if row["technique_id"]]
                     
                     nav = {
                         "name": "AERO-SHIELD DroneFleet Analysis",
+                        "version": "4.5",
                         "versions": { "attack": "14", "navigator": "4.9.1", "layer": "4.5" },
                         "domain": "ics-attack",
                         "techniques": []
