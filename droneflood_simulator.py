@@ -62,11 +62,12 @@ class DroneFloodSimulator:
             url = f"http://{self.c2_ip}:{self.web_port}/api/drones"
             with urllib.request.urlopen(url, timeout=3) as res:
                 data = json.loads(res.read().decode())
-                fleet = data.get("fleet", {})
+                fleet = data.get("drones", [])
                 
-                # Chuyển đổi dict thành list với drone_id được giữ lại
+                # Chuyển đổi list thành list với drone_id được giữ lại
                 drone_list = []
-                for drone_id, drone_info in fleet.items():
+                for drone_info in fleet:
+                    drone_id = drone_info.get("drone_id", "Unknown")
                     battery = drone_info.get("battery", 0)
                     
                     # ⚡ CHỈ LẤY DRONE CÒN PIN (> 0)
