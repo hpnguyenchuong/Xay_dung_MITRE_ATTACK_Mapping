@@ -70,8 +70,8 @@ class DroneFloodSimulator:
                     drone_id = drone_info.get("drone_id", "Unknown")
                     battery = drone_info.get("battery", 0)
                     
-                    # ⚡ CHỈ LẤY DRONE CÒN PIN (> 0)
-                    if battery <= 0:
+                    # ⚡ CHỈ LẤY DRONE CÒN PIN VÀ ĐANG ONLINE
+                    if battery <= 0 or drone_info.get("status") == "OFFLINE":
                         continue
                     
                     drone_list.append({
