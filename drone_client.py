@@ -189,8 +189,8 @@ class DroneVictim:
         elif cmd_type == "imu_drift":
             self.imu_drift_active = True
             self.state = "UNDER_ATTACK"
-            if "imu_drift_injection" not in self.active_artifacts:
-                self.active_artifacts.append("imu_drift_injection")
+            if "imu_drift" not in self.active_artifacts:
+                self.active_artifacts.append("imu_drift")
             self.threat_score = 80
             rate = params.get("drift_rate", 15)
             print_line("  Status: IMU drift activated")
@@ -221,8 +221,8 @@ class DroneVictim:
         # Lệnh Collision
         elif cmd_type == "collision":
             self.state = "UNDER_ATTACK"
-            if "collision_vector" not in self.active_artifacts:
-                self.active_artifacts.append("collision_vector")
+            if "collision" not in self.active_artifacts:
+                self.active_artifacts.append("collision")
             self.threat_score = 100
             target = params.get("target", "Unknown")
             print_line("  Status: COLLISION COMMAND ACTIVATED")
@@ -232,8 +232,8 @@ class DroneVictim:
         # Lệnh Emergency Landing
         elif cmd_type == "emergency_land":
             self.state = "CRITICAL"
-            if "forced_landing" not in self.active_artifacts:
-                self.active_artifacts.append("forced_landing")
+            if "emergency_land" not in self.active_artifacts:
+                self.active_artifacts.append("emergency_land")
             print_line("  Status: EMERGENCY LANDING ACTIVATED")
             print_line("  Effect: Drone will attempt forced landing")
             
