@@ -1434,13 +1434,21 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         fleet[d_id]["is_hardware_asset"] = True if is_connected else False
                         
                         if not is_connected or row["battery"] <= 0:
-                            # User requested NOT to show disconnected drones
-                            del fleet[d_id]
-                            continue
+                            fleet[d_id]["status"] = "OFFLINE"
+                            fleet[d_id]["threat_score"] = 0
+                            fleet[d_id]["active_artifacts"] = 0
+                            fleet[d_id]["campaign_stage"] = "Offline"
                         else:
                             fleet[d_id]["status"] = "ACTIVE"
                             
-                    self._send_json({"fleet": fleet})
+                    active_drones = {k: v for k, v in fleet.items() if v["status"] == "ACTIVE"}
+                    offline_drones = {k: v for k, v in fleet.items() if v["status"] == "OFFLINE"}
+                    
+                    sorted_offline = sorted(offline_drones.items(), key=lambda x: x[1].get('timestamp', ''), reverse=True)
+                    
+                    final_fleet = list(active_drones.values()) + [v for k, v in sorted_offline[:5]]
+                    
+                    self._send_json({"drones": final_fleet})
 
                 elif endpoint == "malware_profiles":
                     cursor.execute("SELECT * FROM malware_profiles")
