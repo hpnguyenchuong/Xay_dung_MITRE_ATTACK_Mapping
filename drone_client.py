@@ -477,7 +477,7 @@ class DroneVictim:
                 print(f"{status_color}| Altitude: {alt_color}{altitude:5.1f}m [{alt_bar}]{C_END} {status_color}|{C_END}")
                 print(f"{status_color}| Speed: {speed_color}{speed:5.1f}km/h [{speed_bar}]{C_END} {status_color}|{C_END}")
                 print(f"{status_color}| GPS: {gps:<43} {status_color}|{C_END}")
-                print(f"{status_color}| Artifacts: {len(self.active_artifacts):<3} | Threat Score: {self.threat_score:<3}{' ' * (23 - len(str(self.threat_score)))} {status_color}|{C_END}")
+                print(f"{status_color}| Artifacts: {len(self.active_artifacts):<3} | Threat Score: {self.threat_score:<3}{' ' * 19} {status_color}|{C_END}")
                 print(f"{status_color}+{'-' * 50}+{C_END}")
                 
                 # Cảnh báo đặc biệt theo trạng thái
