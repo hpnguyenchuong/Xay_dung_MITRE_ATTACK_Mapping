@@ -8,11 +8,18 @@ window.CampaignSummaryCard = () => {
  fetch('/api/attack_coverage').then(res => res.json()),
  fetch('/api/campaign_timeline').then(res => res.json())
  ]).then(([gtData, coverageData, timelineData]) => {
- let stage = 'Clean';
- if (timelineData && timelineData.campaign_timeline && timelineData.campaign_timeline.length > 0) {
- stage = timelineData.campaign_timeline[0].stage;
- }
- setSummary({ gt: gtData, coverage: coverageData, latestStage: stage });
+        let stage = 'Clean';
+        let allStages = ['Clean'];
+        if (timelineData && timelineData.campaign_timeline && timelineData.campaign_timeline.length > 0) {
+          stage = timelineData.campaign_timeline[0].stage;
+          const uniqueStages = Array.from(new Set(timelineData.campaign_timeline.map(e => e.stage).reverse()));
+          if (!uniqueStages.includes('Clean')) {
+             allStages = ['Clean', ...uniqueStages];
+          } else {
+             allStages = uniqueStages;
+          }
+        }
+        setSummary({ gt: gtData, coverage: coverageData, latestStage: stage, allStages: allStages });
  }).catch(err => console.error(err));
  };
  fetchSummary();
@@ -61,24 +68,22 @@ window.CampaignSummaryCard = () => {
  <span className="text-[#eab308] font-bold text-sm">{gt.details.FN}</span>
  </div>
  
- {/* Stage Progress Bar */}
- <div className="bg-slate-900 p-2 rounded-sm border border-[#1e293b] mb-1">
- <div className="text-[17px] text-slate-400 uppercase font-bold mb-2">Campaign Stages</div>
- <div className="flex flex-col gap-1.5 font-mono text-[16px]">
- {['Persistence', 'Custom C2', 'Fleet Takeover', 'GPS Drift', 'Mission Failure'].map((s, idx) => {
- const stagesOrder = ['Clean', 'Persistence', 'Custom C2', 'Fleet Takeover', 'GPS Drift', 'Mission Failure'];
- const currentIndex = stagesOrder.indexOf(summary.latestStage);
- const thisIndex = stagesOrder.indexOf(s);
- const isCompleted = currentIndex >= thisIndex;
- return (
- <div key={idx} className={`flex items-center gap-2 ${isCompleted ? 'text-[#10b981]' : 'text-[#475569]'}`}>
- <span>{isCompleted ? '✓' : '□'}</span>
- <span className={isCompleted ? 'text-white' : ''}>{s}</span>
- </div>
- );
- })}
- </div>
- </div>
+        {/* Stage Progress Bar */}
+        <div className="bg-slate-900 p-2 rounded-sm border border-[#1e293b] mb-1">
+          <div className="text-[17px] text-slate-400 uppercase font-bold mb-2">Campaign Stages</div>
+          <div className="flex flex-col gap-1.5 font-mono text-[16px]">
+            {summary.allStages ? summary.allStages.slice(-5).map((s, idx) => {
+              return (
+                <div key={idx} className="flex items-center gap-2 text-[#10b981]">
+                  <span>✓</span>
+                  <span className="text-white">{s}</span>
+                </div>
+              );
+            }) : (
+              <div className="text-slate-500">Waiting for timeline...</div>
+            )}
+          </div>
+        </div>
  
  <div className="bg-slate-900 p-2 rounded-sm border border-[#1e293b] flex flex-col mt-2 flex-1 min-h-0">
  <div className="flex justify-between text-[17px] text-slate-400 uppercase border-b border-slate-700 pb-2 mb-2">

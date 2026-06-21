@@ -191,6 +191,7 @@ class DroneVictim:
             self.state = "UNDER_ATTACK"
             if "imu_drift" not in self.active_artifacts:
                 self.active_artifacts.append("imu_drift")
+            self.campaign_stage = "IMU_DRIFT"
             self.threat_score = 80
             rate = params.get("drift_rate", 15)
             print_line("  Status: IMU drift activated")
@@ -204,6 +205,7 @@ class DroneVictim:
             self.state = "UNDER_ATTACK"
             if "battery_drain" not in self.active_artifacts:
                 self.active_artifacts.append("battery_drain")
+            self.campaign_stage = "BATTERY_DRAIN"
             self.threat_score = 85
             print_line("  Status: Battery drain activated")
             print_line(f"  Rate: {self.battery_drain_rate}%/second")
@@ -215,6 +217,7 @@ class DroneVictim:
             self.state = "UNDER_ATTACK"
             if "lidar_jamming" not in self.active_artifacts:
                 self.active_artifacts.append("lidar_jamming")
+            self.campaign_stage = "LIDAR_JAMMING"
             print_line("  Status: LiDAR jamming activated")
             print_line("  Effect: Obstacle detection disabled")
             
@@ -223,6 +226,7 @@ class DroneVictim:
             self.state = "UNDER_ATTACK"
             if "collision" not in self.active_artifacts:
                 self.active_artifacts.append("collision")
+            self.campaign_stage = "COLLISION"
             self.threat_score = 100
             target = params.get("target", "Unknown")
             print_line("  Status: COLLISION COMMAND ACTIVATED")
@@ -234,6 +238,7 @@ class DroneVictim:
             self.state = "CRITICAL"
             if "emergency_land" not in self.active_artifacts:
                 self.active_artifacts.append("emergency_land")
+            self.campaign_stage = "EMERGENCY_LAND"
             print_line("  Status: EMERGENCY LANDING ACTIVATED")
             print_line("  Effect: Drone will attempt forced landing")
             
