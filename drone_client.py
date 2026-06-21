@@ -504,9 +504,9 @@ class DroneVictim:
                 # Cảnh báo đặc biệt theo trạng thái
                 if self.state == "CRITICAL" and altitude < 30:
                     print(f"\n{C_RED}{C_BOLD}")
-                    print("█" * 65)
-                    print(f"█  EMERGENCY! DRONE IS LANDING!  Altitude: {altitude:.0f}m  █")
-                    print("█" * 65)
+                    print("!" * 65)
+                    print(f"!  EMERGENCY! DRONE IS LANDING!  Altitude: {altitude:.0f}m  !")
+                    print("!" * 65)
                     print(f"{C_END}")
                 elif self.gps_spoof_active:
                     print(f"\n{C_YELLOW}GPS SPOOF ACTIVE: Drone flying to fake coordinates{C_END}")
@@ -514,9 +514,9 @@ class DroneVictim:
                     print(f"\n{C_YELLOW}IMU DRIFT ACTIVE: Speed and attitude unstable{C_END}")
                 elif batt_pct <= 15 and time.time() - last_batt_warning > 10:
                     print(f"\n{C_RED}{C_BOLD}")
-                    print("█" * 65)
-                    print(f"█  CRITICAL BATTERY WARNING!  {batt_pct:.0f}% REMAINING  █")
-                    print("█" * 65)
+                    print("!" * 65)
+                    print(f"!  CRITICAL BATTERY WARNING!  {batt_pct:.0f}% REMAINING  !")
+                    print("!" * 65)
                     print(f"{C_END}")
                     last_batt_warning = time.time()
                 
@@ -526,9 +526,9 @@ class DroneVictim:
         
         if self.state == "OFFLINE":
             print(f"\n{C_RED}{C_BOLD}")
-            print("█" * 65)
-            print(f"█  DRONE {self.drone_id} IS OFFLINE!                           █")
-            print("█" * 65)
+            print("!" * 65)
+            print(f"!  DRONE {self.drone_id} IS OFFLINE!                           !")
+            print("!" * 65)
             print(f"{C_END}")
         
         self.sock.close()
