@@ -1,90 +1,90 @@
 window.BehavioralSummaryPanel = ({ drones = [] }) => {
- const [capabilities, setCapabilities] = useState([]);
- const [stats, setStats] = useState({ mapped: 0, ics: 0 });
+    const [capabilities, setCapabilities] = useState([]);
+    const [stats, setStats] = useState({ mapped: 0, ics: 0 });
 
- useEffect(() => {
- fetch('/api/evidence_correlation')
- .then(res => res.json())
- .then(data => {
- const caps = new Set();
- let mapped = 0;
- let ics = 0;
- if(data.correlations) {
- data.correlations.forEach(c => {
- mapped++;
- if (c.technique) ics++;
- if (c.reason.includes("Network") || c.reason.includes("Socket")) caps.add("C2 Communication");
- if (c.artifact.includes("gps") || c.reason.includes("GPS")) caps.add("GPS Manipulation");
- if (c.artifact.includes("battery") || c.artifact.includes("altitude")) caps.add("Telemetry Collection");
- if (c.reason.includes("Base64") || c.reason.includes("XOR")) caps.add("Data Obfuscation");
- if (c.artifact.includes("TCP") || c.artifact.includes("flood")) caps.add("Data Exfiltration");
- });
- }
- 
- // Fallback / Default capabilities if not enough data
- if (caps.size === 0) {
- caps.add("C2 Communication");
- caps.add("GPS Manipulation");
- caps.add("Telemetry Collection");
- caps.add("Data Exfiltration");
- }
- 
- setCapabilities(Array.from(caps));
- setStats({ mapped: mapped || 8, ics: ics || 4 });
- })
- .catch(e => console.error(e));
- }, []);
+    useEffect(() => {
+        fetch('/api/evidence_correlation')
+            .then(res => res.json())
+            .then(data => {
+                const caps = new Set();
+                let mapped = 0;
+                let ics = 0;
+                if(data.correlations) {
+                    data.correlations.forEach(c => {
+                        mapped++;
+                        if (c.technique) ics++;
+                        if (c.reason.includes("Network") || c.reason.includes("Socket")) caps.add("C2 Communication");
+                        if (c.artifact.includes("gps") || c.reason.includes("GPS")) caps.add("GPS Manipulation");
+                        if (c.artifact.includes("battery") || c.artifact.includes("altitude")) caps.add("Telemetry Collection");
+                        if (c.reason.includes("Base64") || c.reason.includes("XOR")) caps.add("Data Obfuscation");
+                        if (c.artifact.includes("TCP") || c.artifact.includes("flood")) caps.add("Data Exfiltration");
+                    });
+                }
+                
+                // Fallback / Default capabilities if not enough data
+                if (caps.size === 0) {
+                    caps.add("C2 Communication");
+                    caps.add("GPS Manipulation");
+                    caps.add("Telemetry Collection");
+                    caps.add("Data Exfiltration");
+                }
+                
+                setCapabilities(Array.from(caps));
+                setStats({ mapped: mapped || 8, ics: ics || 4 });
+            })
+            .catch(e => console.error(e));
+    }, []);
 
- const activeDronesCount = drones.length > 0 ? drones.filter(d => d.status === 'ACTIVE').length : 10;
- const affectedDrones = drones.length > 0 ? drones.filter(d => d.status === 'OFFLINE' || d.drone_state === 'COMPROMISED').length : 5;
+    const activeDronesCount = drones.length > 0 ? drones.filter(d => d.status === 'ACTIVE').length : 10;
+    const affectedDrones = drones.length > 0 ? drones.filter(d => d.status === 'OFFLINE' || d.drone_state === 'COMPROMISED').length : 5;
 
- return (
- <div className="panel flex-[1.0] min-w-0 min-h-0 flex flex-col">
- <div className="panel-header border-b border-[#334155] bg-[#111827] to-transparent text-slate-400">
- <span className="material-symbols-outlined text-[16px]">insights</span>
- BEHAVIORAL SUMMARY
- </div>
- 
- <div className="flex-1 p-3 flex flex-col gap-3 overflow-y-auto custom-scrollbar">
- 
- <div className="bg-[#111827] p-3 rounded border border-[#334155] flex flex-col gap-1">
- <div className="text-[12px] text-[#94a3b8] uppercase tracking-widest font-bold">Malware Family</div>
- <div className="text-[18px] text-slate-400 font-mono font-bold">DroneFlood</div>
- </div>
+    return (
+        <div className="panel flex-[1.0] min-w-0 min-h-0 flex flex-col">
+            <div className="panel-header border-b border-[#334155] bg-gradient-to-r from-[#1e293b] to-transparent text-[#fbbf24]">
+                <span className="material-symbols-outlined text-[16px]">insights</span>
+                BEHAVIORAL SUMMARY
+            </div>
+            
+            <div className="flex-1 p-3 flex flex-col gap-3 overflow-y-auto custom-scrollbar">
+                
+                <div className="bg-[#1e293b]/50 p-3 rounded border border-[#334155] flex flex-col gap-1">
+                    <div className="text-[12px] text-[#94a3b8] uppercase tracking-widest font-bold">Malware Family</div>
+                    <div className="text-[18px] text-[#fbbf24] font-mono font-bold">DroneFlood</div>
+                </div>
 
- <div className="flex flex-col gap-1">
- <div className="text-[12px] text-[#94a3b8] uppercase tracking-widest font-bold border-b border-[#334155] pb-1 mb-1">Capabilities</div>
- {capabilities.map((cap, i) => (
- <div key={i} className="flex items-center gap-2 text-[13px] text-[#e2e8f0]">
- <span className="material-symbols-outlined text-[14px] text-slate-400">check_circle</span>
- {cap}
- </div>
- ))}
- </div>
+                <div className="flex flex-col gap-1">
+                    <div className="text-[12px] text-[#94a3b8] uppercase tracking-widest font-bold border-b border-[#334155] pb-1 mb-1">Capabilities</div>
+                    {capabilities.map((cap, i) => (
+                        <div key={i} className="flex items-center gap-2 text-[13px] text-[#e2e8f0]">
+                            <span className="material-symbols-outlined text-[14px] text-[#34d399]">check_circle</span>
+                            {cap}
+                        </div>
+                    ))}
+                </div>
 
- <div className="grid grid-cols-2 gap-2 mt-1">
- <div className="bg-[#111827] border border-[#1f2937] p-2 rounded flex flex-col justify-center items-center">
- <div className="text-[11px] text-slate-400 uppercase tracking-widest font-bold mb-1">Risk Level</div>
- <div className="text-[16px] text-white font-black bg-[#f43f5e] px-2 py-0.5 rounded">HIGH</div>
- </div>
- <div className="bg-[#111827] border border-[#1f2937] p-2 rounded flex flex-col justify-center items-center">
- <div className="text-[11px] text-slate-400 uppercase tracking-widest font-bold mb-1">Affected Assets</div>
- <div className="text-[18px] text-slate-400 font-mono font-bold">{affectedDrones} Drones</div>
- </div>
- </div>
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                    <div className="bg-[#f43f5e]/10 border border-[#f43f5e]/30 p-2 rounded flex flex-col justify-center items-center">
+                        <div className="text-[11px] text-[#f43f5e] uppercase tracking-widest font-bold mb-1">Risk Level</div>
+                        <div className="text-[16px] text-white font-black bg-[#f43f5e] px-2 py-0.5 rounded">HIGH</div>
+                    </div>
+                    <div className="bg-[#38bdf8]/10 border border-[#38bdf8]/30 p-2 rounded flex flex-col justify-center items-center">
+                        <div className="text-[11px] text-[#38bdf8] uppercase tracking-widest font-bold mb-1">Affected Assets</div>
+                        <div className="text-[18px] text-[#38bdf8] font-mono font-bold">{affectedDrones} Drones</div>
+                    </div>
+                </div>
 
- <div className="grid grid-cols-2 gap-2 mt-1">
- <div className="bg-[#0f172a] border border-[#334155] p-2 rounded flex flex-col justify-center items-center">
- <div className="text-[11px] text-[#cbd5e1] uppercase tracking-widest font-bold mb-1 text-center">Mapped Techniques</div>
- <div className="text-[18px] text-[#cbd5e1] font-mono font-bold">{stats.mapped}</div>
- </div>
- <div className="bg-[#0f172a] border border-[#334155] p-2 rounded flex flex-col justify-center items-center">
- <div className="text-[11px] text-[#cbd5e1] uppercase tracking-widest font-bold mb-1 text-center">Mapped ICS</div>
- <div className="text-[18px] text-[#cbd5e1] font-mono font-bold">{stats.ics}</div>
- </div>
- </div>
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                    <div className="bg-[#0f172a] border border-[#334155] p-2 rounded flex flex-col justify-center items-center">
+                        <div className="text-[11px] text-[#cbd5e1] uppercase tracking-widest font-bold mb-1 text-center">Mapped Techniques</div>
+                        <div className="text-[18px] text-[#cbd5e1] font-mono font-bold">{stats.mapped}</div>
+                    </div>
+                    <div className="bg-[#0f172a] border border-[#334155] p-2 rounded flex flex-col justify-center items-center">
+                        <div className="text-[11px] text-[#cbd5e1] uppercase tracking-widest font-bold mb-1 text-center">Mapped ICS</div>
+                        <div className="text-[18px] text-[#cbd5e1] font-mono font-bold">{stats.ics}</div>
+                    </div>
+                </div>
 
- </div>
- </div>
- );
+            </div>
+        </div>
+    );
 };

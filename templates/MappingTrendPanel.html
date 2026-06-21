@@ -1,113 +1,113 @@
 window.MappingTrendPanel = () => {
- const chartRef = React.useRef(null);
- const chartInstance = React.useRef(null);
+    const chartRef = React.useRef(null);
+    const chartInstance = React.useRef(null);
 
- React.useEffect(() => {
- const fetchTrend = () => {
- fetch('/api/mapping_trend')
- .then(res => res.json())
- .then(data => {
- if (!chartRef.current) return;
- 
- const trend = (data.trend || []).slice(-30);
- const labels = trend.map(t => t.time || 'Unknown');
- const scores = trend.map(t => t.confidence);
- 
- // Basic step logic to map campaign stage back to labels for tooltip if wanted
- 
- const minScore = scores.length > 0 ? Math.min(...scores) : 80;
- const calculatedMin = Math.max(0, minScore - 5);
- 
- if (chartInstance.current) {
- chartInstance.current.data.labels = labels;
- chartInstance.current.data.datasets[0].data = scores;
- chartInstance.current.options.scales.y.min = calculatedMin;
- chartInstance.current.update();
- } else {
- const ctx = chartRef.current.getContext('2d');
- chartInstance.current = new Chart(ctx, {
- type: 'line',
- data: {
- labels: labels,
- datasets: [{
- label: 'Mapping Confidence',
- data: scores,
- borderColor: '#38bdf8',
- backgroundColor: 'rgba(56, 189, 248, 0.1)',
- borderWidth: 2,
- pointBackgroundColor: '#a855f7',
- pointBorderColor: '#fff',
- pointRadius: 4,
- fill: true,
- tension: 0.3
- }]
- },
- options: {
- responsive: true,
- maintainAspectRatio: false,
- layout: { padding: { top: 20, bottom: 0, left: 0, right: 15 } },
- plugins: {
- legend: { display: false },
- tooltip: {
- callbacks: {
- label: function(context) {
- const idx = context.dataIndex;
- const stage = trend[idx]?.stage || 'Unknown';
- return `Score: ${context.parsed.y}% (${stage})`;
- }
- }
- }
- },
- scales: {
- y: {
- min: 80,
- max: 105,
- grid: { color: 'rgba(51, 65, 85, 0.5)' },
- ticks: { 
- color: '#94a3b8', 
- font: { size: 10 },
- stepSize: 5,
- callback: function(value) {
- return value <= 100 ? value : '';
- }
- }
- },
- x: {
- offset: true,
- grid: { display: false },
- ticks: { 
- color: '#94a3b8', 
- font: { size: 9 },
- maxRotation: 45,
- minRotation: 45,
- autoSkip: true,
- maxTicksLimit: 8
- }
- }
- }
- }
- });
- }
- })
- .catch(err => console.error(err));
- };
+    React.useEffect(() => {
+        const fetchTrend = () => {
+            fetch('/api/mapping_trend')
+                .then(res => res.json())
+                .then(data => {
+                    if (!chartRef.current) return;
+                    
+                    const trend = (data.trend || []).slice(-30);
+                    const labels = trend.map(t => t.time || 'Unknown');
+                    const scores = trend.map(t => t.confidence);
+                    
+                    // Basic step logic to map campaign stage back to labels for tooltip if wanted
+                    
+                    const minScore = scores.length > 0 ? Math.min(...scores) : 80;
+                    const calculatedMin = Math.max(0, minScore - 5);
+                    
+                    if (chartInstance.current) {
+                        chartInstance.current.data.labels = labels;
+                        chartInstance.current.data.datasets[0].data = scores;
+                        chartInstance.current.options.scales.y.min = calculatedMin;
+                        chartInstance.current.update();
+                    } else {
+                        const ctx = chartRef.current.getContext('2d');
+                        chartInstance.current = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: labels,
+                                datasets: [{
+                                    label: 'Mapping Confidence',
+                                    data: scores,
+                                    borderColor: '#38bdf8',
+                                    backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                                    borderWidth: 2,
+                                    pointBackgroundColor: '#a855f7',
+                                    pointBorderColor: '#fff',
+                                    pointRadius: 4,
+                                    fill: true,
+                                    tension: 0.3
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                layout: { padding: { top: 20, bottom: 0, left: 0, right: 15 } },
+                                plugins: {
+                                    legend: { display: false },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function(context) {
+                                                const idx = context.dataIndex;
+                                                const stage = trend[idx]?.stage || 'Unknown';
+                                                return `Score: ${context.parsed.y}% (${stage})`;
+                                            }
+                                        }
+                                    }
+                                },
+                                scales: {
+                                    y: {
+                                        min: 80,
+                                        max: 105,
+                                        grid: { color: 'rgba(51, 65, 85, 0.5)' },
+                                        ticks: { 
+                                            color: '#94a3b8', 
+                                            font: { size: 10 },
+                                            stepSize: 5,
+                                            callback: function(value) {
+                                                return value <= 100 ? value : '';
+                                            }
+                                        }
+                                    },
+                                    x: {
+                                        offset: true,
+                                        grid: { display: false },
+                                        ticks: { 
+                                            color: '#94a3b8', 
+                                            font: { size: 9 },
+                                            maxRotation: 45,
+                                            minRotation: 45,
+                                            autoSkip: true,
+                                            maxTicksLimit: 8
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                })
+                .catch(err => console.error(err));
+        };
 
- fetchTrend();
- const interval = setInterval(fetchTrend, 3000);
- return () => clearInterval(interval);
- }, []);
+        fetchTrend();
+        const interval = setInterval(fetchTrend, 3000);
+        return () => clearInterval(interval);
+    }, []);
 
- return (
- <div className="panel h-full flex flex-col">
- <div className="panel-header">
- <span className="material-symbols-outlined text-[16px]">show_chart</span>
- <span>MAPPING CONFIDENCE TREND</span>
- </div>
- <div className="flex-1 relative min-h-0 w-full">
- <div className="absolute inset-4">
- <canvas ref={chartRef}></canvas>
- </div>
- </div>
- </div>
- );
+    return (
+        <div className="panel h-full flex flex-col">
+            <div className="panel-header">
+                <span className="material-symbols-outlined text-[16px]">show_chart</span>
+                <span>MAPPING CONFIDENCE TREND</span>
+            </div>
+            <div className="flex-1 relative min-h-0 w-full">
+                <div className="absolute inset-4">
+                    <canvas ref={chartRef}></canvas>
+                </div>
+            </div>
+        </div>
+    );
 };

@@ -1,393 +1,393 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
- <meta charset="UTF-8">
- <meta name="viewport" content="width=device-width, initial-scale=1.0">
- <title>Drone Fleet Malware Mapping</title>
- <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
- <meta http-equiv="Pragma" content="no-cache" />
- <meta http-equiv="Expires" content="0" />
- <!-- Fonts -->
- <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Fira+Code:wght@400;700&display=swap" rel="stylesheet">
- <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
- 
- <!-- Tailwind CSS -->
- <script src="https://cdn.tailwindcss.com"></script>
- <style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drone Fleet Malware Mapping</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Fira+Code:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
 @media print {
- body { background-color: white !important; color: black !important; overflow: visible !important; height: auto !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
- #root { height: auto !important; }
- .panel { background-color: white !important; color: black !important; border: 1px solid #ccc !important; box-shadow: none !important; page-break-inside: avoid; margin-bottom: 20px; }
- .panel-header { background: #f0f0f0 !important; color: black !important; border-bottom: 1px solid #ccc !important; }
- .bento-grid { display: block !important; height: auto !important; }
- .bento-row { display: block !important; }
- .bento-row > div { margin-bottom: 20px; }
- .bottom-bonus { display: block !important; height: auto !important; }
- .bottom-bonus > div { margin-bottom: 20px; }
- button, .custom-scrollbar::-webkit-scrollbar, .Sidebar, #Sidebar { display: none !important; }
- .text-white, .text-\[\#e2e8f0\], .text-\[\#94a3b8\] { color: black !important; }
- .text-\[\#38bdf8\], .text-\[\#10b981\], .text-\[\#f43f5e\], .text-\[\#fbbf24\], .text-\[\#a855f7\] { color: #333 !important; font-weight: bold; }
- .bg-\[\#0f172a\], .bg-\[\#1e293b\], .bg-\[\#090d16\] { background-color: #f9f9f9 !important; border: 1px solid #ddd !important; }
- * { backdrop-filter: none !important; }
+    body { background-color: white !important; color: black !important; overflow: visible !important; height: auto !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
+    #root { height: auto !important; }
+    .panel { background-color: white !important; color: black !important; border: 1px solid #ccc !important; box-shadow: none !important; page-break-inside: avoid; margin-bottom: 20px; }
+    .panel-header { background: #f0f0f0 !important; color: black !important; border-bottom: 1px solid #ccc !important; }
+    .bento-grid { display: block !important; height: auto !important; }
+    .bento-row { display: block !important; }
+    .bento-row > div { margin-bottom: 20px; }
+    .bottom-bonus { display: block !important; height: auto !important; }
+    .bottom-bonus > div { margin-bottom: 20px; }
+    button, .custom-scrollbar::-webkit-scrollbar, .Sidebar, #Sidebar { display: none !important; }
+    .text-white, .text-\[\#e2e8f0\], .text-\[\#94a3b8\] { color: black !important; }
+    .text-\[\#38bdf8\], .text-\[\#10b981\], .text-\[\#f43f5e\], .text-\[\#fbbf24\], .text-\[\#a855f7\] { color: #333 !important; font-weight: bold; }
+    .bg-\[\#0f172a\], .bg-\[\#1e293b\], .bg-\[\#090d16\] { background-color: #f9f9f9 !important; border: 1px solid #ddd !important; }
+    * { backdrop-filter: none !important; }
 }
- </style>
- <script>
- tailwind.config = {
- theme: {
- extend: {
- colors: {
- background: '#0b1326',
- panel: '#151e32',
- accent: '#89ceff',
- danger: '#f43f5e',
- warning: '#fbbf24',
- success: '#34d399',
- info: '#a855f7'
- },
- fontFamily: {
- sans: ['Inter', 'sans-serif'],
- mono: ['Fira Code', 'monospace']
- }
- }
- }
- }
- </script>
- 
- <!-- React & Babel -->
- <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
- <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
- <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js" crossorigin="anonymous"></script>
- 
- <!-- Lucide Icons & Tailwind -->
- <script src="https://unpkg.com/lucide@latest" crossorigin="anonymous"></script>
- <script src="https://cdn.tailwindcss.com"></script>
- <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.js" crossorigin="anonymous"></script>
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        background: '#0b1326',
+                        panel: '#151e32',
+                        accent: '#89ceff',
+                        danger: '#f43f5e',
+                        warning: '#fbbf24',
+                        success: '#34d399',
+                        info: '#a855f7'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- React & Babel -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js" crossorigin="anonymous"></script>
+    
+    <!-- Lucide Icons & Tailwind -->
+    <script src="https://unpkg.com/lucide@latest" crossorigin="anonymous"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.js" crossorigin="anonymous"></script>
 
- <style>
+    <style>
 :root {
- --bg-main: #050b14;
- --panel-bg: rgba(15, 23, 42, 0.58);
- --panel-border: rgba(148, 163, 184, 0.18);
- --cyan: #38bdf8;
- --purple: #a78bfa;
- --red: #f43f5e;
- --green: #34d399;
- --yellow: #facc15;
+  --bg-main: #050b14;
+  --panel-bg: rgba(15, 23, 42, 0.58);
+  --panel-border: rgba(148, 163, 184, 0.18);
+  --cyan: #38bdf8;
+  --purple: #a78bfa;
+  --red: #f43f5e;
+  --green: #34d399;
+  --yellow: #facc15;
 }
 
 html, body {
- margin: 0;
- padding: 0;
- height: 100vh;
- width: 100vw;
- overflow: hidden;
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
 }
 
 body {
- color: #e5e7eb;
- background: #0B1020;
- font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,"Segoe UI", sans-serif;
+  color: #e5e7eb;
+  background: #0B1020;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 .bento-grid {
- display: flex;
- flex-direction: column;
- flex: 1;
- min-height: 0;
- overflow-y: auto;
- scroll-behavior: smooth;
- padding: 6px 10px;
- gap: 8px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  padding: 6px 10px;
+  gap: 8px;
 }
 
 .bento-row {
- display: flex;
- gap: 8px;
- align-items: stretch;
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
 }
 
 .panel,
 .card,
 .glass-card {
- background: rgba(15, 23, 42, 0.65);
- border: 1px solid rgba(148, 163, 184, 0.25);
- border-radius: 12px;
- backdrop-filter: blur(16px);
- -webkit-backdrop-filter: blur(16px);
- box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
- transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
- height: 100%;
- width: 100%;
- display: flex;
- flex-direction: column;
- overflow: hidden;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 12px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .panel:hover,
 .card:hover,
 .glass-card:hover {
- transform: translateY(-2px);
- border-color: rgba(56,189,248,0.45);
- box-shadow:
- 0 22px 60px rgba(0,0,0,0.42),
- 0 0 22px rgba(56,189,248,0.12);
+  transform: translateY(-2px);
+  border-color: rgba(56,189,248,0.45);
+  box-shadow:
+    0 22px 60px rgba(0,0,0,0.42),
+    0 0 22px rgba(56,189,248,0.12);
 }
 
 .panel-header {
- background: linear-gradient(to right, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.4));
- border-bottom: 1px solid var(--panel-border);
- padding: 6px 12px;
- display: flex;
- align-items: center;
- gap: 6px;
+  background: linear-gradient(to right, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.4));
+  border-bottom: 1px solid var(--panel-border);
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .panel-title,
 .card-title,
 .panel-header h2, 
 .panel-header h3 {
- text-transform: uppercase;
- letter-spacing: 0.08em;
- color: #f8fafc;
- font-size: 15px;
- font-weight: 700;
- text-shadow: 0 0 18px rgba(56,189,248,0.25);
- margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #f8fafc;
+  font-size: 15px;
+  font-weight: 700;
+  text-shadow: 0 0 18px rgba(56,189,248,0.25);
+  margin: 0;
 }
 
 .metric-value,
 .big-number,
 .score-value {
- font-weight: 900;
- background: linear-gradient(90deg, var(--cyan), var(--purple));
- -webkit-background-clip: text;
- color: transparent;
+  font-weight: 900;
+  background: linear-gradient(90deg, var(--cyan), var(--purple));
+  -webkit-background-clip: text;
+  color: transparent;
 }
 
 .status-active,
 .badge-success {
- color: var(--green);
- animation: pulseGlowGreen 1.8s infinite;
+  color: var(--green);
+  animation: pulseGlowGreen 1.8s infinite;
 }
 
 .status-critical,
 .badge-critical {
- color: var(--red);
- animation: pulseGlowRed 1.4s infinite;
+  color: var(--red);
+  animation: pulseGlowRed 1.4s infinite;
 }
 
 @keyframes pulseGlowGreen {
- 0%, 100% { text-shadow: 0 0 6px rgba(52,211,153,0.35); }
- 50% { text-shadow: 0 0 18px rgba(52,211,153,0.85); }
+  0%, 100% { text-shadow: 0 0 6px rgba(52,211,153,0.35); }
+  50% { text-shadow: 0 0 18px rgba(52,211,153,0.85); }
 }
 
 @keyframes pulseGlowRed {
- 0%, 100% { text-shadow: 0 0 6px rgba(244,63,94,0.35); }
- 50% { text-shadow: 0 0 18px rgba(244,63,94,0.9); }
+  0%, 100% { text-shadow: 0 0 6px rgba(244,63,94,0.35); }
+  50% { text-shadow: 0 0 18px rgba(244,63,94,0.9); }
 }
 
 @keyframes pulse-red {
- 0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4); }
- 70% { box-shadow: 0 0 0 10px rgba(244, 63, 94, 0); }
- 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(244, 63, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
 }
 
 .animate-pulse-slow {
- animation: pulse-red 2s infinite;
+  animation: pulse-red 2s infinite;
 }
 
 table {
- width: 100%;
- border-collapse: collapse;
+  width: 100%;
+  border-collapse: collapse;
 }
 
 thead th {
- color: #93c5fd;
- font-size: 14px;
- text-transform: uppercase;
- letter-spacing: 0.08em;
- border-bottom: 1px solid rgba(148,163,184,0.2);
- padding: 6px;
- text-align: left;
+  color: #93c5fd;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid rgba(148,163,184,0.2);
+  padding: 6px;
+  text-align: left;
 }
 
 tbody tr {
- border-bottom: 1px solid rgba(148,163,184,0.08);
- transition: background 0.2s ease;
+  border-bottom: 1px solid rgba(148,163,184,0.08);
+  transition: background 0.2s ease;
 }
 
 tbody td {
- padding: 6px;
- font-size: 14px;
+  padding: 6px;
+  font-size: 14px;
 }
 
 tbody tr:hover {
- background: rgba(30,41,59,0.55);
+  background: rgba(30,41,59,0.55);
 }
 
 ::-webkit-scrollbar,
 .custom-scrollbar::-webkit-scrollbar {
- width: 6px;
- height: 6px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track,
 .custom-scrollbar::-webkit-scrollbar-track {
- background: rgba(15, 23, 42, 0.5);
- border-radius: 8px;
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb,
 .custom-scrollbar::-webkit-scrollbar-thumb {
- background: rgba(148,163,184,0.4);
- border-radius: 8px;
+  background: rgba(148,163,184,0.4);
+  border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb:hover,
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
- background: rgba(56,189,248,0.7);
+  background: rgba(56,189,248,0.7);
 }
 
 .metric-grid {
- display: grid;
- grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
- gap: 6px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 6px;
 }
 
 .metric-card {
- padding: 8px;
- border-radius: 10px;
- background: rgba(15,23,42,0.62);
- border: 1px solid rgba(148,163,184,0.14);
- display: flex;
- flex-direction: column;
- justify-content: center;
- align-items: center;
+  padding: 8px;
+  border-radius: 10px;
+  background: rgba(15,23,42,0.62);
+  border: 1px solid rgba(148,163,184,0.14);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
 .metric-label {
- font-size: 15px;
- color: #94a3b8;
- text-transform: uppercase;
- letter-spacing: 0.08em;
- text-align: center;
+  font-size: 15px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-align: center;
 }
 
 .metric-value {
- font-size: 42px;
- line-height: 1;
- text-align: center;
+  font-size: 42px;
+  line-height: 1;
+  text-align: center;
 }
 
 .heatmap-cell {
- border-radius: 10px;
- padding: 4px 10px;
- display: inline-block;
- text-align: center;
- font-weight: 700;
- border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 4px 10px;
+  display: inline-block;
+  text-align: center;
+  font-weight: 700;
+  border: 1px solid rgba(255,255,255,0.08);
 }
 
 .heat-low {
- background: rgba(15,23,42,0.75);
- color: #94a3b8;
+  background: rgba(15,23,42,0.75);
+  color: #94a3b8;
 }
 
 .heat-medium {
- background: rgba(56,189,248,0.16);
- color: #38bdf8;
+  background: rgba(56,189,248,0.16);
+  color: #38bdf8;
 }
 
 .heat-high {
- background: rgba(244,63,94,0.18);
- color: #fb7185;
- box-shadow: 0 0 16px rgba(244,63,94,0.18);
+  background: rgba(244,63,94,0.18);
+  color: #fb7185;
+  box-shadow: 0 0 16px rgba(244,63,94,0.18);
 }
 
 .key-finding-box {
- padding: 18px;
- border-radius: 18px;
- background:
- linear-gradient(rgba(15,23,42,0.86), rgba(15,23,42,0.86)) padding-box,
- linear-gradient(135deg, #38bdf8, #a78bfa, #f43f5e) border-box;
- border: 1px solid transparent;
- box-shadow: 0 0 28px rgba(56,189,248,0.12);
+  padding: 18px;
+  border-radius: 18px;
+  background:
+    linear-gradient(rgba(15,23,42,0.86), rgba(15,23,42,0.86)) padding-box,
+    linear-gradient(135deg, #38bdf8, #a78bfa, #f43f5e) border-box;
+  border: 1px solid transparent;
+  box-shadow: 0 0 28px rgba(56,189,248,0.12);
 }
 
 .key-finding-title {
- color: #f8fafc;
- font-weight: 900;
- letter-spacing: 0.08em;
- text-transform: uppercase;
+  color: #f8fafc;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .key-finding-text {
- color: #cbd5e1;
- line-height: 1.6;
+  color: #cbd5e1;
+  line-height: 1.6;
 }
 
 .flow-line {
- width: 2px;
- background: linear-gradient(to bottom, #334155, #f43f5e);
- margin: 4px auto;
- flex-grow: 1;
+  width: 2px;
+  background: linear-gradient(to bottom, #334155, #f43f5e);
+  margin: 4px auto;
+  flex-grow: 1;
 }
- </style>
+    </style>
 </head>
 <body class="h-screen w-screen p-2 font-sans">
- <div id="error-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); color:red; z-index:9999; padding:20px; font-family:monospace; overflow-y:auto;">
- <h2>DASHBOARD RENDER ERROR</h2>
- <pre id="error-message"></pre>
- </div>
- <script>
- window.addEventListener('error', function(e) {
- document.getElementById('error-overlay').style.display = 'block';
- document.getElementById('error-message').innerText = e.message + '\n' + e.filename + ':' + e.lineno;
- });
- window.addEventListener('unhandledrejection', function(e) {
- document.getElementById('error-overlay').style.display = 'block';
- document.getElementById('error-message').innerText = e.reason;
- });
- </script>
- <div id="root" class="h-full w-full"></div>
- <script type="text/babel">
- /* INCLUDE: Sidebar.html */
- /* INCLUDE: ResearchMethodologyPanel.html */
- /* INCLUDE: ArtifactDrawer.html */
- /* INCLUDE: C2MonitorPanel.html */
- /* INCLUDE: DatasetStatisticsPanel.html */
- /* INCLUDE: REEvidencePanel.html */
- /* INCLUDE: ICSImpactScorePanel.html */
- /* INCLUDE: LimitationsPanel.html */
- /* INCLUDE: ResearchContributionsPanel.html */
- /* INCLUDE: ResearchConclusionPanel.html */
- /* INCLUDE: ThreatCoverageHeatmapPanel.html */
- /* INCLUDE: DatasetProvenancePanel.html */
- /* INCLUDE: DroneHistoryPanel.html */
- /* INCLUDE: App.html */
- /* INCLUDE: ActiveAttacksPanel.html */
- /* INCLUDE: EvidenceChainPanel.html */
- /* INCLUDE: GroundTruthPanel.html */
- /* INCLUDE: CampaignSummaryCard.html */
- /* INCLUDE: ICSImpactMatrixPanel.html */
- /* INCLUDE: MappingTrendPanel.html */
- /* INCLUDE: ResearchQuestionsPanel.html */
- /* INCLUDE: AcademicConclusionPanel.html */
- /* INCLUDE: MappingValidationPanel.html */
- /* INCLUDE: TranslationEnginePanel.html */
- /* INCLUDE: FleetInfectionPanel.html */
- /* INCLUDE: AttackControlPanel.html */
- /* INCLUDE: ArtifactMatrixPanel.html */
- /* INCLUDE: MalwareExecutionFlowPanel.html */
- /* INCLUDE: BehavioralSummaryPanel.html */
- /* INCLUDE: HeuristicMappingJustificationPanel.html */
- /* INCLUDE: ATTACKTacticCoveragePanel.html */
- /* INCLUDE: ICSContextCard.html */
- /* INCLUDE: AttackGraphPanel.html */
- /* INCLUDE: CampaignTimelineReconstructionPanel.html */
- /* INCLUDE: AttackReportsPanel.html */
- const root = ReactDOM.createRoot(document.getElementById('root'));
- root.render(<App />);
- </script>
+    <div id="error-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); color:red; z-index:9999; padding:20px; font-family:monospace; overflow-y:auto;">
+        <h2>DASHBOARD RENDER ERROR</h2>
+        <pre id="error-message"></pre>
+    </div>
+    <script>
+        window.addEventListener('error', function(e) {
+            document.getElementById('error-overlay').style.display = 'block';
+            document.getElementById('error-message').innerText = e.message + '\n' + e.filename + ':' + e.lineno;
+        });
+        window.addEventListener('unhandledrejection', function(e) {
+            document.getElementById('error-overlay').style.display = 'block';
+            document.getElementById('error-message').innerText = e.reason;
+        });
+    </script>
+    <div id="root" class="h-full w-full"></div>
+    <script type="text/babel">
+        /* INCLUDE: Sidebar.html */
+        /* INCLUDE: ResearchMethodologyPanel.html */
+        /* INCLUDE: ArtifactDrawer.html */
+        /* INCLUDE: C2MonitorPanel.html */
+        /* INCLUDE: DatasetStatisticsPanel.html */
+        /* INCLUDE: REEvidencePanel.html */
+        /* INCLUDE: ICSImpactScorePanel.html */
+        /* INCLUDE: LimitationsPanel.html */
+        /* INCLUDE: ResearchContributionsPanel.html */
+        /* INCLUDE: ResearchConclusionPanel.html */
+        /* INCLUDE: ThreatCoverageHeatmapPanel.html */
+        /* INCLUDE: DatasetProvenancePanel.html */
+        /* INCLUDE: DroneHistoryPanel.html */
+        /* INCLUDE: App.html */
+        /* INCLUDE: ActiveAttacksPanel.html */
+        /* INCLUDE: EvidenceChainPanel.html */
+        /* INCLUDE: GroundTruthPanel.html */
+        /* INCLUDE: CampaignSummaryCard.html */
+        /* INCLUDE: ICSImpactMatrixPanel.html */
+        /* INCLUDE: MappingTrendPanel.html */
+        /* INCLUDE: ResearchQuestionsPanel.html */
+        /* INCLUDE: AcademicConclusionPanel.html */
+        /* INCLUDE: MappingValidationPanel.html */
+        /* INCLUDE: TranslationEnginePanel.html */
+        /* INCLUDE: FleetInfectionPanel.html */
+        /* INCLUDE: AttackControlPanel.html */
+        /* INCLUDE: ArtifactMatrixPanel.html */
+        /* INCLUDE: MalwareExecutionFlowPanel.html */
+        /* INCLUDE: BehavioralSummaryPanel.html */
+        /* INCLUDE: HeuristicMappingJustificationPanel.html */
+        /* INCLUDE: ATTACKTacticCoveragePanel.html */
+        /* INCLUDE: ICSContextCard.html */
+        /* INCLUDE: AttackGraphPanel.html */
+        /* INCLUDE: CampaignTimelineReconstructionPanel.html */
+        /* INCLUDE: AttackReportsPanel.html */
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
 </body>
 </html>
