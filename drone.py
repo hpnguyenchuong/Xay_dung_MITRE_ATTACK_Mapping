@@ -2439,15 +2439,50 @@ class DashboardHandler(BaseHTTPRequestHandler):
                             elif ics and ics.startswith("T108") and len(ics) == 5:
                                 ics = "T08" + ics[4:]
                                 
-                            # Nếu artifact là gps_spoof hoặc battery_drain thì ép cứng ICS Tech đúng chuẩn
-                            artifact_val = row["evidence_source"]
-                            if artifact_val == "gps_spoof":
+                            finding_val = row["artifact"] or ""
+                            evidence_val = row["evidence_source"] or ""
+                            behavior = row["behavior"]
+                            if not behavior: behavior = "Unknown"
+                            enterprise = row["enterprise_tech_id"] or ""
+                            
+                            def match_key(k):
+                                return k in finding_val or k in evidence_val
+
+                            if match_key("gps_spoof"):
                                 ics = "T0831"
-                            elif artifact_val == "battery_drain":
+                                if behavior == "Unknown": behavior = "Navigation Manipulation"
+                                if not enterprise: enterprise = "T0831"
+                            elif match_key("battery_drain"):
                                 ics = "T0879"
+                                if behavior == "Unknown": behavior = "Battery Drain"
+                                if not enterprise: enterprise = "T1498"
+                            elif match_key("lidar_jamming"):
+                                ics = "T0831"
+                                if behavior == "Unknown": behavior = "Sensor Jamming"
+                                if not enterprise: enterprise = "T0831"
+                            elif match_key("imu_drift_injection"):
+                                ics = "T0832"
+                                if behavior == "Unknown": behavior = "IMU Manipulation"
+                                if not enterprise: enterprise = "T0832"
+                            elif match_key("collision_vector") or match_key("forced_landing"):
+                                ics = "T0831"
+                                if behavior == "Unknown": behavior = "Kinetic Impact"
+                                if not enterprise: enterprise = "T0831"
+                            elif match_key("FLEET_SYNC") or match_key("FLEET_COMMAND_PUSH") or match_key("custom_protocol_v1"):
+                                ics = "T0869" if match_key("FLEET_SYNC") else "T0885"
+                                if behavior == "Unknown": behavior = "Swarm Takeover"
+                                if not enterprise: enterprise = "T1059"
+                            
+                            # Cố gắng đảo lại cho đẹp nếu artifact chứa ID ngắn (ví dụ gps_spoof)
+                            # để cột Artifact luôn là tên mô tả, Evidence là ID
+                            final_artifact = finding_val
+                            final_evidence = evidence_val
+                            short_ids = ["gps_spoof", "battery_drain", "lidar_jamming", "imu_drift_injection", "collision_vector", "forced_landing", "FLEET_SYNC", "FLEET_COMMAND_PUSH", "custom_protocol_v1", "DF_MUTEX_01", "DF_REG_RUN", "DF_STARTUP_CFG"]
+                            if final_artifact in short_ids and final_evidence not in short_ids:
+                                final_artifact, final_evidence = final_evidence, final_artifact
 
                             # Xuất cột theo đúng thứ tự logic, không đảo ngược nữa
-                            writer.writerow([row["drone_id"], row["artifact"], row["evidence_source"], row["behavior"], row["enterprise_tech_id"], ics, row["confidence"], row["timestamp"]])
+                            writer.writerow([row["drone_id"], final_artifact, final_evidence, behavior, enterprise, ics, row["confidence"], row["timestamp"]])
                             
                     self._send_json({"status": "success", "file": f"reports/export_re_findings_{report_ts}.csv"})
 
