@@ -1619,12 +1619,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         if active_drone_ids:
                             placeholders = ','.join(['?'] * len(active_drone_ids))
                             cursor.execute(f"DELETE FROM campaign_timeline WHERE drone_id NOT IN ({placeholders}) AND drone_id != 'ALL_DRONES'", active_drone_ids)
-                            db.commit()
+                            conn.commit()
                             query = f"SELECT time, drone_id, stage, artifact, technique FROM campaign_timeline WHERE drone_id IN ({placeholders}) OR drone_id = 'ALL_DRONES' ORDER BY id DESC LIMIT 50"
                             cursor.execute(query, active_drone_ids)
                         else:
                             cursor.execute("DELETE FROM campaign_timeline WHERE drone_id != 'ALL_DRONES'")
-                            db.commit()
+                            conn.commit()
                             cursor.execute("SELECT time, drone_id, stage, artifact, technique FROM campaign_timeline WHERE drone_id = 'ALL_DRONES' ORDER BY id DESC LIMIT 50")
                             
                         self._send_json({"campaign_timeline": [dict(row) for row in cursor.fetchall()]})
