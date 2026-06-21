@@ -1219,53 +1219,57 @@ class DashboardHandler(BaseHTTPRequestHandler):
             conn.row_factory = sqlite3.Row
             try:
                 cursor = conn.cursor()
-                cursor.execute(
-                    "INSERT INTO active_attacks (attack_id, drone_id, attack_type, status, started_at, params) VALUES (?, ?, ?, ?, ?, ?)",
-                    (attack_id, drone_id, command, "IN PROGRESS", t_str, json.dumps(params))
-                )
                 
-                # --- AUTO-GENERATE FORENSIC JSON REPORT ---
-                try:
-                    cursor.execute("SELECT * FROM attack_mapping WHERE drone_id=? ORDER BY id DESC LIMIT 1", (drone_id,))
-                    mitre_map = cursor.fetchone()
-                    mitre_maps = [dict(mitre_map)] if mitre_map else []
+                # Chỉ log vào DB và tạo JSON Report nếu là LỆNH TẤN CÔNG thực sự
+                non_attack_cmds = ["ping", "get_status", "get_config", "get_ioc", "isolate node", "generate_report", "restore_control", "stop_gps_spoof", "fleet_report"]
+                if command.lower() not in non_attack_cmds:
+                    cursor.execute(
+                        "INSERT INTO active_attacks (attack_id, drone_id, attack_type, status, started_at, params) VALUES (?, ?, ?, ?, ?, ?)",
+                        (attack_id, drone_id, command, "IN PROGRESS", t_str, json.dumps(params))
+                    )
                     
-                    incident_entry = {
-                        "attack_id": attack_id,
-                        "timestamp": t_str,
-                        "attack_type": command,
-                        "mitre_technique": mitre_maps[0]["technique_id"] if mitre_maps else "Unknown",
-                        "ics_technique": mitre_maps[0].get("ics_tech_id", "Unknown") if mitre_maps else "Unknown",
-                        "state_transition": "NORMAL -> UNDER_ATTACK",
-                        "mitre_mapping": mitre_maps
-                    }
-                    
-                    filename = f"attack_{drone_id}_report.json"
-                    filepath = os.path.join(ATTACKS_DIR, filename)
-                    
-                    if os.path.exists(filepath):
-                        with open(filepath, "r", encoding="utf-8") as f:
-                            try:
-                                existing_report = json.load(f)
-                            except:
-                                existing_report = {"target_drone": drone_id, "incidents": []}
-                    else:
-                        existing_report = {"target_drone": drone_id, "incidents": []}
+                    # --- AUTO-GENERATE FORENSIC JSON REPORT ---
+                    try:
+                        cursor.execute("SELECT * FROM attack_mapping WHERE drone_id=? ORDER BY id DESC LIMIT 1", (drone_id,))
+                        mitre_map = cursor.fetchone()
+                        mitre_maps = [dict(mitre_map)] if mitre_map else []
                         
-                    existing_report["incidents"].append(incident_entry)
-                    
-                    with open(filepath, "w", encoding="utf-8") as f:
-                        json.dump(existing_report, f, indent=2, ensure_ascii=False)
+                        incident_entry = {
+                            "attack_id": attack_id,
+                            "timestamp": t_str,
+                            "attack_type": command,
+                            "mitre_technique": mitre_maps[0]["technique_id"] if mitre_maps else "Unknown",
+                            "ics_technique": mitre_maps[0].get("ics_tech_id", "Unknown") if mitre_maps else "Unknown",
+                            "state_transition": "NORMAL -> UNDER_ATTACK",
+                            "mitre_mapping": mitre_maps
+                        }
                         
-                    # Tự động cập nhật vào Campaign Timeline để UI hiển thị ngay lập tức
-                    time_only = datetime.now().strftime("%H:%M:%S")
-                    stage_str = command.upper()
-                    tech_str = incident_entry["mitre_technique"]
-                    cursor.execute("INSERT INTO campaign_timeline (drone_id, time, stage, artifact, technique) VALUES (?, ?, ?, ?, ?)", (drone_id or 'ALL_DRONES', time_only, stage_str, "C2 Attack Command: " + command, tech_str))
-                    
-                except Exception as e:
-                    print(f"Error exporting attack JSON from API: {e}")
-                # ------------------------------------------
+                        filename = f"attack_{drone_id}_report.json"
+                        filepath = os.path.join(ATTACKS_DIR, filename)
+                        
+                        if os.path.exists(filepath):
+                            with open(filepath, "r", encoding="utf-8") as f:
+                                try:
+                                    existing_report = json.load(f)
+                                except:
+                                    existing_report = {"target_drone": drone_id, "incidents": []}
+                        else:
+                            existing_report = {"target_drone": drone_id, "incidents": []}
+                            
+                        existing_report["incidents"].append(incident_entry)
+                        
+                        with open(filepath, "w", encoding="utf-8") as f:
+                            json.dump(existing_report, f, indent=2, ensure_ascii=False)
+                            
+                        # Tự động cập nhật vào Campaign Timeline để UI hiển thị ngay lập tức
+                        time_only = datetime.now().strftime("%H:%M:%S")
+                        stage_str = command.upper()
+                        tech_str = incident_entry["mitre_technique"]
+                        cursor.execute("INSERT INTO campaign_timeline (drone_id, time, stage, artifact, technique) VALUES (?, ?, ?, ?, ?)", (drone_id or 'ALL_DRONES', time_only, stage_str, "C2 Attack Command: " + command, tech_str))
+                        
+                    except Exception as e:
+                        print(f"Error exporting attack JSON from API: {e}")
+                    # ------------------------------------------
 
                 conn.commit()
                 result = {"success": True, "attack_id": attack_id}
@@ -2442,8 +2446,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                             elif artifact_val == "battery_drain":
                                 ics = "T0879"
 
-                            # Đảo vị trí evidence_source (Cột B) và artifact (Cột C) theo ý người dùng
-                            writer.writerow([row["drone_id"], row["evidence_source"], row["artifact"], row["behavior"], row["enterprise_tech_id"], ics, row["confidence"], row["timestamp"]])
+                            # Xuất cột theo đúng thứ tự logic, không đảo ngược nữa
+                            writer.writerow([row["drone_id"], row["artifact"], row["evidence_source"], row["behavior"], row["enterprise_tech_id"], ics, row["confidence"], row["timestamp"]])
                             
                     self._send_json({"status": "success", "file": f"reports/export_re_findings_{report_ts}.csv"})
 
