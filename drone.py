@@ -1615,18 +1615,19 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     with clients_lock:
                         active_drone_ids = list(clients.keys())
                     
-                    if active_drone_ids:
-                        placeholders = ','.join(['?'] * len(active_drone_ids))
-                        cursor.execute(f"DELETE FROM campaign_timeline WHERE drone_id NOT IN ({placeholders}) AND drone_id != 'ALL_DRONES'", active_drone_ids)
-                        db.commit()
-                        query = f"SELECT time, drone_id, stage, artifact, technique FROM campaign_timeline WHERE drone_id IN ({placeholders}) OR drone_id = 'ALL_DRONES' ORDER BY id DESC LIMIT 50"
-                        cursor.execute(query, active_drone_ids)
-                    else:
-                        cursor.execute("DELETE FROM campaign_timeline WHERE drone_id != 'ALL_DRONES'")
-                        db.commit()
-                        cursor.execute("SELECT time, drone_id, stage, artifact, technique FROM campaign_timeline WHERE drone_id = 'ALL_DRONES' ORDER BY id DESC LIMIT 50")
-                        
-                    self._send_json({"campaign_timeline": [dict(row) for row in cursor.fetchall()]})
+                    with db_write_lock:
+                        if active_drone_ids:
+                            placeholders = ','.join(['?'] * len(active_drone_ids))
+                            cursor.execute(f"DELETE FROM campaign_timeline WHERE drone_id NOT IN ({placeholders}) AND drone_id != 'ALL_DRONES'", active_drone_ids)
+                            db.commit()
+                            query = f"SELECT time, drone_id, stage, artifact, technique FROM campaign_timeline WHERE drone_id IN ({placeholders}) OR drone_id = 'ALL_DRONES' ORDER BY id DESC LIMIT 50"
+                            cursor.execute(query, active_drone_ids)
+                        else:
+                            cursor.execute("DELETE FROM campaign_timeline WHERE drone_id != 'ALL_DRONES'")
+                            db.commit()
+                            cursor.execute("SELECT time, drone_id, stage, artifact, technique FROM campaign_timeline WHERE drone_id = 'ALL_DRONES' ORDER BY id DESC LIMIT 50")
+                            
+                        self._send_json({"campaign_timeline": [dict(row) for row in cursor.fetchall()]})
                     
                 elif endpoint == "mapping_history":
                     cursor.execute("SELECT time, artifact, technique FROM mapping_history ORDER BY id DESC LIMIT 50")
