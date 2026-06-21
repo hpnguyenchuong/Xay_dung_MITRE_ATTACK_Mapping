@@ -1382,26 +1382,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     
                 elif endpoint == "attack_reports":
                     files = []
-                    with clients_lock:
-                        active_drone_ids = list(clients.keys())
-                        
                     if os.path.exists(ATTACKS_DIR):
                         all_files = [f for f in os.listdir(ATTACKS_DIR) if f.endswith(".json")]
                         all_files.sort(reverse=True)
-                        for f in all_files:
-                            # Extract drone ID from filename e.g. attack_DRONE-330_20240101.json
-                            parts = f.split('_')
-                            d_id = None
-                            for p in parts:
-                                if p.startswith('DRONE-'):
-                                    d_id = p
-                                    break
-                            if not d_id and len(parts) > 1:
-                                d_id = parts[1]
-                                
-                            if d_id and d_id not in active_drone_ids:
-                                continue
-                                
+                        for f in all_files[:50]:
                             try:
                                 filepath = os.path.join(ATTACKS_DIR, f)
                                 stat = os.stat(filepath)
@@ -1410,8 +1394,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
                                     "size": stat.st_size,
                                     "created_at": datetime.fromtimestamp(stat.st_ctime).strftime("%Y-%m-%d %H:%M:%S")
                                 })
-                                if len(files) >= 50:
-                                    break
                             except Exception:
                                 pass
                     self._send_json({"reports": files})
