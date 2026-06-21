@@ -1,17 +1,21 @@
 const AttackReportsPanel = () => {
  const [reports, setReports] = React.useState([]);
  const [loading, setLoading] = React.useState(true);
+ const [viewMode, setViewMode] = React.useState('current');
+ const [currentDrones, setCurrentDrones] = React.useState(new Set());
 
  const fetchReports = () => {
  setLoading(true);
- fetch('/api/attack_reports')
- .then(res => res.json())
- .then(data => {
- setReports(data.reports || []);
+ Promise.all([
+ fetch('/api/attack_reports').then(res => res.json()),
+ fetch('/api/drones').then(res => res.json())
+ ]).then(([reportsData, dronesData]) => {
+ setReports(reportsData.reports || []);
+ const activeIds = new Set((dronesData.drones || []).map(d => d.drone_id));
+ setCurrentDrones(activeIds);
  setLoading(false);
- })
- .catch(err => {
- console.error("Error fetching attack reports", err);
+ }).catch(err => {
+ console.error("Error fetching data", err);
  setLoading(false);
  });
  };
@@ -48,12 +52,19 @@ const AttackReportsPanel = () => {
       group.sort((a, b) => new Date(b.created_at.replace(' ', 'T')) - new Date(a.created_at.replace(' ', 'T')));
     });
 
-    return Object.entries(groups).sort((a, b) => {
+    const sortedGroups = Object.entries(groups).sort((a, b) => {
       const newestA = new Date(a[1][0].created_at.replace(' ', 'T'));
       const newestB = new Date(b[1][0].created_at.replace(' ', 'T'));
       return newestB - newestA;
     });
-  }, [reports]);
+
+    return {
+      current: sortedGroups.filter(([id]) => currentDrones.has(id)),
+      history: sortedGroups.filter(([id]) => !currentDrones.has(id))
+    };
+  }, [reports, currentDrones]);
+
+  const activeReports = groupedReports[viewMode] || [];
 
   return (
   <div className="flex flex-col h-full w-full bg-slate-800 border border-slate-700 rounded-sm-sm overflow-hidden relative">
@@ -63,8 +74,14 @@ const AttackReportsPanel = () => {
   <span className="font-bold text-[#f8fafc] text-[14px] tracking-wide">ATTACK INCIDENT REPORTS</span>
   </div>
   <div className="flex items-center gap-3">
-  <span className="text-slate-400 text-[12px] font-mono">{reports.length} Reports</span>
-  <button onClick={fetchReports} className="text-slate-400 hover:text-[#d8b4fe] transition-colors">
+  
+  <div className="flex bg-slate-900 border border-slate-700 rounded-sm p-0.5">
+    <button onClick={() => setViewMode('current')} className={`px-3 py-1 text-[11px] font-bold rounded-sm transition-colors ${viewMode === 'current' ? 'bg-[#38bdf8] text-slate-900' : 'text-slate-400 hover:text-slate-200'}`}>CURRENT</button>
+    <button onClick={() => setViewMode('history')} className={`px-3 py-1 text-[11px] font-bold rounded-sm transition-colors ${viewMode === 'history' ? 'bg-slate-700 text-slate-200' : 'text-slate-400 hover:text-slate-200'}`}>HISTORY</button>
+  </div>
+  
+  <span className="text-slate-400 text-[12px] font-mono border-l border-slate-700 pl-3">{activeReports.length} Drones</span>
+  <button onClick={fetchReports} className="text-slate-400 hover:text-[#d8b4fe] transition-colors ml-1">
   <span className="material-symbols-outlined text-[18px]">refresh</span>
   </button>
   </div>
@@ -96,7 +113,7 @@ const AttackReportsPanel = () => {
   </div>
   ) : (
   <div className="flex flex-col gap-1">
-  {groupedReports.map(([droneId, groupReports], gIdx) => (
+  {activeReports.map(([droneId, groupReports], gIdx) => (
     <div key={gIdx} className={`mb-4 last:mb-0 ${gIdx === 0 ? 'bg-[#f43f5e]/5 border border-[#f43f5e]/30 p-2 rounded-sm shadow-[0_0_15px_rgba(244,63,94,0.1)]' : ''}`}>
       <div className="flex items-center gap-2 mb-2 px-1">
         <span className={`material-symbols-outlined text-[16px] ${gIdx === 0 ? 'text-[#f43f5e] animate-pulse' : 'text-[#38bdf8]'}`}>flight</span>
