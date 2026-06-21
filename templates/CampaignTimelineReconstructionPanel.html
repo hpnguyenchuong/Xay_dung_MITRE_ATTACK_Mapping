@@ -3,16 +3,22 @@ window.CampaignTimelineReconstructionPanel = () => {
  const [loading, setLoading] = useState(true);
 
  useEffect(() => {
- fetch('/api/campaign_timeline')
- .then(res => res.json())
- .then(data => {
- setTimelineData(data.campaign_timeline || []);
- setLoading(false);
- })
- .catch(err => {
- console.error(err);
- setLoading(false);
- });
+    const fetchTimeline = () => {
+      fetch('/api/campaign_timeline')
+      .then(res => res.json())
+      .then(data => {
+        setTimelineData(data.campaign_timeline || []);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
+    };
+    
+    fetchTimeline();
+    const interval = setInterval(fetchTimeline, 2000);
+    return () => clearInterval(interval);
  }, []);
 
  if (loading) {

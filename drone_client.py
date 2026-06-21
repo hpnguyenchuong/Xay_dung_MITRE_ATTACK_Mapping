@@ -474,15 +474,31 @@ class DroneVictim:
                     speed_color = status_color
                 
                 print(f"{status_color}[{datetime.now().strftime('%H:%M:%S')}] {C_END}")
+                def make_line(content, colored_content=None):
+                    if colored_content is None:
+                        colored_content = content
+                    pad = max(0, 48 - len(content))
+                    return f"{status_color}| {colored_content}{' ' * pad} |{C_END}"
+
                 print(f"{status_color}+{'-' * 50}+{C_END}")
-                print(f"{status_color}| Drone: {self.drone_id:<43} {status_color}|{C_END}")
-                print(f"{status_color}| State: {self.state:<43} {status_color}|{C_END}")
-                print(f"{status_color}|{'-' * 50}{status_color}|{C_END}")
-                print(f"{status_color}| Battery: {batt_color}{batt_pct:3.0f}% [{batt_bar}]{C_END} {status_color}|{C_END}")
-                print(f"{status_color}| Altitude: {alt_color}{altitude:5.1f}m [{alt_bar}]{C_END} {status_color}|{C_END}")
-                print(f"{status_color}| Speed: {speed_color}{speed:5.1f}km/h [{speed_bar}]{C_END} {status_color}|{C_END}")
-                print(f"{status_color}| GPS: {gps:<43} {status_color}|{C_END}")
-                print(f"{status_color}| Artifacts: {len(self.active_artifacts):<3} | Threat Score: {self.threat_score:<3}{' ' * 19} {status_color}|{C_END}")
+                print(make_line(f"Drone: {self.drone_id}"))
+                print(make_line(f"State: {self.state}"))
+                print(f"{status_color}|{'-' * 50}|{C_END}")
+                
+                batt_content = f"Battery: {batt_pct:3.0f}% [{batt_bar}]"
+                batt_colored = f"Battery: {batt_color}{batt_pct:3.0f}% [{batt_bar}]{status_color}"
+                print(make_line(batt_content, batt_colored))
+                
+                alt_content = f"Altitude: {altitude:5.1f}m [{alt_bar}]"
+                alt_colored = f"Altitude: {alt_color}{altitude:5.1f}m [{alt_bar}]{status_color}"
+                print(make_line(alt_content, alt_colored))
+                
+                speed_content = f"Speed: {speed:5.1f}km/h [{speed_bar}]"
+                speed_colored = f"Speed: {speed_color}{speed:5.1f}km/h [{speed_bar}]{status_color}"
+                print(make_line(speed_content, speed_colored))
+                
+                print(make_line(f"GPS: {gps}"))
+                print(make_line(f"Artifacts: {len(self.active_artifacts):<3} | Threat Score: {self.threat_score:<3}"))
                 print(f"{status_color}+{'-' * 50}+{C_END}")
                 
                 # Cảnh báo đặc biệt theo trạng thái
