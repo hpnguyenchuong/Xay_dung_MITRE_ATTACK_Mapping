@@ -1,0 +1,145 @@
+const AttackReportsPanel = () => {
+ const [reports, setReports] = React.useState([]);
+ const [loading, setLoading] = React.useState(true);
+
+ const fetchReports = () => {
+ setLoading(true);
+ fetch('/api/attack_reports')
+ .then(res => res.json())
+ .then(data => {
+ setReports(data.reports || []);
+ setLoading(false);
+ })
+ .catch(err => {
+ console.error("Error fetching attack reports", err);
+ setLoading(false);
+ });
+ };
+
+ React.useEffect(() => {
+ fetchReports();
+ const interval = setInterval(fetchReports, 10000); // Polling every 10s
+ return () => clearInterval(interval);
+ }, []);
+
+ const handleDownload = (filename) => {
+ window.open(`/reports/attacks/${filename}`, '_blank');
+ };
+
+  const groupedReports = React.useMemo(() => {
+    const groups = {};
+    reports.forEach(report => {
+      const nameParts = report.filename.split('_');
+      let droneId = "Unknown";
+      for (let p of nameParts) {
+        if (p.startsWith('DRONE-')) {
+          droneId = p;
+          break;
+        }
+      }
+      if (droneId === "Unknown" && nameParts.length > 1) {
+          droneId = nameParts[1];
+      }
+      if (!groups[droneId]) groups[droneId] = [];
+      groups[droneId].push(report);
+    });
+
+    Object.values(groups).forEach(group => {
+      group.sort((a, b) => new Date(b.created_at.replace(' ', 'T')) - new Date(a.created_at.replace(' ', 'T')));
+    });
+
+    return Object.entries(groups).sort((a, b) => {
+      const newestA = new Date(a[1][0].created_at.replace(' ', 'T'));
+      const newestB = new Date(b[1][0].created_at.replace(' ', 'T'));
+      return newestB - newestA;
+    });
+  }, [reports]);
+
+  return (
+  <div className="flex flex-col h-full w-full bg-slate-800 border border-slate-700 rounded-sm-sm overflow-hidden relative">
+  <div className="bg-slate-800 px-4 py-3 flex justify-between items-center border-b border-slate-700">
+  <div className="flex items-center gap-2">
+  <span className="material-symbols-outlined text-slate-400 text-[20px]">manage_search</span>
+  <span className="font-bold text-[#f8fafc] text-[14px] tracking-wide">ATTACK INCIDENT REPORTS</span>
+  </div>
+  <div className="flex items-center gap-3">
+  <span className="text-slate-400 text-[12px] font-mono">{reports.length} Reports</span>
+  <button onClick={fetchReports} className="text-slate-400 hover:text-[#d8b4fe] transition-colors">
+  <span className="material-symbols-outlined text-[18px]">refresh</span>
+  </button>
+  </div>
+  </div>
+  
+  <div className="flex-1 overflow-auto p-4 custom-scrollbar">
+  {loading && reports.length === 0 ? (
+  <div className="flex flex-col justify-center items-center h-full text-slate-400 gap-4 relative">
+  <div className="relative flex justify-center items-center">
+  <div className="absolute w-24 h-24 border border-slate-700 rounded-sm-full animate-ping" style={{ animationDuration: '2s' }}></div>
+  <div className="absolute w-16 h-16 border-t border-b border-slate-700 rounded-sm-full animate-spin" style={{ animationDuration: '3s' }}></div>
+  <span className="material-symbols-outlined text-[32px] animate-pulse">radar</span>
+  </div>
+  <div className="flex flex-col items-center z-10">
+  <span className="text-[14px] font-mono tracking-widest font-bold uppercase">Scanning Network...</span>
+  <span className="text-[12px] text-slate-400 italic mt-1">Analyzing pcap and system logs for anomalies</span>
+  </div>
+  </div>
+  ) : reports.length === 0 ? (
+  <div className="flex flex-col justify-center items-center h-full text-slate-400 gap-4">
+  <div className="relative flex justify-center items-center mb-2">
+  <div className="absolute w-32 h-32 bg-slate-800 rounded-sm-full blur-xl"></div>
+  <span className="material-symbols-outlined text-[48px] text-[#334155] relative z-10">policy</span>
+  </div>
+  <div className="flex flex-col items-center gap-1 text-center z-10">
+  <span className="text-[15px] font-bold text-slate-400 tracking-wider uppercase">No Incidents Detected</span>
+  <span className="text-[13px] text-[#475569] max-w-sm">The DroneFlood fleet is currently operating within normal parameters. Run an attack simulation to generate forensic reports.</span>
+  </div>
+  </div>
+  ) : (
+  <div className="flex flex-col gap-1">
+  {groupedReports.map(([droneId, groupReports], gIdx) => (
+    <div key={gIdx} className="mb-4 last:mb-0">
+      <div className="flex items-center gap-2 mb-2 px-1">
+        <span className="material-symbols-outlined text-[#38bdf8] text-[16px]">flight</span>
+        <span className="font-bold text-[#38bdf8] font-mono text-[14px] uppercase">{droneId}</span>
+        <span className="bg-slate-800 text-slate-400 px-2 py-0.5 rounded-sm text-[11px] font-mono border border-slate-700">{groupReports.length} Reports</span>
+      </div>
+      <div className="flex flex-col gap-2 pl-3 border-l-2 border-slate-700 ml-2">
+        {groupReports.map((report, rIdx) => {
+          const sizeKb = (report.size / 1024).toFixed(1);
+          return (
+            <div key={rIdx} className="bg-slate-900 border border-slate-700 p-2.5 rounded-sm hover:border-[#38bdf8]/50 transition-colors flex justify-between items-center group">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2 text-slate-300 text-[12px] font-mono">
+                  <span className="material-symbols-outlined text-[14px] text-slate-400">schedule</span>
+                  <span className="font-bold text-[#f8fafc]">{report.created_at}</span>
+                  <span className="bg-slate-800 text-slate-400 px-2 py-0.5 rounded-sm text-[11px] font-mono">{sizeKb} KB</span>
+                </div>
+                <div className="text-[11px] text-slate-400 font-mono truncate max-w-[220px]" title={report.filename}>
+                  {report.filename}
+                </div>
+              </div>
+              
+              <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button 
+                  onClick={() => handleDownload(report.filename)}
+                  className="bg-[#0ea5e9]/10 hover:bg-[#0ea5e9]/30 text-[#0ea5e9] border border-[#0ea5e9]/50 px-3 py-1.5 rounded-sm flex items-center gap-1 transition-colors"
+                  title="Download JSON Report"
+                >
+                  <span className="material-symbols-outlined text-[16px]">download</span>
+                  <span className="text-[11px] font-bold">JSON</span>
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  ))}
+  </div>
+ )}
+ </div>
+ </div>
+ );
+};
+
+window.AttackReportsPanel = AttackReportsPanel;
