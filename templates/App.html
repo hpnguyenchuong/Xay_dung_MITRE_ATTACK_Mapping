@@ -281,21 +281,24 @@ Date.now() - b.t < 2000)); } } }, 50); return ()=> clearInterval(intv);
             const renderTabContent = () => {
                 switch(activeTab) {
                     case 1: return (
-                        <div className="flex flex-col gap-4 h-full animate-slide-in-fade">
-                            <div className="bg-[#111827] border border-[#1f2937] rounded-sm p-4 w-[400px] font-mono text-[13px]">
-                                <div className="text-[#94a3b8] border-b border-[#1f2937] pb-2 mb-2 font-bold tracking-widest uppercase">Research Context</div>
-                                <div className="flex justify-between py-1"><span className="text-[#94a3b8]">Campaign Status</span><span className="text-[#ef4444]">● Critical</span></div>
-                                <div className="flex justify-between py-1"><span className="text-[#94a3b8]">Techniques Mapped</span><span className="text-[#e5e7eb]">12</span></div>
-                                <div className="flex justify-between py-1"><span className="text-[#94a3b8]">ATT&CK Coverage</span><span className="text-[#e5e7eb]">91%</span></div>
-                                <div className="flex justify-between py-1"><span className="text-[#94a3b8]">RE Artifacts</span><span className="text-[#e5e7eb]">187</span></div>
-                            </div>
-                            <div className="flex gap-4 flex-1 min-h-0">
-                                <div className="flex-[1.0] flex min-w-0">
+                        <div className="flex gap-4 h-full animate-slide-in-fade">
+                            {/* Left Column */}
+                            <div className="flex-[1.0] flex flex-col gap-4 min-w-0">
+                                <div className="bg-[#111827] border border-[#1f2937] rounded-sm p-4 font-mono text-[13px] shrink-0 shadow-md">
+                                    <div className="text-[#94a3b8] border-b border-[#1f2937] pb-2 mb-2 font-bold tracking-widest uppercase">Research Context</div>
+                                    <div className="flex justify-between py-1"><span className="text-[#94a3b8]">Campaign Status</span><span className="text-[#ef4444]">● Critical</span></div>
+                                    <div className="flex justify-between py-1"><span className="text-[#94a3b8]">Techniques Mapped</span><span className="text-[#e5e7eb]">12</span></div>
+                                    <div className="flex justify-between py-1"><span className="text-[#94a3b8]">ATT&CK Coverage</span><span className="text-[#e5e7eb]">91%</span></div>
+                                    <div className="flex justify-between py-1"><span className="text-[#94a3b8]">RE Artifacts</span><span className="text-[#e5e7eb]">187</span></div>
+                                </div>
+                                <div className="flex-1 flex min-h-0">
                                     <ResearchContributionsPanel />
                                 </div>
-                                <div className="flex-[1.5] flex min-w-0">
-                                    <ResearchMethodologyPanel />
-                                </div>
+                            </div>
+                            
+                            {/* Right Column */}
+                            <div className="flex-[1.5] flex min-w-0">
+                                <ResearchMethodologyPanel />
                             </div>
                         </div>
                     );
