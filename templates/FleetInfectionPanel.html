@@ -1,106 +1,106 @@
 window.FleetInfectionPanel = ({ drones = [], selectedDrone, onDroneSelect }) => {
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [currentTime, setCurrentTime] = useState(-1);
+ const [isPlaying, setIsPlaying] = useState(false);
+ const [currentTime, setCurrentTime] = useState(-1);
 
-    const timelineEvents = [
-        { t: 0, label: "T+00m", title: "Malware loaded", color: "#89ceff", icon: "download", desc: "Inject Initial Payload", backendCmd: "get_profile" },
-        { t: 15, label: "T+15m", title: "Persistence established", color: "#c084fc", icon: "vpn_key", desc: "Ensure Survivability", backendCmd: "get_config" },
-        { t: 30, label: "T+30m", title: "Custom C2 channel", color: "#f97316", icon: "settings_ethernet", desc: "Establish Comm Link", backendCmd: "get_ioc" },
-        { t: 45, label: "T+45m", title: "Fleet Takeover (P2P)", color: "#f43f5e", icon: "hub", desc: "Infect Swarm Neighbors", backendCmd: "tcp_flood" },
-        { t: 55, label: "T+55m", title: "GPS Drift manipulation", color: "#fbbf24", icon: "gps_off", desc: "Alter Navigation Path", backendCmd: "gps_spoof" },
-        { t: 60, label: "T+60m", title: "Mission failure", color: "#ef4444", icon: "warning", desc: "Trigger Physical Damage", backendCmd: "physical_damage" }
-    ];
+ const timelineEvents = [
+ { t: 0, label:"T+00m", title:"Malware loaded", color:"#89ceff", icon:"download", desc:"Inject Initial Payload", backendCmd:"get_profile" },
+ { t: 15, label:"T+15m", title:"Persistence established", color:"#c084fc", icon:"vpn_key", desc:"Ensure Survivability", backendCmd:"get_config" },
+ { t: 30, label:"T+30m", title:"Custom C2 channel", color:"#f97316", icon:"settings_ethernet", desc:"Establish Comm Link", backendCmd:"get_ioc" },
+ { t: 45, label:"T+45m", title:"Fleet Takeover (P2P)", color:"#f43f5e", icon:"hub", desc:"Infect Swarm Neighbors", backendCmd:"tcp_flood" },
+ { t: 55, label:"T+55m", title:"GPS Drift manipulation", color:"#fbbf24", icon:"gps_off", desc:"Alter Navigation Path", backendCmd:"gps_spoof" },
+ { t: 60, label:"T+60m", title:"Mission failure", color:"#ef4444", icon:"warning", desc:"Trigger Physical Damage", backendCmd:"physical_damage" }
+ ];
 
-    const activeDronesCount = drones.length > 0 ? drones.filter(d => d.status === 'ACTIVE').length : 10;
-    const totalDrones = drones.length || 10;
-    
-    // Group drones by ATT&CK Stage
-    const stageCounts = {
-        "Normal": 0,
-        "Beaconing": 0,
-        "Controlled": 0,
-        "Collection": 0,
-        "Exfiltration": 0,
-        "Impact": 0
-    };
-    
-    if (drones.length > 0) {
-        drones.forEach(d => {
-            const stage = d.campaign_stage || "Normal";
-            if (stageCounts[stage] !== undefined) stageCounts[stage]++;
-            else stageCounts["Normal"]++;
-        });
-    } else {
-        // Mock data if no connection
-        stageCounts["Normal"] = 3;
-        stageCounts["Beaconing"] = 2;
-        stageCounts["Controlled"] = 2;
-        stageCounts["Impact"] = 3;
-    }
+ const activeDronesCount = drones.length > 0 ? drones.filter(d => d.status === 'ACTIVE').length : 10;
+ const totalDrones = drones.length || 10;
+ 
+ // Group drones by ATT&CK Stage
+ const stageCounts = {
+"Normal": 0,
+"Beaconing": 0,
+"Controlled": 0,
+"Collection": 0,
+"Exfiltration": 0,
+"Impact": 0
+ };
+ 
+ if (drones.length > 0) {
+ drones.forEach(d => {
+ const stage = d.campaign_stage ||"Normal";
+ if (stageCounts[stage] !== undefined) stageCounts[stage]++;
+ else stageCounts["Normal"]++;
+ });
+ } else {
+ // Mock data if no connection
+ stageCounts["Normal"] = 3;
+ stageCounts["Beaconing"] = 2;
+ stageCounts["Controlled"] = 2;
+ stageCounts["Impact"] = 3;
+ }
 
-    const affectedDrones = totalDrones - stageCounts["Normal"];
-    const compromiseRate = Math.round((affectedDrones / totalDrones) * 100);
+ const affectedDrones = totalDrones - stageCounts["Normal"];
+ const compromiseRate = Math.round((affectedDrones / totalDrones) * 100);
 
-    return (
-        <div className="panel flex-1 w-full max-w-full min-w-0 min-h-0 flex flex-col box-border overflow-hidden">
-            <div className="panel-header text-[#f43f5e] flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[17px]">device_hub</span>
-                    KILL CHAIN PROGRESSION
-                </div>
-            </div>
-            
-            <div className="flex-1 flex flex-col min-w-0 min-h-0 p-3 gap-3 overflow-y-auto overflow-x-hidden custom-scrollbar box-border w-full max-w-full">
-                
-                <div className="flex justify-between items-end mb-1">
-                    <div className="text-[16px] font-bold text-[#94a3b8]">FLEET SUMMARY</div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-2 mb-2">
-                    <div className="bg-[#1e293b] p-2 rounded border border-[#334155] flex flex-col items-center justify-center">
-                        <span className="text-[16px] text-[#38bdf8] font-mono font-bold">TOTAL ASSETS</span>
-                        <span className="text-[18px] font-bold text-[#38bdf8]">{totalDrones}</span>
-                    </div>
-                    <div className="bg-[#1e293b] p-2 rounded border border-[#f43f5e]/30 flex flex-col items-center justify-center shadow-[0_0_10px_rgba(244,63,94,0.1)]">
-                        <span className="text-[16px] text-[#f43f5e] font-mono font-bold">AFFECTED</span>
-                        <span className="text-[18px] font-bold text-[#f43f5e]">{affectedDrones}</span>
-                    </div>
-                </div>
+ return (
+ <div className="panel flex-1 w-full max-w-full min-w-0 min-h-0 flex flex-col box-border overflow-hidden">
+ <div className="panel-header text-[#f43f5e] flex justify-between items-center">
+ <div className="flex items-center gap-2">
+ <span className="material-symbols-outlined text-[17px]">device_hub</span>
+ KILL CHAIN PROGRESSION
+ </div>
+ </div>
+ 
+ <div className="flex-1 flex flex-col min-w-0 min-h-0 p-3 gap-3 overflow-y-auto overflow-x-hidden custom-scrollbar box-border w-full max-w-full">
+ 
+ <div className="flex justify-between items-end mb-1">
+ <div className="text-[16px] font-bold text-slate-400">FLEET SUMMARY</div>
+ </div>
+ 
+ <div className="grid grid-cols-2 gap-2 mb-2">
+ <div className="bg-slate-800 p-2 rounded-sm border border-slate-700 flex flex-col items-center justify-center">
+ <span className="text-[16px] text-slate-400 font-mono font-bold">TOTAL ASSETS</span>
+ <span className="text-[18px] font-bold text-slate-400">{totalDrones}</span>
+ </div>
+ <div className="bg-slate-800 p-2 rounded-sm border border-[#f43f5e]/30 flex flex-col items-center justify-center shadow-none">
+ <span className="text-[16px] text-[#f43f5e] font-mono font-bold">AFFECTED</span>
+ <span className="text-[18px] font-bold text-[#f43f5e]">{affectedDrones}</span>
+ </div>
+ </div>
 
-                {/* Kill Chain Progression Bars */}
-                <div className="text-[15px] font-bold text-[#f97316] mt-2 mb-1 tracking-widest uppercase">ATT&CK Stages</div>
-                
-                <div className="flex flex-col gap-3">
-                    {Object.entries(stageCounts).map(([stage, count], idx) => {
-                        const percent = totalDrones > 0 ? (count / totalDrones) * 100 : 0;
-                        let colorClass = "bg-[#34d399]";
-                        let textClass = "text-[#34d399]";
-                        
-                        if (stage === "Beaconing") { colorClass = "bg-[#89ceff]"; textClass = "text-[#89ceff]"; }
-                        if (stage === "Controlled") { colorClass = "bg-[#c084fc]"; textClass = "text-[#c084fc]"; }
-                        if (stage === "Collection") { colorClass = "bg-[#fbbf24]"; textClass = "text-[#fbbf24]"; }
-                        if (stage === "Exfiltration") { colorClass = "bg-[#f97316]"; textClass = "text-[#f97316]"; }
-                        if (stage === "Impact") { colorClass = "bg-[#f43f5e]"; textClass = "text-[#f43f5e]"; }
-                        
-                        return (
-                            <div key={stage} className="flex flex-col gap-1">
-                                <div className="flex justify-between items-center font-mono text-[13px]">
-                                    <span className={`${textClass} font-bold`}>{stage}</span>
-                                    <span className="text-slate-400">{count} Drones ({percent.toFixed(0)}%)</span>
-                                </div>
-                                <div className="w-full h-2 bg-[#1e293b] rounded-full overflow-hidden border border-[#334155]">
-                                    <div className={`h-full ${colorClass} transition-all duration-1000`} style={{ width: `${percent}%` }}></div>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
+ {/* Kill Chain Progression Bars */}
+ <div className="text-[15px] font-bold text-[#f97316] mt-2 mb-1 tracking-widest uppercase">ATT&CK Stages</div>
+ 
+ <div className="flex flex-col gap-3">
+ {Object.entries(stageCounts).map(([stage, count], idx) => {
+ const percent = totalDrones > 0 ? (count / totalDrones) * 100 : 0;
+ let colorClass ="bg-[#34d399]";
+ let textClass ="text-slate-400";
+ 
+ if (stage ==="Beaconing") { colorClass ="bg-[#89ceff]"; textClass ="text-[#89ceff]"; }
+ if (stage ==="Controlled") { colorClass ="bg-[#c084fc]"; textClass ="text-[#c084fc]"; }
+ if (stage ==="Collection") { colorClass ="bg-[#fbbf24]"; textClass ="text-[#fbbf24]"; }
+ if (stage ==="Exfiltration") { colorClass ="bg-[#f97316]"; textClass ="text-[#f97316]"; }
+ if (stage ==="Impact") { colorClass ="bg-[#f43f5e]"; textClass ="text-[#f43f5e]"; }
+ 
+ return (
+ <div key={stage} className="flex flex-col gap-1">
+ <div className="flex justify-between items-center font-mono text-[13px]">
+ <span className={`${textClass} font-bold`}>{stage}</span>
+ <span className="text-slate-400">{count} Drones ({percent.toFixed(0)}%)</span>
+ </div>
+ <div className="w-full h-2 bg-slate-800 rounded-sm-full overflow-hidden border border-slate-700">
+ <div className={`h-full ${colorClass} transition-all duration-1000`} style={{ width: `${percent}%` }}></div>
+ </div>
+ </div>
+ );
+ })}
+ </div>
 
-                <div className="bg-[#f43f5e]/10 border border-[#f43f5e] p-2 rounded flex items-center justify-between shadow-[0_0_15px_rgba(244,63,94,0.2)] mt-4">
-                    <span className="text-[15px] font-bold text-[#f43f5e] tracking-widest">THREAT PROPAGATION</span>
-                    <span className="text-[15px] font-black text-white bg-[#f43f5e] px-2 py-0.5 rounded">{compromiseRate}%</span>
-                </div>
-            </div>
-        </div>
-    );
+ <div className="bg-transparent border border-[#f43f5e] p-2 rounded-sm flex items-center justify-between shadow-none mt-4">
+ <span className="text-[15px] font-bold text-[#f43f5e] tracking-widest">THREAT PROPAGATION</span>
+ <span className="text-[15px] font-black text-white bg-[#f43f5e] px-2 py-0.5 rounded-sm">{compromiseRate}%</span>
+ </div>
+ </div>
+ </div>
+ );
 };

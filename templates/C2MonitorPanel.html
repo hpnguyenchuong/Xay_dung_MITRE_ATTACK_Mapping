@@ -1,59 +1,59 @@
 window.C2MonitorPanel = ({ drones, droneId, setSelectedDrone, logsEndRef, currentState, handleCommand }) => (
-    <div className="panel flex-1 min-h-0 flex flex-col">
-        <div className="panel-header">
-            <span className="material-symbols-outlined text-[16px]">terminal</span>
-            C2 LIVE MONITOR
-        </div>
-        <div className="flex-1 flex min-h-0 p-2 gap-2">
-            <div className="w-[220px] shrink-0 border border-[#334155] bg-[#090d16] rounded flex flex-col overflow-y-auto overflow-x-hidden custom-scrollbar p-1 box-border">
-                <div className="text-[15px] font-bold text-[#34d399] px-1 py-1 border-b border-[#334155] mb-1">● ONLINE</div>
-                {drones.map(d => {
-                    const threatScore = d.threat_score || 0;
-                    const threatColor = threatScore >= 80 ? 'text-[#f43f5e]' : threatScore >= 40 ? 'text-[#fbbf24]' : 'text-[#34d399]';
-                    
-                    return (
-                        <div key={d.drone_id} className={`drone-card flex flex-col p-2 mb-1 rounded cursor-pointer border border-[#334155] transition-colors ${droneId === d.drone_id ? 'bg-[#1e293b] border-[#89ceff]' : 'bg-[#090d16] hover:bg-[#1e293b]'}`} onClick={() => setSelectedDrone(d)}>
-                            <div className="flex justify-between items-center mb-1">
-                                <div className="flex items-center gap-2">
-                                    <div className={`w-2 h-2 shrink-0 rounded-full ${d.battery < 20 ? 'bg-[#f43f5e] animate-pulse' : 'bg-[#34d399]'}`}></div>
-                                    <span className="drone-name text-[14px] font-mono font-bold text-[#e2e8f0] truncate">{d.drone_id}</span>
-                                </div>
-                                <span className={`text-[10px] px-1.5 py-0.5 rounded ${d.status === 'ACTIVE' ? 'bg-[#34d399]/20 text-[#34d399]' : 'bg-[#64748b]/20 text-[#94a3b8]'}`}>
-                                    {d.status || 'UNKNOWN'}
-                                </span>
-                            </div>
-                            <div className="flex justify-between items-center text-[11px] font-mono">
-                                <span className="drone-battery text-[#94a3b8]">Battery: <span className={d.battery < 20 ? 'text-[#f43f5e]' : 'text-[#e2e8f0]'}>{Math.round(d.battery || 0)}%</span></span>
-                                <span className="drone-altitude text-[#94a3b8]">Altitude: <span className="text-[#e2e8f0]">{Math.round(d.altitude || 0)}m</span></span>
-                            </div>
-                            <div className="flex justify-between items-center text-[11px] font-mono mt-0.5">
-                                <span className={`drone-threat font-bold ${threatColor}`}>Threat Score: {threatScore}</span>
-                                <span className="drone-artifacts text-[#64748b]">Artifacts: {d.active_artifacts || 0}</span>
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-            <div className="flex-1 border border-[#334155] bg-[#090d16] rounded overflow-y-auto custom-scrollbar p-2 font-mono text-[16px] whitespace-pre-wrap text-[#34d399]" ref={logsEndRef}>
-                {currentState.terminalOutput}
-            </div>
-        </div>
-        <div className="p-2 pt-0 grid grid-cols-4 gap-2">
-            <button onClick={() => handleCommand('PING', droneId)} className="bg-[#34d399]/10 hover:bg-[#34d399]/30 border border-[#34d399]/50 text-[#34d399] py-1 text-[15px] font-bold font-mono rounded transition-colors">PING</button>
-            <button onClick={() => handleCommand('GET_STATUS', droneId)} className="bg-[#34d399]/10 hover:bg-[#34d399]/30 border border-[#34d399]/50 text-[#34d399] py-1 text-[15px] font-bold font-mono rounded transition-colors">STATUS</button>
-            <button onClick={() => handleCommand('GET_CONFIG', droneId)} className="bg-[#34d399]/10 hover:bg-[#34d399]/30 border border-[#34d399]/50 text-[#34d399] py-1 text-[15px] font-bold font-mono rounded transition-colors">CONFIG</button>
-            <button onClick={() => handleCommand('manipulate_control', droneId)} className="bg-[#f43f5e]/20 hover:bg-[#f43f5e]/40 border border-[#f43f5e]/50 text-[#f43f5e] py-1 text-[15px] font-bold font-mono rounded transition-colors">T0831 TEST</button>
-            <button onClick={() => handleCommand('gps_spoof', droneId)} className="bg-[#f43f5e]/30 hover:bg-[#f43f5e]/50 border border-[#f43f5e] text-white py-1 text-[15px] font-bold font-mono rounded transition-colors shadow-[0_0_8px_rgba(244,63,94,0.5)]">GPS_SPOOF_ATTACK</button>
-            
-            <button onClick={() => handleCommand('GET_IOC', droneId)} className="bg-[#fbbf24]/10 hover:bg-[#fbbf24]/30 border border-[#fbbf24]/50 text-[#fbbf24] py-1 text-[15px] font-bold font-mono rounded transition-colors">GET IOC</button>
-            <button onClick={() => handleCommand('ISOLATE NODE', droneId)} className="bg-[#f43f5e]/10 hover:bg-[#f43f5e]/30 border border-[#f43f5e]/50 text-[#f43f5e] py-1 text-[15px] font-bold font-mono rounded transition-colors">ISOLATE</button>
-            <button onClick={() => handleCommand('GENERATE_REPORT', droneId)} className="bg-[#c084fc]/10 hover:bg-[#c084fc]/30 border border-[#c084fc]/50 text-[#c084fc] py-1 text-[15px] font-bold font-mono rounded transition-colors shadow-[0_0_5px_rgba(192,132,252,0.3)]">REPORT</button>
-            <button onClick={() => handleCommand('restore_control', droneId)} className="bg-[#34d399]/20 hover:bg-[#34d399]/40 border border-[#34d399]/50 text-[#34d399] py-1 text-[15px] font-bold font-mono rounded transition-colors">RESTORE</button>
-            <button onClick={() => handleCommand('stop_gps_spoof', droneId)} className="bg-[#38bdf8]/20 hover:bg-[#38bdf8]/40 border border-[#38bdf8]/50 text-[#38bdf8] py-1 text-[15px] font-bold font-mono rounded transition-colors">STOP_GPS</button>
-            <button onClick={() => handleCommand('physical_damage', droneId)} className="bg-[#fbbf24]/20 hover:bg-[#fbbf24]/40 border border-[#fbbf24]/50 text-[#fbbf24] py-1 text-[15px] font-bold font-mono rounded transition-colors col-span-2 shadow-[0_0_8px_rgba(251,191,36,0.5)] animate-pulse">BATTERY_DRAIN</button>
-            
-            <button onClick={() => fetch('/api/summary_report').then(r=>r.json()).then(d=>{if(d.status==='success') window.open(`/${d.file}`, '_blank')})} className="bg-[#0ea5e9]/20 hover:bg-[#0ea5e9]/40 border border-[#0ea5e9] text-white py-1 text-[15px] font-bold font-mono rounded transition-colors col-span-2 shadow-[0_0_8px_rgba(14,165,233,0.5)]">FLEET REPORT</button>
-            <button onClick={() => fetch('/api/export_csv').then(r=>r.json()).then(d=>{if(d.status==='success') window.open(`/${d.file}`, '_blank')})} className="bg-[#10b981]/20 hover:bg-[#10b981]/40 border border-[#10b981] text-white py-1 text-[15px] font-bold font-mono rounded transition-colors col-span-2 shadow-[0_0_8px_rgba(16,185,129,0.5)]">EXPORT CSV</button>
-        </div>
-    </div>
+ <div className="panel flex-1 min-h-0 flex flex-col">
+ <div className="panel-header">
+ <span className="material-symbols-outlined text-[16px]">terminal</span>
+ C2 LIVE MONITOR
+ </div>
+ <div className="flex-1 flex min-h-0 p-2 gap-2">
+ <div className="w-[220px] shrink-0 border border-slate-700 bg-slate-900 rounded-sm flex flex-col overflow-y-auto overflow-x-hidden custom-scrollbar p-1 box-border">
+ <div className="text-[15px] font-bold text-slate-400 px-1 py-1 border-b border-slate-700 mb-1">● ONLINE</div>
+ {drones.map(d => {
+ const threatScore = d.threat_score || 0;
+ const threatColor = threatScore >= 80 ? 'text-[#f43f5e]' : threatScore >= 40 ? 'text-[#fbbf24]' : 'text-slate-400';
+ 
+ return (
+ <div key={d.drone_id} className={`drone-card flex flex-col p-2 mb-1 rounded-sm cursor-pointer border border-slate-700 transition-colors ${droneId === d.drone_id ? 'bg-slate-800 border-[#89ceff]' : 'bg-slate-900 hover:bg-slate-800'}`} onClick={() => setSelectedDrone(d)}>
+ <div className="flex justify-between items-center mb-1">
+ <div className="flex items-center gap-2">
+ <div className={`w-2 h-2 shrink-0 rounded-sm-full ${d.battery < 20 ? 'bg-[#f43f5e] animate-pulse' : 'bg-[#34d399]'}`}></div>
+ <span className="drone-name text-[14px] font-mono font-bold text-slate-200 truncate">{d.drone_id}</span>
+ </div>
+ <span className={`text-[10px] px-1.5 py-0.5 rounded-sm ${d.status === 'ACTIVE' ? 'bg-transparent text-slate-400' : 'bg-[#64748b]/20 text-slate-400'}`}>
+ {d.status || 'UNKNOWN'}
+ </span>
+ </div>
+ <div className="flex justify-between items-center text-[11px] font-mono">
+ <span className="drone-battery text-slate-400">Battery: <span className={d.battery < 20 ? 'text-[#f43f5e]' : 'text-slate-200'}>{Math.round(d.battery || 0)}%</span></span>
+ <span className="drone-altitude text-slate-400">Altitude: <span className="text-slate-200">{Math.round(d.altitude || 0)}m</span></span>
+ </div>
+ <div className="flex justify-between items-center text-[11px] font-mono mt-0.5">
+ <span className={`drone-threat font-bold ${threatColor}`}>Threat Score: {threatScore}</span>
+ <span className="drone-artifacts text-slate-400">Artifacts: {d.active_artifacts || 0}</span>
+ </div>
+ </div>
+ );
+ })}
+ </div>
+ <div className="flex-1 border border-slate-700 bg-slate-900 rounded-sm overflow-y-auto custom-scrollbar p-2 font-mono text-[16px] whitespace-pre-wrap text-slate-400" ref={logsEndRef}>
+ {currentState.terminalOutput}
+ </div>
+ </div>
+ <div className="p-2 pt-0 grid grid-cols-4 gap-2">
+ <button onClick={() => handleCommand('PING', droneId)} className="bg-transparent hover:bg-transparent border border-slate-700 text-slate-400 py-1 text-[15px] font-bold font-mono rounded-sm transition-colors">PING</button>
+ <button onClick={() => handleCommand('GET_STATUS', droneId)} className="bg-transparent hover:bg-transparent border border-slate-700 text-slate-400 py-1 text-[15px] font-bold font-mono rounded-sm transition-colors">STATUS</button>
+ <button onClick={() => handleCommand('GET_CONFIG', droneId)} className="bg-transparent hover:bg-transparent border border-slate-700 text-slate-400 py-1 text-[15px] font-bold font-mono rounded-sm transition-colors">CONFIG</button>
+ <button onClick={() => handleCommand('manipulate_control', droneId)} className="bg-transparent hover:bg-transparent border border-[#f43f5e]/50 text-[#f43f5e] py-1 text-[15px] font-bold font-mono rounded-sm transition-colors">T0831 TEST</button>
+ <button onClick={() => handleCommand('gps_spoof', droneId)} className="bg-transparent hover:bg-transparent border border-[#f43f5e] text-white py-1 text-[15px] font-bold font-mono rounded-sm transition-colors shadow-none">GPS_SPOOF_ATTACK</button>
+ 
+ <button onClick={() => handleCommand('GET_IOC', droneId)} className="bg-transparent hover:bg-transparent border border-[#fbbf24]/50 text-[#fbbf24] py-1 text-[15px] font-bold font-mono rounded-sm transition-colors">GET IOC</button>
+ <button onClick={() => handleCommand('ISOLATE NODE', droneId)} className="bg-transparent hover:bg-transparent border border-[#f43f5e]/50 text-[#f43f5e] py-1 text-[15px] font-bold font-mono rounded-sm transition-colors">ISOLATE</button>
+ <button onClick={() => handleCommand('GENERATE_REPORT', droneId)} className="bg-[#c084fc]/10 hover:bg-[#c084fc]/30 border border-[#c084fc]/50 text-[#c084fc] py-1 text-[15px] font-bold font-mono rounded-sm transition-colors shadow-none">REPORT</button>
+ <button onClick={() => handleCommand('restore_control', droneId)} className="bg-transparent hover:bg-transparent border border-slate-700 text-slate-400 py-1 text-[15px] font-bold font-mono rounded-sm transition-colors">RESTORE</button>
+ <button onClick={() => handleCommand('stop_gps_spoof', droneId)} className="bg-transparent hover:bg-transparent border border-slate-700 text-slate-400 py-1 text-[15px] font-bold font-mono rounded-sm transition-colors">STOP_GPS</button>
+ <button onClick={() => handleCommand('physical_damage', droneId)} className="bg-transparent hover:bg-transparent border border-[#fbbf24]/50 text-[#fbbf24] py-1 text-[15px] font-bold font-mono rounded-sm transition-colors col-span-2 shadow-none animate-pulse">BATTERY_DRAIN</button>
+ 
+ <button onClick={() => fetch('/api/summary_report').then(r=>r.json()).then(d=>{if(d.status==='success') window.open(`/${d.file}`, '_blank')})} className="bg-[#0ea5e9]/20 hover:bg-[#0ea5e9]/40 border border-[#0ea5e9] text-white py-1 text-[15px] font-bold font-mono rounded-sm transition-colors col-span-2 shadow-none">FLEET REPORT</button>
+ <button onClick={() => fetch('/api/export_csv').then(r=>r.json()).then(d=>{if(d.status==='success') window.open(`/${d.file}`, '_blank')})} className="bg-[#10b981]/20 hover:bg-[#10b981]/40 border border-[#10b981] text-white py-1 text-[15px] font-bold font-mono rounded-sm transition-colors col-span-2 shadow-none">EXPORT CSV</button>
+ </div>
+ </div>
 );

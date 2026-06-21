@@ -1,70 +1,70 @@
 window.ATTACKTacticCoveragePanel = () => {
-    const [coverageData, setCoverageData] = useState({ total_techniques: 0, summary_table: [] });
+ const [coverageData, setCoverageData] = useState({ total_techniques: 0, summary_table: [] });
 
-    useEffect(() => {
-        fetch('/api/attack_coverage')
-            .then(res => res.json())
-            .then(data => {
-                if (data.summary_table) {
-                    setCoverageData(data);
-                }
-            })
-            .catch(e => console.error(e));
-    }, []);
+ useEffect(() => {
+ fetch('/api/attack_coverage')
+ .then(res => res.json())
+ .then(data => {
+ if (data.summary_table) {
+ setCoverageData(data);
+ }
+ })
+ .catch(e => console.error(e));
+ }, []);
 
-    const missing = ["Lateral Movement", "Credential Access", "Privilege Escalation"];
+ const missing = ["Lateral Movement","Credential Access","Privilege Escalation"];
 
-    return (
-        <div className="panel h-full w-full min-w-0 min-h-0 flex flex-col">
-            <div className="panel-header border-b border-[#334155] bg-gradient-to-r from-[#1e293b] to-transparent">
-                <span className="material-symbols-outlined text-[16px] text-[#34d399]">donut_large</span>
-                <span className="panel-title text-[#e2e8f0]">TACTIC COVERAGE & GAPS</span>
-            </div>
-            
-            <div className="flex-1 p-3 flex flex-col gap-3 overflow-y-auto custom-scrollbar">
-                
-                <div className="flex items-center justify-between bg-[#38bdf8]/10 border border-[#38bdf8]/30 p-2 rounded">
-                    <span className="text-[13px] font-bold text-[#38bdf8] uppercase tracking-widest">Total Covered</span>
-                    <span className="text-[18px] font-mono font-bold text-white">{coverageData.total_techniques || 0} Techniques</span>
-                </div>
+ return (
+ <div className="panel h-full w-full min-w-0 min-h-0 flex flex-col">
+ <div className="panel-header border-b border-slate-700 bg-gradient-to-r from-[#1e293b] to-transparent">
+ <span className="material-symbols-outlined text-[16px] text-[#34d399]">donut_large</span>
+ <span className="panel-title text-slate-200">TACTIC COVERAGE & GAPS</span>
+ </div>
+ 
+ <div className="flex-1 p-3 flex flex-col gap-3 overflow-y-auto custom-scrollbar">
+ 
+ <div className="flex items-center justify-between bg-[#38bdf8]/10 border border-[#38bdf8]/30 p-2 rounded">
+ <span className="text-[13px] font-bold text-[#38bdf8] uppercase tracking-widest">Total Covered</span>
+ <span className="text-[18px] font-mono font-bold text-white">{coverageData.total_techniques || 0} Techniques</span>
+ </div>
 
-                <div className="flex flex-col gap-1.5">
-                    <div className="flex items-center gap-2 text-[12px] font-bold text-[#34d399] uppercase tracking-wider">
-                        <span className="material-symbols-outlined text-[14px]">shield</span>
-                        COVERED TACTICS
-                    </div>
-                    
-                    <div className="flex flex-col gap-1">
-                        {coverageData.summary_table && coverageData.summary_table.length > 0 ? (
-                            coverageData.summary_table.map((row, i) => (
-                                <div key={i} className="flex items-center justify-between bg-[#1e293b]/50 border border-[#334155] px-2 py-1.5 rounded">
-                                    <span className="text-[13px] font-bold text-[#cbd5e1]">{row.tactic}</span>
-                                    <span className="bg-[#34d399]/20 text-[#34d399] border border-[#34d399]/50 px-2 rounded text-[11px] font-mono font-bold">{row.covered} Techniques</span>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="text-slate-400 text-center py-2 text-[12px]">Waiting for mapping data...</div>
-                        )}
-                    </div>
-                </div>
+ <div className="flex flex-col gap-1.5">
+ <div className="flex items-center gap-2 text-[12px] font-bold text-[#34d399] uppercase tracking-wider">
+ <span className="material-symbols-outlined text-[14px]">shield</span>
+ COVERED TACTICS
+ </div>
+ 
+ <div className="flex flex-col gap-1">
+ {coverageData.summary_table && coverageData.summary_table.length > 0 ? (
+ coverageData.summary_table.map((row, i) => (
+ <div key={i} className="flex items-center justify-between bg-slate-800/50 border border-slate-700 px-2 py-1.5 rounded">
+ <span className="text-[13px] font-bold text-[#cbd5e1]">{row.tactic}</span>
+ <span className="bg-[#34d399]/20 text-[#34d399] border border-[#34d399]/50 px-2 rounded text-[11px] font-mono font-bold">{row.covered} Techniques</span>
+ </div>
+ ))
+ ) : (
+ <div className="text-slate-400 text-center py-2 text-[12px]">Waiting for mapping data...</div>
+ )}
+ </div>
+ </div>
 
-                <div className="flex flex-col gap-1.5 mt-2 border-t border-[#334155] pt-2">
-                    <div className="flex items-center gap-2 text-[12px] font-bold text-[#94a3b8] uppercase tracking-wider">
-                        <span className="material-symbols-outlined text-[14px]">find_in_page</span>
-                        MISSING TACTICS (GAP)
-                    </div>
-                    
-                    <div className="flex flex-col gap-1">
-                        {missing.map((t, i) => (
-                            <div key={i} className="flex items-center justify-between bg-[#0f172a] border border-[#334155]/50 px-2 py-1.5 rounded opacity-70">
-                                <span className="text-[13px] font-bold text-[#94a3b8] line-through decoration-[#f43f5e]">{t}</span>
-                                <span className="text-[11px] text-[#f43f5e] font-mono italic">No evidence</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+ <div className="flex flex-col gap-1.5 mt-2 border-t border-slate-700 pt-2">
+ <div className="flex items-center gap-2 text-[12px] font-bold text-slate-400 uppercase tracking-wider">
+ <span className="material-symbols-outlined text-[14px]">find_in_page</span>
+ MISSING TACTICS (GAP)
+ </div>
+ 
+ <div className="flex flex-col gap-1">
+ {missing.map((t, i) => (
+ <div key={i} className="flex items-center justify-between bg-slate-900 border border-slate-700/50 px-2 py-1.5 rounded opacity-70">
+ <span className="text-[13px] font-bold text-slate-400 line-through decoration-[#f43f5e]">{t}</span>
+ <span className="text-[11px] text-[#f43f5e] font-mono italic">No evidence</span>
+ </div>
+ ))}
+ </div>
+ </div>
 
-            </div>
-        </div>
-    );
+ </div>
+ </div>
+ );
 };

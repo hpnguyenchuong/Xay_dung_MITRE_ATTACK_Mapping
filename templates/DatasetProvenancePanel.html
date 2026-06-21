@@ -1,38 +1,38 @@
 window.DatasetProvenancePanel = () => {
-    return (
-        <div className="panel flex-1 min-w-0 min-h-0 flex flex-col border-[#f472b6]/50 shadow-[0_0_15px_rgba(244,114,182,0.1)] bg-[#090d16]">
-            <div className="panel-header text-[#f472b6] flex items-center gap-2 bg-[#1a2647] border-b border-[#f472b6]/30 shrink-0">
-                <span className="material-symbols-outlined text-[16px]">source</span>
-                <span className="text-[17px] font-bold tracking-widest uppercase">Dataset Provenance</span>
-            </div>
-            <div className="flex-1 p-2 overflow-y-auto custom-scrollbar">
-                <table className="w-full text-left border-collapse mt-1">
-                    <thead>
-                        <tr className="border-b border-[#334155] text-[#94a3b8] text-[15px] uppercase tracking-widest">
-                            <th className="pb-2 font-medium">Dataset</th>
-                            <th className="pb-2 font-medium text-right">Origin</th>
-                        </tr>
-                    </thead>
-                    <tbody className="text-[17px] font-mono">
-                        <tr className="border-b border-[#1e293b]">
-                            <td className="py-2 text-[#e2e8f0]">clean_case.json</td>
-                            <td className="py-2 text-[#94a3b8] text-right italic">Baseline Drone</td>
-                        </tr>
-                        <tr className="border-b border-[#1e293b]">
-                            <td className="py-2 text-[#e2e8f0]">gps_spoof_case.json</td>
-                            <td className="py-2 text-[#94a3b8] text-right italic">GPS Drift Scenario</td>
-                        </tr>
-                        <tr className="border-b border-[#1e293b]">
-                            <td className="py-2 text-[#e2e8f0]">droneflood_case.json</td>
-                            <td className="py-2 text-[#94a3b8] text-right italic">Full Campaign</td>
-                        </tr>
-                        <tr>
-                            <td className="py-2 text-[#e2e8f0]">ground_truth.json</td>
-                            <td className="py-2 text-[#94a3b8] text-right italic">Manual Validation</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    );
+ return (
+ <div className="panel flex-1 min-w-0 min-h-0 flex flex-col border-[#f472b6]/50 shadow-none bg-slate-900">
+ <div className="panel-header text-[#f472b6] flex items-center gap-2 bg-[#1a2647] border-b border-[#f472b6]/30 shrink-0">
+ <span className="material-symbols-outlined text-[16px]">source</span>
+ <span className="text-[17px] font-bold tracking-widest uppercase">Dataset Provenance</span>
+ </div>
+ <div className="flex-1 p-2 overflow-y-auto custom-scrollbar">
+ <table className="w-full text-left border-collapse mt-1">
+ <thead>
+ <tr className="border-b border-slate-700 text-slate-400 text-[15px] uppercase tracking-widest">
+ <th className="pb-2 font-medium">Dataset</th>
+ <th className="pb-2 font-medium text-right">Origin</th>
+ </tr>
+ </thead>
+ <tbody className="text-[17px] font-mono">
+ <tr className="border-b border-[#1e293b]">
+ <td className="py-2 text-slate-200">clean_case.json</td>
+ <td className="py-2 text-slate-400 text-right italic">Baseline Drone</td>
+ </tr>
+ <tr className="border-b border-[#1e293b]">
+ <td className="py-2 text-slate-200">gps_spoof_case.json</td>
+ <td className="py-2 text-slate-400 text-right italic">GPS Drift Scenario</td>
+ </tr>
+ <tr className="border-b border-[#1e293b]">
+ <td className="py-2 text-slate-200">droneflood_case.json</td>
+ <td className="py-2 text-slate-400 text-right italic">Full Campaign</td>
+ </tr>
+ <tr>
+ <td className="py-2 text-slate-200">ground_truth.json</td>
+ <td className="py-2 text-slate-400 text-right italic">Manual Validation</td>
+ </tr>
+ </tbody>
+ </table>
+ </div>
+ </div>
+ );
 };

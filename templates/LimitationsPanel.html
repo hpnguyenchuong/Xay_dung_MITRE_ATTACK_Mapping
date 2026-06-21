@@ -1,65 +1,65 @@
 window.LimitationsPanel = () => {
-    return (
-        <div className="panel flex-1 min-w-0 min-h-0 flex flex-col border-[#f97316]/50 shadow-[0_0_15px_rgba(249,115,22,0.1)]">
-            <div className="panel-header text-[#f97316] flex items-center gap-2 bg-[#1a2647] border-b border-[#f97316]/30 shrink-0">
-                <span className="material-symbols-outlined text-[16px]">visibility_off</span>
-                <span className="text-[17px] font-bold tracking-widest">RESEARCH LIMITATIONS & FUTURE WORK</span>
-            </div>
-            <div className="flex-1 p-2 flex flex-col gap-2 overflow-y-auto custom-scrollbar">
-                
-                {/* Current Limitations */}
-                <div className="flex flex-col gap-2">
-                    <div className="text-[16px] font-bold text-[#f43f5e] tracking-widest uppercase flex items-center gap-1 border-b border-[#334155] pb-1">
-                        <span className="material-symbols-outlined text-[17px]">warning</span>
-                        Current Limitations
-                    </div>
-                    <ul className="flex flex-col gap-1.5 text-[17px] text-[#e2e8f0]">
-                        <li className="flex items-start gap-2">
-                            <span className="text-[#f43f5e] mt-0.5">•</span>
-                            <span><strong className="text-[#94a3b8]">Synthetic RE Findings:</strong> Simulated artifact corpus rather than extracted from in-the-wild drone malware.</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                            <span className="text-[#f43f5e] mt-0.5">•</span>
-                            <span><strong className="text-[#94a3b8]">Rule-based Mapping:</strong> Relies on static regex and heuristic rules, which may not catch highly obfuscated novel behaviors.</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                            <span className="text-[#f43f5e] mt-0.5">•</span>
-                            <span><strong className="text-[#94a3b8]">Limited ICS Coverage:</strong> Focuses primarily on Telemetry Manipulation and DoS, omitting complex physical manipulations.</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                            <span className="text-[#f43f5e] mt-0.5">•</span>
-                            <span><strong className="text-[#94a3b8]">No Real Malware Corpus:</strong> Validation restricted to constructed scenarios due to the scarcity of public drone malware datasets.</span>
-                        </li>
-                    </ul>
-                </div>
+ return (
+ <div className="panel flex-1 min-w-0 min-h-0 flex flex-col border-[#f97316]/50 shadow-none">
+ <div className="panel-header text-[#f97316] flex items-center gap-2 bg-[#1a2647] border-b border-[#f97316]/30 shrink-0">
+ <span className="material-symbols-outlined text-[16px]">visibility_off</span>
+ <span className="text-[17px] font-bold tracking-widest">RESEARCH LIMITATIONS & FUTURE WORK</span>
+ </div>
+ <div className="flex-1 p-2 flex flex-col gap-2 overflow-y-auto custom-scrollbar">
+ 
+ {/* Current Limitations */}
+ <div className="flex flex-col gap-2">
+ <div className="text-[16px] font-bold text-[#f43f5e] tracking-widest uppercase flex items-center gap-1 border-b border-slate-700 pb-1">
+ <span className="material-symbols-outlined text-[17px]">warning</span>
+ Current Limitations
+ </div>
+ <ul className="flex flex-col gap-1.5 text-[17px] text-slate-200">
+ <li className="flex items-start gap-2">
+ <span className="text-[#f43f5e] mt-0.5">•</span>
+ <span><strong className="text-slate-400">Synthetic RE Findings:</strong> Simulated artifact corpus rather than extracted from in-the-wild drone malware.</span>
+ </li>
+ <li className="flex items-start gap-2">
+ <span className="text-[#f43f5e] mt-0.5">•</span>
+ <span><strong className="text-slate-400">Rule-based Mapping:</strong> Relies on static regex and heuristic rules, which may not catch highly obfuscated novel behaviors.</span>
+ </li>
+ <li className="flex items-start gap-2">
+ <span className="text-[#f43f5e] mt-0.5">•</span>
+ <span><strong className="text-slate-400">Limited ICS Coverage:</strong> Focuses primarily on Telemetry Manipulation and DoS, omitting complex physical manipulations.</span>
+ </li>
+ <li className="flex items-start gap-2">
+ <span className="text-[#f43f5e] mt-0.5">•</span>
+ <span><strong className="text-slate-400">No Real Malware Corpus:</strong> Validation restricted to constructed scenarios due to the scarcity of public drone malware datasets.</span>
+ </li>
+ </ul>
+ </div>
 
-                {/* Future Work */}
-                <div className="flex flex-col gap-2">
-                    <div className="text-[16px] font-bold text-[#34d399] tracking-widest uppercase flex items-center gap-1 border-b border-[#334155] pb-1">
-                        <span className="material-symbols-outlined text-[17px]">rocket_launch</span>
-                        Future Work
-                    </div>
-                    <ul className="flex flex-col gap-1.5 text-[17px] text-[#e2e8f0]">
-                        <li className="flex items-start gap-2">
-                            <span className="text-[#34d399] mt-0.5">→</span>
-                            <span><strong className="text-[#94a3b8]">Real Malware Datasets:</strong> Integration with actual captured drone C2/malware samples.</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                            <span className="text-[#34d399] mt-0.5">→</span>
-                            <span><strong className="text-[#94a3b8]">ML-Assisted Mapping:</strong> Employing Large Language Models (LLMs) to dynamically infer mappings from unstructured RE reports.</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                            <span className="text-[#34d399] mt-0.5">→</span>
-                            <span><strong className="text-[#94a3b8]">Automatic Behavior Extraction:</strong> Deep integration with sandboxes (e.g., Cuckoo) to pull dynamic behaviors automatically.</span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                            <span className="text-[#34d399] mt-0.5">→</span>
-                            <span><strong className="text-[#94a3b8]">Larger Fleet Simulations:</strong> Extending the topology simulator to cover heterogeneous swarm operations.</span>
-                        </li>
-                    </ul>
-                </div>
+ {/* Future Work */}
+ <div className="flex flex-col gap-2">
+ <div className="text-[16px] font-bold text-slate-400 tracking-widest uppercase flex items-center gap-1 border-b border-slate-700 pb-1">
+ <span className="material-symbols-outlined text-[17px]">rocket_launch</span>
+ Future Work
+ </div>
+ <ul className="flex flex-col gap-1.5 text-[17px] text-slate-200">
+ <li className="flex items-start gap-2">
+ <span className="text-slate-400 mt-0.5">→</span>
+ <span><strong className="text-slate-400">Real Malware Datasets:</strong> Integration with actual captured drone C2/malware samples.</span>
+ </li>
+ <li className="flex items-start gap-2">
+ <span className="text-slate-400 mt-0.5">→</span>
+ <span><strong className="text-slate-400">ML-Assisted Mapping:</strong> Employing Large Language Models (LLMs) to dynamically infer mappings from unstructured RE reports.</span>
+ </li>
+ <li className="flex items-start gap-2">
+ <span className="text-slate-400 mt-0.5">→</span>
+ <span><strong className="text-slate-400">Automatic Behavior Extraction:</strong> Deep integration with sandboxes (e.g., Cuckoo) to pull dynamic behaviors automatically.</span>
+ </li>
+ <li className="flex items-start gap-2">
+ <span className="text-slate-400 mt-0.5">→</span>
+ <span><strong className="text-slate-400">Larger Fleet Simulations:</strong> Extending the topology simulator to cover heterogeneous swarm operations.</span>
+ </li>
+ </ul>
+ </div>
 
-            </div>
-        </div>
-    );
+ </div>
+ </div>
+ );
 };
