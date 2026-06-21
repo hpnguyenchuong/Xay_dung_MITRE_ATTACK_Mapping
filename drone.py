@@ -460,11 +460,11 @@ class MITREMappingEngine:
             "c2.dronefleet.net": {"tech": "T1071", "ics": "T0885", "tactic": "C2", "score": 98},
             "XOR+Base64": {"tech": "T1027", "ics": "T0832", "tactic": "Evasion", "score": 85},
             "gps_spoof": {"tech": "T0831", "ics": "T0831", "tactic": "Impact", "score": 95},
-            "imu_drift_injection": {"tech": "T0832", "ics": "T0832", "tactic": "Impact", "score": 94},
+            "imu_drift": {"tech": "T0832", "ics": "T0832", "tactic": "Impact", "score": 94},
             "battery_drain": {"tech": "T0879", "ics": "T0879", "tactic": "Impact", "score": 90},
             "lidar_jamming": {"tech": "T0831", "ics": "T0831", "tactic": "Impact", "score": 93},
-            "collision_vector": {"tech": "T0831", "ics": "T0831", "tactic": "Impact", "score": 96},
-            "forced_landing": {"tech": "T0831", "ics": "T0831", "tactic": "Impact", "score": 92}
+            "collision": {"tech": "T0831", "ics": "T0831", "tactic": "Impact", "score": 96},
+            "emergency_land": {"tech": "T0831", "ics": "T0831", "tactic": "Impact", "score": 92}
         }
         
         rule = mapping_rules.get(artifact, {})
@@ -1750,31 +1750,52 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 elif endpoint == "export_navigator":
                     layer_type = query_params.get("layer", ["all"])[0]
                     
+                    techniques_map = {}
+                    
+                    if layer_type in ("enterprise", "all"):
+                        cursor.execute("SELECT enterprise_tech_id as technique, MAX(confidence) as conf, COUNT(*) as occ FROM attack_mapping WHERE enterprise_tech_id IS NOT NULL GROUP BY enterprise_tech_id")
+                        for row in cursor.fetchall():
+                            t = row["technique"]
+                            score = row["conf"] if row["conf"] else (row["occ"] * 15)
+                            if score > 100: score = 100
+                            techniques_map[t] = {"techniqueID": t, "score": score, "comment": f"Mapped from DroneFleet analysis (Confidence: {score})"}
+                            
+                    if layer_type in ("ics", "all"):
+                        cursor.execute("SELECT ics_tech_id as technique, MAX(confidence) as conf, COUNT(*) as occ FROM attack_mapping WHERE ics_tech_id IS NOT NULL GROUP BY ics_tech_id")
+                        for row in cursor.fetchall():
+                            t = row["technique"]
+                            score = row["conf"] if row["conf"] else (row["occ"] * 15)
+                            if score > 100: score = 100
+                            if t in techniques_map:
+                                techniques_map[t]["score"] = max(techniques_map[t]["score"], score)
+                            else:
+                                techniques_map[t] = {"techniqueID": t, "score": score, "comment": f"Mapped from DroneFleet analysis (Confidence: {score})"}
+                                
                     if layer_type == "enterprise":
-                        cursor.execute("SELECT DISTINCT enterprise_tech_id as technique FROM attack_mapping WHERE enterprise_tech_id IS NOT NULL")
-                        techniques = [{"techniqueID": row["technique"], "color": "#38bdf8", "score": 100, "comment": "Mapped from RE Findings (Enterprise)"} for row in cursor.fetchall()]
                         domain = "enterprise-attack"
                         name = "DroneFleet Malware Enterprise Layer"
+                        colors = ["#ffffff", "#60a5fa", "#2563eb"] # Blue gradient for enterprise
                     elif layer_type == "ics":
-                        cursor.execute("SELECT DISTINCT ics_tech_id as technique FROM attack_mapping WHERE ics_tech_id IS NOT NULL")
-                        techniques = [{"techniqueID": row["technique"], "color": "#f43f5e", "score": 100, "comment": "Mapped from RE Findings (ICS)"} for row in cursor.fetchall()]
                         domain = "ics-attack"
                         name = "DroneFleet Malware ICS Layer"
+                        colors = ["#ffffff", "#fb923c", "#ea580c"] # Orange gradient for ICS
                     else:
-                        cursor.execute("SELECT DISTINCT ics_tech_id as technique FROM attack_mapping WHERE ics_tech_id IS NOT NULL")
-                        techniques = [{"techniqueID": row["technique"], "color": "#f43f5e", "score": 100, "comment": "Mapped from RE Findings"} for row in cursor.fetchall()]
-                        cursor.execute("SELECT DISTINCT enterprise_tech_id as technique FROM attack_mapping WHERE enterprise_tech_id IS NOT NULL AND ics_tech_id IS NULL")
-                        techniques += [{"techniqueID": row["technique"], "color": "#f43f5e", "score": 100, "comment": "Mapped from RE Findings"} for row in cursor.fetchall()]
                         domain = "ics-attack"
                         name = "DroneFleet Malware Combined Layer"
+                        colors = ["#ffffff", "#f43f5e", "#be123c"] # Red gradient for combined
                     
                     navigator_layer = {
                         "name": name,
                         "version": "4.5",
                         "versions": {"attack": "14", "navigator": "4.9.1", "layer": "4.5"},
                         "domain": domain,
-                        "description": "Auto-generated by Drone Malware Analysis Engine based on Reverse Engineering Findings.",
-                        "techniques": techniques
+                        "description": "Auto-generated by Drone Malware Analysis Engine based on actual runtime actions.",
+                        "gradient": {
+                            "colors": colors,
+                            "minValue": 0,
+                            "maxValue": 100
+                        },
+                        "techniques": list(techniques_map.values())
                     }
                     self._send_json(navigator_layer)
                     

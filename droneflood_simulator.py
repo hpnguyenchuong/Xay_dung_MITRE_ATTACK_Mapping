@@ -210,23 +210,30 @@ class DroneFloodSimulator:
         
         print(f"{C_CYAN}{C_BOLD}")
         print("+" + "="*84 + "+")
-        print("|                           DRONEFLOOD ATTACK CONTROLLER                            |")
+        print(f"|{'DRONEFLOOD ATTACK CONTROLLER'.center(84)}|")
         print("+" + "="*84 + "+")
-        print(f"|  [C2] Target: {self.c2_ip}:{self.c2_port}                                           |")
-        print(f"|  [ID] Attacker ID: {self.attacker_id}                                                 |")
-        print(f"|  [OK] Compromised: {len(self.compromised_drones)} | Auto-refresh: 5s              |")
+        line1 = f"  [C2] Target: {self.c2_ip}:{self.c2_port}"
+        line2 = f"  [ID] Attacker ID: {self.attacker_id}"
+        line3 = f"  [OK] Compromised: {len(self.compromised_drones)} | Auto-refresh: 5s"
+        print(f"|{line1.ljust(84)}|")
+        print(f"|{line2.ljust(84)}|")
+        print(f"|{line3.ljust(84)}|")
         print("+" + "="*84 + "+")
         print(f"{C_END}")
         
         # Hiển thị danh sách drone với cột Battery
         print(f"\n{C_CYAN}[+] AVAILABLE DRONES:{C_END}")
-        print("+" + "-"*4 + "+" + "-"*18 + "+" + "-"*14 + "+" + "-"*10 + "+" + "-"*18 + "+" + "-"*10 + "+")
-        print("| #  | Drone ID         | Status       | Battery  | Threat Score     | Select   |")
-        print("+" + "-"*4 + "+" + "-"*18 + "+" + "-"*14 + "+" + "-"*10 + "+" + "-"*18 + "+" + "-"*10 + "+")
+        print("+" + "-"*4 + "+" + "-"*18 + "+" + "-"*17 + "+" + "-"*10 + "+" + "-"*18 + "+" + "-"*10 + "+")
+        print("| #  | Drone ID         | Status          | Battery  | Threat Score     | Select   |")
+        print("+" + "-"*4 + "+" + "-"*18 + "+" + "-"*17 + "+" + "-"*10 + "+" + "-"*18 + "+" + "-"*10 + "+")
         
         for i, drone in enumerate(drones[:15]):
-            drone_id = drone.get("id", "Unknown")
-            battery = drone.get("battery", 0)
+            drone_id = drone.get("id", "Unknown")[:16]
+            try:
+                battery = float(drone.get("battery", 0))
+            except:
+                battery = 0.0
+            batt_str = f"{battery:.1f}%"
             
             # Màu battery
             if battery <= 15:
@@ -243,10 +250,18 @@ class DroneFloodSimulator:
                 status_text = "[ ] CLEAN"
                 selected = " "
             
-            threat = drone.get("threat_score", 0)
-            print(f"| {i+1:2} | {drone_id:16} | {status_text:12} | {batt_color}{battery:3}%{C_END} | {threat:16} | [{selected}] |")
+            threat = str(drone.get("threat_score", 0))
+            
+            col_id = f"{i+1:2}"
+            col_drone = drone_id.ljust(16)
+            col_status = status_text.ljust(15)
+            col_batt = batt_str.ljust(8)
+            col_threat = threat.rjust(16)
+            col_sel = f"[{selected}]".center(8)
+            
+            print(f"| {col_id} | {col_drone} | {col_status} | {batt_color}{col_batt}{C_END} | {col_threat} | {col_sel} |")
         
-        print("+" + "-"*4 + "+" + "-"*18 + "+" + "-"*14 + "+" + "-"*10 + "+" + "-"*18 + "+" + "-"*10 + "+")
+        print("+" + "-"*4 + "+" + "-"*18 + "+" + "-"*17 + "+" + "-"*10 + "+" + "-"*18 + "+" + "-"*10 + "+")
         
         # Hiển thị menu tấn công
         print(f"\n{C_YELLOW}[!] ATTACK OPTIONS:{C_END}")

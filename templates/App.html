@@ -225,7 +225,7 @@ Date.now() - b.t < 2000)); } } }, 50); return ()=> clearInterval(intv);
  headers: { 'Content-Type': 'application/json' },
  body: JSON.stringify({ cmd: cmd.toLowerCase(), drone_id: targetId })
  }).then(r => r.json()).then(data => {
- if (['initial_access', 'execution', 'evasion', 'hardware', 'spoof', 'impact'].includes(cmd) || cmd === 'manipulate_control' || cmd === 'gps_spoof' || cmd === 'physical_damage') {
+ if (['initial_access', 'execution', 'evasion', 'hardware', 'spoof', 'impact', 'battery_drain', 'imu_drift', 'lidar_jamming', 'collision', 'emergency_land', 'gps_spoof'].includes(cmd)) {
  setTimeout(() => appendTerminal(`\n${getTime()} >_ [*] Authenticating with target...`, targetId), 300);
  setTimeout(() => appendTerminal(`\n${getTime()} >_ [*] Exploiting vulnerabilities...`, targetId), 800);
  setTimeout(() => appendTerminal(`\n${getTime()} >_ [*] Injecting payload [${cmd.toUpperCase()}]...`, targetId), 1400);
