@@ -282,23 +282,12 @@ Date.now() - b.t < 2000)); } } }, 50); return ()=> clearInterval(intv);
                 switch(activeTab) {
                     case 1: return (
                         <div className="flex flex-col gap-4 h-full animate-slide-in-fade">
-                            <div className="flex gap-4">
-                                <div className="flex-[1.0] panel p-4 flex flex-col justify-center items-center bg-[#0f172a] border border-slate-700 rounded shadow-md">
-                                    <span className="text-[12px] text-slate-400 font-bold tracking-widest uppercase mb-1 flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">science</span> DroneFlood Samples</span>
-                                    <span className="text-3xl font-mono font-bold text-slate-200">45</span>
-                                </div>
-                                <div className="flex-[1.0] panel p-4 flex flex-col justify-center items-center bg-[#0f172a] border border-slate-700 rounded shadow-md">
-                                    <span className="text-[12px] text-slate-400 font-bold tracking-widest uppercase mb-1 flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">bug_report</span> RE Artifacts</span>
-                                    <span className="text-3xl font-mono font-bold text-slate-200">187</span>
-                                </div>
-                                <div className="flex-[1.0] panel p-4 flex flex-col justify-center items-center bg-[#0f172a] border border-slate-700 rounded shadow-md">
-                                    <span className="text-[12px] text-slate-400 font-bold tracking-widest uppercase mb-1 flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">account_tree</span> Mapped Techniques</span>
-                                    <span className="text-3xl font-mono font-bold text-slate-200">12</span>
-                                </div>
-                                <div className="flex-[1.0] panel p-4 flex flex-col justify-center items-center bg-[#0f172a] border border-slate-700 rounded shadow-md">
-                                    <span className="text-[12px] text-slate-400 font-bold tracking-widest uppercase mb-1 flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">analytics</span> ATT&CK Coverage</span>
-                                    <span className="text-3xl font-mono font-bold text-[#0ea5e9]">91%</span>
-                                </div>
+                            <div className="bg-[#111827] border border-[#1f2937] rounded-sm p-4 w-[400px] font-mono text-[13px]">
+                                <div className="text-[#94a3b8] border-b border-[#1f2937] pb-2 mb-2 font-bold tracking-widest uppercase">Research Context</div>
+                                <div className="flex justify-between py-1"><span className="text-[#94a3b8]">Campaign Status</span><span className="text-[#ef4444]">● Critical</span></div>
+                                <div className="flex justify-between py-1"><span className="text-[#94a3b8]">Techniques Mapped</span><span className="text-[#e5e7eb]">12</span></div>
+                                <div className="flex justify-between py-1"><span className="text-[#94a3b8]">ATT&CK Coverage</span><span className="text-[#e5e7eb]">91%</span></div>
+                                <div className="flex justify-between py-1"><span className="text-[#94a3b8]">RE Artifacts</span><span className="text-[#e5e7eb]">187</span></div>
                             </div>
                             <div className="flex gap-4 flex-1 min-h-0">
                                 <div className="flex-[1.0] flex min-w-0">
@@ -423,38 +412,27 @@ Date.now() - b.t < 2000)); } } }, 50); return ()=> clearInterval(intv);
             };
 
             return (
-            <div className="flex flex-col h-full w-full bg-[#0B1020] text-[#E5E7EB] font-sans">
+            <div className="flex flex-col h-full w-full bg-[#0a0f1c] text-[#e5e7eb] font-sans">
                 {/* Global Header */}
-                <div className="bg-[#111827] border-b border-[#334155] px-6 py-3 flex justify-between items-center shadow-md z-10">
+                <div className="bg-[#0a0f1c] border-b border-[#1f2937] px-6 py-3 flex justify-between items-center z-10">
                     <div className="flex items-center gap-3">
-                        <span className="material-symbols-outlined text-[#38bdf8] text-[24px]">security</span>
-                        <span className="font-bold text-[18px] tracking-widest text-white">DRONEFLOOD RESEARCH</span>
-                    </div>
-                    <div className="text-[13px] text-[#94a3b8] flex items-center gap-2 bg-[#0B1020] px-4 py-1.5 rounded border border-[#334155] shadow-inner">
-                        <span className="material-symbols-outlined text-[16px] text-[#fbbf24]">flag</span>
-                        <span className="font-mono">Research Objective: Build MITRE ATT&CK Mapping for DroneFlood Malware using RE Findings & C2 Simulation</span>
+                        <span className="font-mono text-[16px] tracking-[0.05em] text-[#e5e7eb] font-bold" style={{fontFamily: "'JetBrains Mono', monospace"}}>DRONEFLOOD ANALYTICAL FRAMEWORK</span>
                     </div>
                 </div>
 
-                {/* Academic Workflow Bar */}
-                <div className="bg-[#111827] border-b border-[#334155] px-6 py-4 relative z-0 shadow-sm">
-                    <div className="flex items-center justify-between max-w-5xl mx-auto relative">
-                        {/* Progress Line */}
-                        <div className="absolute top-1/2 left-[5%] right-[5%] h-0.5 bg-[#334155] -z-10 -translate-y-1/2"></div>
-                        
+                {/* IDE-style Workflow Bar */}
+                <div className="bg-[#0a0f1c] border-b border-[#1f2937] px-6 flex items-center z-0">
+                    <div className="flex items-center gap-4">
                         {tabs.map((tab) => {
                             const isActive = activeTab === tab.id;
-                            const isPast = tab.id < activeTab;
                             return (
                                 <button 
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
-                                    className={`flex flex-col items-center gap-2 px-4 transition-colors duration-200 bg-[#111827] ${isActive ? 'text-[#0ea5e9]' : (isPast ? 'text-slate-400' : 'text-slate-500 hover:text-slate-300')}`}
+                                    className={`flex items-center gap-2 px-2 py-3 border-b-2 transition-colors duration-200 ${isActive ? 'border-[#3b82f6] text-[#e5e7eb]' : 'border-transparent text-[#94a3b8] hover:text-[#e5e7eb]'}`}
                                 >
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors duration-200 ${isActive ? 'border-[#0ea5e9] bg-[#0ea5e9]/10' : (isPast ? 'border-slate-600 bg-slate-800' : 'border-slate-700 bg-[#0B1020]')}`}>
-                                        {isPast ? <span className="material-symbols-outlined text-[20px]">check</span> : <span className="material-symbols-outlined text-[20px]">{tab.icon}</span>}
-                                    </div>
-                                    <span className={`text-[13px] font-bold tracking-wide ${isActive ? '' : 'opacity-80'}`}>{tab.name}</span>
+                                    <span className="material-symbols-outlined text-[16px]">{tab.icon}</span>
+                                    <span className="text-[13px] font-mono tracking-wide">{tab.name}</span>
                                 </button>
                             );
                         })}
@@ -471,20 +449,20 @@ Date.now() - b.t < 2000)); } } }, 50); return ()=> clearInterval(intv);
                 {/* CRITICAL ALERT OVERLAY */}
                 {showCriticalOverlay && (
                 <div
-                    className="fixed top-24 right-10 z-50 bg-[#090d16]/90 backdrop-blur-md border border-[#f43f5e] p-3 rounded-lg shadow-[0_0_30px_rgba(244,63,94,0.3)] animate-pulse-slow max-w-sm pointer-events-none">
+                    className="fixed top-24 right-10 z-50 bg-[#111827] border border-[#ef4444] p-3 rounded-sm max-w-sm pointer-events-none">
                     <div
-                        className="text-[#f43f5e] font-mono font-bold text-center border-b border-[#f43f5e]/50 pb-2 mb-3 tracking-widest text-[14px]">
+                        className="text-[#ef4444] font-mono font-bold text-center border-b border-[#1f2937] pb-2 mb-3 tracking-widest text-[14px]">
                         ⚠️ CRITICAL ICS ALERT
                     </div>
                     <div className="flex flex-col gap-2 font-mono text-[13px]">
                         <div className="flex justify-between"><span className="text-[#94a3b8]">Drone:</span> <span
-                                className="text-white font-bold">{selectedDrone ? selectedDrone.drone_id : 'UNKNOWN'}</span></div>
+                                className="text-[#e5e7eb]">{selectedDrone ? selectedDrone.drone_id : 'UNKNOWN'}</span></div>
                         <div className="flex justify-between"><span className="text-[#94a3b8]">Technique:</span> <span
-                                className="text-[#f43f5e] font-bold bg-[#f43f5e]/20 px-1 rounded">T0832</span></div>
+                                className="text-[#ef4444]">T0832</span></div>
                         <div className="flex justify-between"><span className="text-[#94a3b8]">Severity:</span> <span
-                                className="text-[#f43f5e] font-bold">HIGH</span></div>
+                                className="text-[#ef4444]">HIGH</span></div>
                         <div
-                            className="mt-2 text-center text-white bg-[#f43f5e]/20 p-2 rounded border border-[#f43f5e]/50">
+                            className="mt-2 text-center text-[#e5e7eb] border border-[#1f2937] p-2 rounded-sm">
                             Flight Telemetry Manipulation
                         </div>
                     </div>
