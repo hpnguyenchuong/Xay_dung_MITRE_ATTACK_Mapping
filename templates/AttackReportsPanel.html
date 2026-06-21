@@ -97,22 +97,24 @@ const AttackReportsPanel = () => {
   ) : (
   <div className="flex flex-col gap-1">
   {groupedReports.map(([droneId, groupReports], gIdx) => (
-    <div key={gIdx} className="mb-4 last:mb-0">
+    <div key={gIdx} className={`mb-4 last:mb-0 ${gIdx === 0 ? 'bg-[#f43f5e]/5 border border-[#f43f5e]/30 p-2 rounded-sm shadow-[0_0_15px_rgba(244,63,94,0.1)]' : ''}`}>
       <div className="flex items-center gap-2 mb-2 px-1">
-        <span className="material-symbols-outlined text-[#38bdf8] text-[16px]">flight</span>
-        <span className="font-bold text-[#38bdf8] font-mono text-[14px] uppercase">{droneId}</span>
-        <span className="bg-slate-800 text-slate-400 px-2 py-0.5 rounded-sm text-[11px] font-mono border border-slate-700">{groupReports.length} Reports</span>
+        <span className={`material-symbols-outlined text-[16px] ${gIdx === 0 ? 'text-[#f43f5e] animate-pulse' : 'text-[#38bdf8]'}`}>flight</span>
+        <span className={`font-bold font-mono text-[14px] uppercase ${gIdx === 0 ? 'text-[#f43f5e]' : 'text-[#38bdf8]'}`}>{droneId}</span>
+        <span className={`px-2 py-0.5 rounded-sm text-[11px] font-mono border ${gIdx === 0 ? 'bg-[#f43f5e]/20 text-[#f43f5e] border-[#f43f5e]/50' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>{groupReports.length} Reports</span>
+        {gIdx === 0 && <span className="ml-auto text-[10px] font-bold text-[#f43f5e] bg-[#f43f5e]/20 px-2 py-0.5 rounded animate-pulse border border-[#f43f5e]/30">LATEST INCIDENT</span>}
       </div>
-      <div className="flex flex-col gap-2 pl-3 border-l-2 border-slate-700 ml-2">
+      <div className={`flex flex-col gap-2 pl-3 border-l-2 ml-2 ${gIdx === 0 ? 'border-[#f43f5e]/50' : 'border-slate-700'}`}>
         {groupReports.map((report, rIdx) => {
           const sizeKb = (report.size / 1024).toFixed(1);
           return (
-            <div key={rIdx} className="bg-slate-900 border border-slate-700 p-2.5 rounded-sm hover:border-[#38bdf8]/50 transition-colors flex justify-between items-center group">
+            <div key={rIdx} className={`bg-slate-900 border p-2.5 rounded-sm transition-colors flex justify-between items-center group ${gIdx === 0 && rIdx === 0 ? 'border-[#f43f5e]/50 hover:border-[#f43f5e]' : 'border-slate-700 hover:border-[#38bdf8]/50'}`}>
               <div className="flex flex-col gap-1">
                 <div className="flex items-center gap-2 text-slate-300 text-[12px] font-mono">
                   <span className="material-symbols-outlined text-[14px] text-slate-400">schedule</span>
-                  <span className="font-bold text-[#f8fafc]">{report.created_at}</span>
+                  <span className={`font-bold ${gIdx === 0 && rIdx === 0 ? 'text-[#f43f5e]' : 'text-[#f8fafc]'}`}>{report.created_at}</span>
                   <span className="bg-slate-800 text-slate-400 px-2 py-0.5 rounded-sm text-[11px] font-mono">{sizeKb} KB</span>
+                  {gIdx === 0 && rIdx === 0 && <span className="text-[9px] text-[#f43f5e] font-bold uppercase ml-1">New</span>}
                 </div>
                 <div className="text-[11px] text-slate-400 font-mono truncate max-w-[220px]" title={report.filename}>
                   {report.filename}
@@ -122,7 +124,7 @@ const AttackReportsPanel = () => {
               <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button 
                   onClick={() => handleDownload(report.filename)}
-                  className="bg-[#0ea5e9]/10 hover:bg-[#0ea5e9]/30 text-[#0ea5e9] border border-[#0ea5e9]/50 px-3 py-1.5 rounded-sm flex items-center gap-1 transition-colors"
+                  className={`${gIdx === 0 && rIdx === 0 ? 'bg-[#f43f5e]/10 hover:bg-[#f43f5e]/30 text-[#f43f5e] border-[#f43f5e]/50' : 'bg-[#0ea5e9]/10 hover:bg-[#0ea5e9]/30 text-[#0ea5e9] border-[#0ea5e9]/50'} border px-3 py-1.5 rounded-sm flex items-center gap-1 transition-colors`}
                   title="Download JSON Report"
                 >
                   <span className="material-symbols-outlined text-[16px]">download</span>
