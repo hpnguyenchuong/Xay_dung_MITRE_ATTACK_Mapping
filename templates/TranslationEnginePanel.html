@@ -1,68 +1,68 @@
 window.TranslationEnginePanel = () => {
-    const translationLayer = [
-        { ent: "T1071", effect: "Receive Malicious Command", ics: "T0885", icsName: "Commonly Used Port" },
-        { ent: "T1547.001", effect: "Autostart on Reboot", ics: "T0866", icsName: "Unauthorized Service" },
-        { ent: "T1005", effect: "Extract Telemetry Data", ics: "T0842", icsName: "Data Illumination" },
-        { ent: "T1498", effect: "Flood C2 Link", ics: "T0879", icsName: "Damage to Property" },
-        { ent: "T1059", effect: "Execute Flight Command", ics: "T0831", icsName: "Manipulation of Control" },
-        { ent: "T1041", effect: "Exfiltrate Telemetry", ics: "T0869", icsName: "Loss of View" }
-    ];
+ const translationLayer = [
+ { ent:"T1071", effect:"Receive Malicious Command", ics:"T0885", icsName:"Commonly Used Port" },
+ { ent:"T1547.001", effect:"Autostart on Reboot", ics:"T0866", icsName:"Unauthorized Service" },
+ { ent:"T1005", effect:"Extract Telemetry Data", ics:"T0842", icsName:"Data Illumination" },
+ { ent:"T1498", effect:"Flood C2 Link", ics:"T0879", icsName:"Damage to Property" },
+ { ent:"T1059", effect:"Execute Flight Command", ics:"T0831", icsName:"Manipulation of Control" },
+ { ent:"T1041", effect:"Exfiltrate Telemetry", ics:"T0869", icsName:"Loss of View" }
+ ];
 
-    return (
-        <div className="panel flex-1 min-w-0 min-h-0 flex flex-col">
-            <div className="panel-header text-[#f43f5e]">
-                <span className="material-symbols-outlined text-[17px]">transform</span>
-                ENTERPRISE → ICS TRANSLATION ENGINE
-            </div>
-            
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-2 flex flex-col gap-2 bg-[#0B1020]">
-                
-                <div className="grid grid-cols-[1fr_auto_2fr_auto_2fr] items-center text-[#94a3b8] text-[12px] uppercase font-bold tracking-widest border-b border-[#334155] pb-2 px-2 mt-2">
-                    <div className="text-center">Enterprise</div>
-                    <div className="w-6"></div>
-                    <div className="text-center">Cyber-Physical Effect</div>
-                    <div className="w-6"></div>
-                    <div className="text-center">ICS Impact</div>
-                </div>
+ return (
+ <div className="panel flex-1 min-w-0 min-h-0 flex flex-col">
+ <div className="panel-header text-slate-400">
+ <span className="material-symbols-outlined text-[17px]">transform</span>
+ ENTERPRISE → ICS TRANSLATION ENGINE
+ </div>
+ 
+ <div className="flex-1 overflow-y-auto custom-scrollbar p-2 flex flex-col gap-2 bg-[#0B1020]">
+ 
+ <div className="grid grid-cols-[1fr_auto_2fr_auto_2fr] items-center text-[#94a3b8] text-[12px] uppercase font-bold tracking-widest border-b border-[#334155] pb-2 px-2 mt-2">
+ <div className="text-center">Enterprise</div>
+ <div className="w-6"></div>
+ <div className="text-center">Cyber-Physical Effect</div>
+ <div className="w-6"></div>
+ <div className="text-center">ICS Impact</div>
+ </div>
 
-                <div className="flex flex-col gap-2 mt-1">
-                    {translationLayer.map((item, i) => (
-                        <div key={i} className="grid grid-cols-[1fr_auto_2fr_auto_2fr] items-center gap-2">
-                            
-                            {/* Column 1: Enterprise */}
-                            <div className="bg-[#1e293b] border border-[#38bdf8]/40 p-2 rounded flex justify-center shadow-[inset_0_0_10px_rgba(56,189,248,0.1)]">
-                                <span className="text-[#38bdf8] font-mono text-[14px] font-bold">{item.ent}</span>
-                            </div>
+ <div className="flex flex-col gap-2 mt-1">
+ {translationLayer.map((item, i) => (
+ <div key={i} className="grid grid-cols-[1fr_auto_2fr_auto_2fr] items-center gap-2">
+ 
+ {/* Column 1: Enterprise */}
+ <div className="bg-[#1e293b] border border-[#1f2937] p-2 rounded flex justify-center">
+ <span className="text-slate-400 font-mono text-[14px] font-bold">{item.ent}</span>
+ </div>
 
-                            <span className="material-symbols-outlined text-[20px] text-[#475569]">east</span>
+ <span className="material-symbols-outlined text-[20px] text-[#475569]">east</span>
 
-                            {/* Column 2: Drone Effect */}
-                            <div className="bg-[#fbbf24]/10 border border-[#fbbf24]/40 p-2 rounded flex justify-center shadow-[inset_0_0_10px_rgba(251,191,36,0.1)]">
-                                <span className="text-[#fbbf24] font-sans text-[13px] font-bold text-center">{item.effect}</span>
-                            </div>
+ {/* Column 2: Drone Effect */}
+ <div className="bg-[#111827] border border-[#1f2937] p-2 rounded flex justify-center">
+ <span className="text-slate-400 font-sans text-[13px] font-bold text-center">{item.effect}</span>
+ </div>
 
-                            <span className="material-symbols-outlined text-[20px] text-[#475569]">east</span>
+ <span className="material-symbols-outlined text-[20px] text-[#475569]">east</span>
 
-                            {/* Column 3: ICS Impact */}
-                            <div className="bg-[#f43f5e]/10 border border-[#f43f5e]/40 p-2 rounded flex flex-col items-center justify-center shadow-[inset_0_0_10px_rgba(244,63,94,0.1)]">
-                                <span className="text-[#f43f5e] font-mono text-[12px] font-bold">{item.ics}</span>
-                                <span className="text-slate-300 font-sans text-[12px] text-center">{item.icsName}</span>
-                            </div>
+ {/* Column 3: ICS Impact */}
+ <div className="bg-[#111827] border border-[#1f2937] p-2 rounded flex flex-col items-center justify-center">
+ <span className="text-slate-400 font-mono text-[12px] font-bold">{item.ics}</span>
+ <span className="text-slate-300 font-sans text-[12px] text-center">{item.icsName}</span>
+ </div>
 
-                        </div>
-                    ))}
-                </div>
+ </div>
+ ))}
+ </div>
 
-                <div className="mt-4 p-3 border border-[#34d399]/30 bg-[#34d399]/5 rounded">
-                    <div className="text-[#34d399] text-[13px] font-bold uppercase tracking-widest mb-1 flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[16px]">info</span> Translation Logic
-                    </div>
-                    <div className="text-slate-400 text-[13px]">
-                        The engine maps traditional IT behaviors (Enterprise) to cyber-physical consequences (ICS). An IT network flood translates to a Loss of View for the operator, while a script execution translates to Manipulation of Control on the Drone.
-                    </div>
-                </div>
+ <div className="mt-4 p-3 border border-[#1f2937] bg-[#111827] rounded">
+ <div className="text-slate-400 text-[13px] font-bold uppercase tracking-widest mb-1 flex items-center gap-1">
+ <span className="material-symbols-outlined text-[16px]">info</span> Translation Logic
+ </div>
+ <div className="text-slate-400 text-[13px]">
+ The engine maps traditional IT behaviors (Enterprise) to cyber-physical consequences (ICS). An IT network flood translates to a Loss of View for the operator, while a script execution translates to Manipulation of Control on the Drone.
+ </div>
+ </div>
 
-            </div>
-        </div>
-    );
+ </div>
+ </div>
+ );
 };

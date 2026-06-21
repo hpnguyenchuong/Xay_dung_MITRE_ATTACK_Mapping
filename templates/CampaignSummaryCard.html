@@ -1,130 +1,130 @@
 window.CampaignSummaryCard = () => {
-    const [summary, setSummary] = React.useState({ gt: null, coverage: null, latestStage: null });
+ const [summary, setSummary] = React.useState({ gt: null, coverage: null, latestStage: null });
 
-    React.useEffect(() => {
-        const fetchSummary = () => {
-            Promise.all([
-                fetch('/api/ground_truth').then(res => res.json()),
-                fetch('/api/attack_coverage').then(res => res.json()),
-                fetch('/api/campaign_timeline').then(res => res.json())
-            ]).then(([gtData, coverageData, timelineData]) => {
-                let stage = 'Clean';
-                if (timelineData && timelineData.campaign_timeline && timelineData.campaign_timeline.length > 0) {
-                    stage = timelineData.campaign_timeline[0].stage;
-                }
-                setSummary({ gt: gtData, coverage: coverageData, latestStage: stage });
-            }).catch(err => console.error(err));
-        };
-        fetchSummary();
-        const interval = setInterval(fetchSummary, 3000);
-        return () => clearInterval(interval);
-    }, []);
+ React.useEffect(() => {
+ const fetchSummary = () => {
+ Promise.all([
+ fetch('/api/ground_truth').then(res => res.json()),
+ fetch('/api/attack_coverage').then(res => res.json()),
+ fetch('/api/campaign_timeline').then(res => res.json())
+ ]).then(([gtData, coverageData, timelineData]) => {
+ let stage = 'Clean';
+ if (timelineData && timelineData.campaign_timeline && timelineData.campaign_timeline.length > 0) {
+ stage = timelineData.campaign_timeline[0].stage;
+ }
+ setSummary({ gt: gtData, coverage: coverageData, latestStage: stage });
+ }).catch(err => console.error(err));
+ };
+ fetchSummary();
+ const interval = setInterval(fetchSummary, 3000);
+ return () => clearInterval(interval);
+ }, []);
 
-    if (!summary.gt || !summary.coverage) return <div className="p-2 text-white">Loading...</div>;
+ if (!summary.gt || !summary.coverage) return <div className="p-2 text-white">Loading...</div>;
 
-    const { gt, coverage } = summary;
-    const tacticsList = Object.keys(coverage.tactics_covered);
+ const { gt, coverage } = summary;
+ const tacticsList = Object.keys(coverage.tactics_covered);
 
-    return (
-        <div className="panel h-full flex flex-col">
-            <div class="panel-header flex justify-between items-center w-full">
-                <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[16px]">science</span>
-                    <span>RESEARCH FINDINGS SUMMARY</span>
-                </div>
-                <div className="flex gap-2">
-                    <button onClick={() => window.exportNavigator('enterprise')} className="bg-[#38bdf8]/20 border border-[#38bdf8] text-[#38bdf8] px-2 py-1 rounded text-[15px] font-bold hover:bg-[#38bdf8] hover:text-[#0b1326] transition-colors flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[15px]">download</span>
-                        ENTERPRISE LAYER
-                    </button>
-                    <button onClick={() => window.exportNavigator('ics')} className="bg-[#f43f5e]/20 border border-[#f43f5e] text-[#f43f5e] px-2 py-1 rounded text-[15px] font-bold hover:bg-[#f43f5e] hover:text-[#0b1326] transition-colors flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[15px]">download</span>
-                        ICS LAYER
-                    </button>
-                </div>
-            </div>
-            <div className="p-2 flex-1 flex flex-col gap-2 min-h-0 overflow-y-auto custom-scrollbar">
-                <div className="flex justify-between items-center bg-[#0f172a] p-2 rounded border border-[#1e293b]">
-                    <span className="text-[17px] text-[#94a3b8] uppercase">Total Artifacts</span>
-                    <span className="text-[#38bdf8] font-bold text-sm">{gt.details.Total_GroundTruth}</span>
-                </div>
-                <div className="flex justify-between items-center bg-[#0f172a] p-2 rounded border border-[#1e293b]">
-                    <span className="text-[17px] text-[#94a3b8] uppercase">Correct Mapping</span>
-                    <span className="text-[#10b981] font-bold text-sm">{gt.details.TP}</span>
-                </div>
-                <div className="flex justify-between items-center bg-[#0f172a] p-2 rounded border border-[#1e293b]">
-                    <span className="text-[17px] text-[#94a3b8] uppercase">Incorrect Mapping</span>
-                    <span className="text-[#f43f5e] font-bold text-sm">{gt.details.FP}</span>
-                </div>
-                <div className="flex justify-between items-center bg-[#0f172a] p-2 rounded border border-[#1e293b]">
-                    <span className="text-[17px] text-[#94a3b8] uppercase">Missed Mapping</span>
-                    <span className="text-[#eab308] font-bold text-sm">{gt.details.FN}</span>
-                </div>
-                
-                {/* Stage Progress Bar */}
-                <div className="bg-[#0f172a] p-2 rounded border border-[#1e293b] mb-1">
-                    <div className="text-[17px] text-[#94a3b8] uppercase font-bold mb-2">Campaign Stages</div>
-                    <div className="flex flex-col gap-1.5 font-mono text-[16px]">
-                        {['Persistence', 'Custom C2', 'Fleet Takeover', 'GPS Drift', 'Mission Failure'].map((s, idx) => {
-                            const stagesOrder = ['Clean', 'Persistence', 'Custom C2', 'Fleet Takeover', 'GPS Drift', 'Mission Failure'];
-                            const currentIndex = stagesOrder.indexOf(summary.latestStage);
-                            const thisIndex = stagesOrder.indexOf(s);
-                            const isCompleted = currentIndex >= thisIndex;
-                            return (
-                                <div key={idx} className={`flex items-center gap-2 ${isCompleted ? 'text-[#10b981]' : 'text-[#475569]'}`}>
-                                    <span>{isCompleted ? '✓' : '□'}</span>
-                                    <span className={isCompleted ? 'text-white' : ''}>{s}</span>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-                
-                <div className="bg-[#0f172a] p-2 rounded border border-[#1e293b] flex flex-col mt-2 flex-1 min-h-0">
-                    <div className="flex justify-between text-[17px] text-[#94a3b8] uppercase border-b border-[#334155] pb-2 mb-2">
-                        <span>Tactics Covered ({tacticsList.length} / 4)</span>
-                        <span className="text-[#38bdf8] font-bold">Techniques Mapped: {coverage.total_techniques || 14}</span>
-                    </div>
-                    <div className="flex flex-col gap-2 overflow-y-auto custom-scrollbar pr-1">
-                        {tacticsList.length > 0 ? tacticsList.map((tactic, idx) => {
-                            let percent = 100;
-                            if (tactic.includes('Execution')) percent = 80;
-                            if (tactic.includes('Impact') || tactic.includes('Inhibit')) percent = 75;
-                            if (tactic.includes('Command')) percent = 100;
-                            
-                            return (
-                                <div key={idx} className="flex flex-col gap-1">
-                                    <div className="flex justify-between items-center text-[16px] uppercase tracking-wide">
-                                        <div className="text-[#10b981] flex items-center gap-1">
-                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                                            <span className="text-white">{tactic}</span>
-                                        </div>
-                                        <span className="text-[#94a3b8] font-mono">{percent}%</span>
-                                    </div>
-                                    <div className="w-full h-1 bg-[#1e293b] rounded-full overflow-hidden">
-                                        <div className="h-full bg-[#10b981]" style={{ width: `${percent}%` }}></div>
-                                    </div>
-                                </div>
-                            );
-                        }) : <span className="text-[#475569]">No tactics covered yet</span>}
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
+ return (
+ <div className="panel h-full flex flex-col">
+ <div class="panel-header flex justify-between items-center w-full">
+ <div className="flex items-center gap-2">
+ <span className="material-symbols-outlined text-[16px]">science</span>
+ <span>RESEARCH FINDINGS SUMMARY</span>
+ </div>
+ <div className="flex gap-2">
+ <button onClick={() => window.exportNavigator('enterprise')} className="bg-[#111827] border border-[#1f2937] text-slate-400 px-2 py-1 rounded text-[15px] font-bold hover:bg-[#38bdf8] hover:text-[#0b1326] transition-colors flex items-center gap-1">
+ <span className="material-symbols-outlined text-[15px]">download</span>
+ ENTERPRISE LAYER
+ </button>
+ <button onClick={() => window.exportNavigator('ics')} className="bg-[#111827] border border-[#1f2937] text-slate-400 px-2 py-1 rounded text-[15px] font-bold hover:bg-[#f43f5e] hover:text-[#0b1326] transition-colors flex items-center gap-1">
+ <span className="material-symbols-outlined text-[15px]">download</span>
+ ICS LAYER
+ </button>
+ </div>
+ </div>
+ <div className="p-2 flex-1 flex flex-col gap-2 min-h-0 overflow-y-auto custom-scrollbar">
+ <div className="flex justify-between items-center bg-[#0f172a] p-2 rounded border border-[#1e293b]">
+ <span className="text-[17px] text-[#94a3b8] uppercase">Total Artifacts</span>
+ <span className="text-slate-400 font-bold text-sm">{gt.details.Total_GroundTruth}</span>
+ </div>
+ <div className="flex justify-between items-center bg-[#0f172a] p-2 rounded border border-[#1e293b]">
+ <span className="text-[17px] text-[#94a3b8] uppercase">Correct Mapping</span>
+ <span className="text-[#10b981] font-bold text-sm">{gt.details.TP}</span>
+ </div>
+ <div className="flex justify-between items-center bg-[#0f172a] p-2 rounded border border-[#1e293b]">
+ <span className="text-[17px] text-[#94a3b8] uppercase">Incorrect Mapping</span>
+ <span className="text-slate-400 font-bold text-sm">{gt.details.FP}</span>
+ </div>
+ <div className="flex justify-between items-center bg-[#0f172a] p-2 rounded border border-[#1e293b]">
+ <span className="text-[17px] text-[#94a3b8] uppercase">Missed Mapping</span>
+ <span className="text-[#eab308] font-bold text-sm">{gt.details.FN}</span>
+ </div>
+ 
+ {/* Stage Progress Bar */}
+ <div className="bg-[#0f172a] p-2 rounded border border-[#1e293b] mb-1">
+ <div className="text-[17px] text-[#94a3b8] uppercase font-bold mb-2">Campaign Stages</div>
+ <div className="flex flex-col gap-1.5 font-mono text-[16px]">
+ {['Persistence', 'Custom C2', 'Fleet Takeover', 'GPS Drift', 'Mission Failure'].map((s, idx) => {
+ const stagesOrder = ['Clean', 'Persistence', 'Custom C2', 'Fleet Takeover', 'GPS Drift', 'Mission Failure'];
+ const currentIndex = stagesOrder.indexOf(summary.latestStage);
+ const thisIndex = stagesOrder.indexOf(s);
+ const isCompleted = currentIndex >= thisIndex;
+ return (
+ <div key={idx} className={`flex items-center gap-2 ${isCompleted ? 'text-[#10b981]' : 'text-[#475569]'}`}>
+ <span>{isCompleted ? '✓' : '□'}</span>
+ <span className={isCompleted ? 'text-white' : ''}>{s}</span>
+ </div>
+ );
+ })}
+ </div>
+ </div>
+ 
+ <div className="bg-[#0f172a] p-2 rounded border border-[#1e293b] flex flex-col mt-2 flex-1 min-h-0">
+ <div className="flex justify-between text-[17px] text-[#94a3b8] uppercase border-b border-[#334155] pb-2 mb-2">
+ <span>Tactics Covered ({tacticsList.length} / 4)</span>
+ <span className="text-slate-400 font-bold">Techniques Mapped: {coverage.total_techniques || 14}</span>
+ </div>
+ <div className="flex flex-col gap-2 overflow-y-auto custom-scrollbar pr-1">
+ {tacticsList.length > 0 ? tacticsList.map((tactic, idx) => {
+ let percent = 100;
+ if (tactic.includes('Execution')) percent = 80;
+ if (tactic.includes('Impact') || tactic.includes('Inhibit')) percent = 75;
+ if (tactic.includes('Command')) percent = 100;
+ 
+ return (
+ <div key={idx} className="flex flex-col gap-1">
+ <div className="flex justify-between items-center text-[16px] uppercase tracking-wide">
+ <div className="text-[#10b981] flex items-center gap-1">
+ <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+ <span className="text-white">{tactic}</span>
+ </div>
+ <span className="text-[#94a3b8] font-mono">{percent}%</span>
+ </div>
+ <div className="w-full h-1 bg-[#1e293b] rounded-full overflow-hidden">
+ <div className="h-full bg-[#10b981]" style={{ width: `${percent}%` }}></div>
+ </div>
+ </div>
+ );
+ }) : <span className="text-[#475569]">No tactics covered yet</span>}
+ </div>
+ </div>
+ </div>
+ </div>
+ );
 };
 
 window.exportNavigator = (layerType) => {
-    fetch(`/api/export_navigator?layer=${layerType}`)
-        .then(res => res.json())
-        .then(data => {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
-            const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", `dronefleet_${layerType}_layer.json`);
-            document.body.appendChild(downloadAnchorNode);
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
-        })
-        .catch(err => console.error('Failed to export Navigator layer:', err));
+ fetch(`/api/export_navigator?layer=${layerType}`)
+ .then(res => res.json())
+ .then(data => {
+ const dataStr ="data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
+ const downloadAnchorNode = document.createElement('a');
+ downloadAnchorNode.setAttribute("href", dataStr);
+ downloadAnchorNode.setAttribute("download", `dronefleet_${layerType}_layer.json`);
+ document.body.appendChild(downloadAnchorNode);
+ downloadAnchorNode.click();
+ downloadAnchorNode.remove();
+ })
+ .catch(err => console.error('Failed to export Navigator layer:', err));
 };

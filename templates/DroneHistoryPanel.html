@@ -1,111 +1,111 @@
 window.DroneHistoryPanel = () => {
-    const [historyList, setHistoryList] = React.useState([]);
-    const [selectedHistoryDrone, setSelectedHistoryDrone] = React.useState(null);
-    const [timelineEvents, setTimelineEvents] = React.useState([]);
+ const [historyList, setHistoryList] = React.useState([]);
+ const [selectedHistoryDrone, setSelectedHistoryDrone] = React.useState(null);
+ const [timelineEvents, setTimelineEvents] = React.useState([]);
 
-    React.useEffect(() => {
-        const fetchHistory = () => {
-            fetch('/api/threat_score')
-                .then(res => res.json())
-                .then(data => {
-                    if(data.rankings) {
-                        setHistoryList(data.rankings);
-                    }
-                })
-                .catch(err => console.error("Error fetching history:", err));
-        };
-        fetchHistory();
-        const interval = setInterval(fetchHistory, 5000); // Poll every 5s
-        return () => clearInterval(interval);
-    }, []);
+ React.useEffect(() => {
+ const fetchHistory = () => {
+ fetch('/api/threat_score')
+ .then(res => res.json())
+ .then(data => {
+ if(data.rankings) {
+ setHistoryList(data.rankings);
+ }
+ })
+ .catch(err => console.error("Error fetching history:", err));
+ };
+ fetchHistory();
+ const interval = setInterval(fetchHistory, 5000); // Poll every 5s
+ return () => clearInterval(interval);
+ }, []);
 
-    const handleSelectDrone = (droneId) => {
-        if(selectedHistoryDrone === droneId) {
-            setSelectedHistoryDrone(null);
-            setTimelineEvents([]);
-            return;
-        }
-        setSelectedHistoryDrone(droneId);
-        fetch(`/api/timeline?drone_id=${droneId}`)
-            .then(res => res.json())
-            .then(data => {
-                if(data.timeline) setTimelineEvents(data.timeline);
-            })
-            .catch(err => console.error("Error fetching timeline:", err));
-    };
+ const handleSelectDrone = (droneId) => {
+ if(selectedHistoryDrone === droneId) {
+ setSelectedHistoryDrone(null);
+ setTimelineEvents([]);
+ return;
+ }
+ setSelectedHistoryDrone(droneId);
+ fetch(`/api/timeline?drone_id=${droneId}`)
+ .then(res => res.json())
+ .then(data => {
+ if(data.timeline) setTimelineEvents(data.timeline);
+ })
+ .catch(err => console.error("Error fetching timeline:", err));
+ };
 
-    return (
-        <div className="flex flex-col h-full bg-[#1e293b]/80 border border-[#334155] rounded-xl overflow-hidden shadow-xl backdrop-blur-md">
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 bg-[#0f172a]/90 border-b border-[#334155]">
-                <div className="flex items-center gap-2">
-                    <svg className="w-5 h-5 text-[#94a3b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <h2 className="text-[#f8fafc] font-bold text-sm uppercase tracking-wide">Historical Connections</h2>
-                </div>
-                <div className="text-[#64748b] text-[11px] font-mono">{historyList.length} Records</div>
-            </div>
+ return (
+ <div className="flex flex-col h-full bg-[#111827] border border-[#334155] rounded-sm overflow-hidden backdrop-blur-md">
+ {/* Header */}
+ <div className="flex items-center justify-between px-4 py-3 bg-[#111827] border-b border-[#334155]">
+ <div className="flex items-center gap-2">
+ <svg className="w-5 h-5 text-[#94a3b8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+ <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+ </svg>
+ <h2 className="text-[#f8fafc] font-bold text-sm uppercase tracking-wide">Historical Connections</h2>
+ </div>
+ <div className="text-[#64748b] text-[11px] font-mono">{historyList.length} Records</div>
+ </div>
 
-            {/* Content */}
-            <div className="flex-1 flex overflow-hidden">
-                {/* Left side: List of historical drones */}
-                <div className="w-2/5 border-r border-[#334155] overflow-y-auto bg-[#0f172a]/40 custom-scrollbar">
-                    {historyList.map(drone => (
-                        <div 
-                            key={drone.drone_id} 
-                            onClick={() => handleSelectDrone(drone.drone_id)}
-                            className={`p-3 border-b border-[#334155] cursor-pointer transition-colors ${selectedHistoryDrone === drone.drone_id ? 'bg-[#3b82f6]/20 border-l-2 border-l-[#3b82f6]' : 'hover:bg-[#334155]/50'}`}
-                        >
-                            <div className="flex justify-between items-center mb-1">
-                                <span className="font-mono text-[#e2e8f0] text-sm font-bold">{drone.drone_id}</span>
-                                <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${drone.score > 0 ? 'bg-[#f43f5e]/20 text-[#f43f5e]' : 'bg-[#10b981]/20 text-[#10b981]'}`}>
-                                    Risk: {drone.score}
-                                </span>
-                            </div>
-                            <div className="text-[10px] text-[#94a3b8] font-mono">
-                                Last seen: {drone.last_updated}
-                            </div>
-                        </div>
-                    ))}
-                    {historyList.length === 0 && (
-                        <div className="p-4 text-center text-[#64748b] text-[12px]">No historical data found.</div>
-                    )}
-                </div>
+ {/* Content */}
+ <div className="flex-1 flex overflow-hidden">
+ {/* Left side: List of historical drones */}
+ <div className="w-2/5 border-r border-[#334155] overflow-y-auto bg-[#111827] custom-scrollbar">
+ {historyList.map(drone => (
+ <div 
+ key={drone.drone_id} 
+ onClick={() => handleSelectDrone(drone.drone_id)}
+ className={`p-3 border-b border-[#334155] cursor-pointer transition-colors ${selectedHistoryDrone === drone.drone_id ? 'bg-[#111827] border-l-2 border-l-[#3b82f6]' : 'hover:bg-[#111827]'}`}
+ >
+ <div className="flex justify-between items-center mb-1">
+ <span className="font-mono text-[#e2e8f0] text-sm font-bold">{drone.drone_id}</span>
+ <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold ${drone.score > 0 ? 'bg-[#111827] text-slate-400' : 'bg-[#111827] text-[#10b981]'}`}>
+ Risk: {drone.score}
+ </span>
+ </div>
+ <div className="text-[10px] text-[#94a3b8] font-mono">
+ Last seen: {drone.last_updated}
+ </div>
+ </div>
+ ))}
+ {historyList.length === 0 && (
+ <div className="p-4 text-center text-[#64748b] text-[12px]">No historical data found.</div>
+ )}
+ </div>
 
-                {/* Right side: Timeline details */}
-                <div className="w-3/5 overflow-y-auto custom-scrollbar p-3 bg-[#0f172a]/60">
-                    {!selectedHistoryDrone ? (
-                        <div className="h-full flex items-center justify-center text-[#64748b] text-sm">
-                            Select a drone to view attack timeline
-                        </div>
-                    ) : (
-                        <div className="flex flex-col gap-3">
-                            <div className="text-[#e2e8f0] font-mono text-xs border-b border-[#334155] pb-2 mb-2 font-bold flex items-center gap-2">
-                                <span className="text-[#3b82f6]">▶</span> Event Timeline: {selectedHistoryDrone}
-                            </div>
-                            {timelineEvents.length === 0 ? (
-                                <div className="text-[#64748b] text-[11px] italic">No events recorded for this session.</div>
-                            ) : (
-                                timelineEvents.map(event => (
-                                    <div key={event.id} className="bg-[#1e293b] border border-[#334155] rounded p-2 text-left relative overflow-hidden group hover:border-[#475569] transition-colors">
-                                        <div className={`absolute top-0 left-0 w-1 h-full ${event.event_type.includes('CORRELATION') ? 'bg-[#f59e0b]' : event.event_type.includes('TECHNIQUE') ? 'bg-[#ef4444]' : 'bg-[#3b82f6]'}`}></div>
-                                        <div className="pl-2">
-                                            <div className="flex justify-between items-start mb-1">
-                                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${event.event_type.includes('CORRELATION') ? 'bg-[#f59e0b]/20 text-[#f59e0b]' : event.event_type.includes('TECHNIQUE') ? 'bg-[#ef4444]/20 text-[#ef4444]' : 'bg-[#3b82f6]/20 text-[#3b82f6]'}`}>
-                                                    {event.event_type}
-                                                </span>
-                                                <span className="text-[10px] text-[#64748b] font-mono">{event.timestamp.split(' ')[1]}</span>
-                                            </div>
-                                            <div className="text-[#e2e8f0] text-[12px] leading-relaxed mt-1.5">{event.message}</div>
-                                        </div>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    )}
-                </div>
-            </div>
-        </div>
-    );
+ {/* Right side: Timeline details */}
+ <div className="w-3/5 overflow-y-auto custom-scrollbar p-3 bg-[#111827]">
+ {!selectedHistoryDrone ? (
+ <div className="h-full flex items-center justify-center text-[#64748b] text-sm">
+ Select a drone to view attack timeline
+ </div>
+ ) : (
+ <div className="flex flex-col gap-3">
+ <div className="text-[#e2e8f0] font-mono text-xs border-b border-[#334155] pb-2 mb-2 font-bold flex items-center gap-2">
+ <span className="text-[#3b82f6]">▶</span> Event Timeline: {selectedHistoryDrone}
+ </div>
+ {timelineEvents.length === 0 ? (
+ <div className="text-[#64748b] text-[11px] italic">No events recorded for this session.</div>
+ ) : (
+ timelineEvents.map(event => (
+ <div key={event.id} className="bg-[#1e293b] border border-[#334155] rounded p-2 text-left relative overflow-hidden group hover:border-[#475569] transition-colors">
+ <div className={`absolute top-0 left-0 w-1 h-full ${event.event_type.includes('CORRELATION') ? 'bg-[#f59e0b]' : event.event_type.includes('TECHNIQUE') ? 'bg-[#ef4444]' : 'bg-[#3b82f6]'}`}></div>
+ <div className="pl-2">
+ <div className="flex justify-between items-start mb-1">
+ <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${event.event_type.includes('CORRELATION') ? 'bg-[#111827] text-[#f59e0b]' : event.event_type.includes('TECHNIQUE') ? 'bg-[#111827] text-[#ef4444]' : 'bg-[#111827] text-[#3b82f6]'}`}>
+ {event.event_type}
+ </span>
+ <span className="text-[10px] text-[#64748b] font-mono">{event.timestamp.split(' ')[1]}</span>
+ </div>
+ <div className="text-[#e2e8f0] text-[12px] leading-relaxed mt-1.5">{event.message}</div>
+ </div>
+ </div>
+ ))
+ )}
+ </div>
+ )}
+ </div>
+ </div>
+ </div>
+ );
 };

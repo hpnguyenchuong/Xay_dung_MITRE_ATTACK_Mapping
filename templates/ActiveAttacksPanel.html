@@ -1,66 +1,66 @@
 window.ActiveAttacksPanel = () => {
-    const [attacks, setAttacks] = React.useState([]);
+ const [attacks, setAttacks] = React.useState([]);
 
-    React.useEffect(() => {
-        const fetchAttacks = () => {
-            fetch('/api/attacks')
-                .then(r => r.json())
-                .then(data => {
-                    if (data.attacks) setAttacks(data.attacks);
-                })
-                .catch(e => console.error("Error fetching attacks:", e));
-        };
-        fetchAttacks();
-        const interval = setInterval(fetchAttacks, 3000);
-        return () => clearInterval(interval);
-    }, []);
+ React.useEffect(() => {
+ const fetchAttacks = () => {
+ fetch('/api/attacks')
+ .then(r => r.json())
+ .then(data => {
+ if (data.attacks) setAttacks(data.attacks);
+ })
+ .catch(e => console.error("Error fetching attacks:", e));
+ };
+ fetchAttacks();
+ const interval = setInterval(fetchAttacks, 3000);
+ return () => clearInterval(interval);
+ }, []);
 
-    const active = attacks.filter(a => a.status === 'IN PROGRESS');
-    const completed = attacks.filter(a => a.status !== 'IN PROGRESS');
+ const active = attacks.filter(a => a.status === 'IN PROGRESS');
+ const completed = attacks.filter(a => a.status !== 'IN PROGRESS');
 
-    return (
-        <div className="panel flex-1 min-h-0 flex flex-col">
-            <div className="panel-header">
-                <span className="material-symbols-outlined text-[#f43f5e] text-[16px]">local_fire_department</span>
-                ACTIVE ATTACKS
-            </div>
-            <div className="flex-1 flex flex-col min-h-0 p-2 gap-2 overflow-y-auto custom-scrollbar">
-                {active.length === 0 && <div className="text-[#64748b] text-center py-4 text-[14px]">No active attacks</div>}
-                {active.map(attack => (
-                    <div key={attack.attack_id} className="bg-[#f43f5e]/10 border-l-4 border-[#f43f5e] p-3 rounded">
-                        <div className="flex justify-between items-center mb-2">
-                            <div>
-                                <span className="font-mono font-bold text-[#fca5a5]">{attack.attack_type.toUpperCase()}</span>
-                                <span className="text-[#94a3b8] text-[13px] ml-2">on {attack.drone_id}</span>
-                            </div>
-                            <span className="px-2 py-1 bg-[#f43f5e]/20 text-[#fca5a5] rounded text-[11px] font-bold">ACTIVE</span>
-                        </div>
-                        <div className="w-full bg-[#1e293b] rounded-full h-1.5 mb-2 overflow-hidden flex">
-                            <div className="bg-gradient-to-r from-[#f43f5e]/10 via-[#f43f5e] to-[#f43f5e]/10 h-full w-[50%] animate-[pulse_1s_infinite_alternate] rounded-full translate-x-1/2"></div>
-                        </div>
-                        <div className="text-[#94a3b8] text-[12px]">
-                            Started: {new Date(attack.started_at).toLocaleTimeString()}
-                        </div>
-                    </div>
-                ))}
-            </div>
-            
-            <div className="panel-header border-t border-[#334155] mt-2">
-                <span className="material-symbols-outlined text-[#fbbf24] text-[16px]">history</span>
-                ATTACK HISTORY
-            </div>
-            <div className="flex-[0.8] flex flex-col min-h-0 p-2 gap-2 overflow-y-auto custom-scrollbar">
-                {completed.length === 0 && <div className="text-[#64748b] text-center py-2 text-[13px]">No attacks recorded</div>}
-                {completed.slice(0, 20).map(attack => (
-                    <div key={attack.attack_id} className="bg-[#1e293b]/50 border-l-2 border-[#64748b] p-2 rounded">
-                        <div className="flex justify-between">
-                            <span className="font-mono text-[#cbd5e1] text-[13px]">{attack.attack_type.toUpperCase()}</span>
-                            <span className="text-[#94a3b8] text-[12px]">{attack.drone_id}</span>
-                        </div>
-                        <div className="text-[#64748b] text-[11px]">{new Date(attack.started_at).toLocaleString()}</div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
+ return (
+ <div className="panel flex-1 min-h-0 flex flex-col">
+ <div className="panel-header">
+ <span className="material-symbols-outlined text-slate-400 text-[16px]">local_fire_department</span>
+ ACTIVE ATTACKS
+ </div>
+ <div className="flex-1 flex flex-col min-h-0 p-2 gap-2 overflow-y-auto custom-scrollbar">
+ {active.length === 0 && <div className="text-[#64748b] text-center py-4 text-[14px]">No active attacks</div>}
+ {active.map(attack => (
+ <div key={attack.attack_id} className="bg-[#111827] border-l-4 border-[#1f2937] p-3 rounded">
+ <div className="flex justify-between items-center mb-2">
+ <div>
+ <span className="font-mono font-bold text-[#fca5a5]">{attack.attack_type.toUpperCase()}</span>
+ <span className="text-[#94a3b8] text-[13px] ml-2">on {attack.drone_id}</span>
+ </div>
+ <span className="px-2 py-1 bg-[#111827] text-[#fca5a5] rounded text-[11px] font-bold">ACTIVE</span>
+ </div>
+ <div className="w-full bg-[#1e293b] rounded-full h-1.5 mb-2 overflow-hidden flex">
+ <div className="bg-[#111827] /10 via-[#f43f5e] /10 h-full w-[50%] animate-[pulse_1s_infinite_alternate] rounded-full translate-x-1/2"></div>
+ </div>
+ <div className="text-[#94a3b8] text-[12px]">
+ Started: {new Date(attack.started_at).toLocaleTimeString()}
+ </div>
+ </div>
+ ))}
+ </div>
+ 
+ <div className="panel-header border-t border-[#334155] mt-2">
+ <span className="material-symbols-outlined text-slate-400 text-[16px]">history</span>
+ ATTACK HISTORY
+ </div>
+ <div className="flex-[0.8] flex flex-col min-h-0 p-2 gap-2 overflow-y-auto custom-scrollbar">
+ {completed.length === 0 && <div className="text-[#64748b] text-center py-2 text-[13px]">No attacks recorded</div>}
+ {completed.slice(0, 20).map(attack => (
+ <div key={attack.attack_id} className="bg-[#111827] border-l-2 border-[#64748b] p-2 rounded">
+ <div className="flex justify-between">
+ <span className="font-mono text-[#cbd5e1] text-[13px]">{attack.attack_type.toUpperCase()}</span>
+ <span className="text-[#94a3b8] text-[12px]">{attack.drone_id}</span>
+ </div>
+ <div className="text-[#64748b] text-[11px]">{new Date(attack.started_at).toLocaleString()}</div>
+ </div>
+ ))}
+ </div>
+ </div>
+ );
 };
