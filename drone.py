@@ -1302,10 +1302,15 @@ def export_campaign_layers():
             
     findings = conn.execute("SELECT technique_id, enterprise_tech_id, ics_tech_id, MAX(confidence) as confidence, MAX(evidence) as evidence, tactic_name, MAX(name) as technique_name, COUNT(*) as occ, MAX(timestamp) as timestamp, MAX(reason) as reason FROM attack_mapping GROUP BY technique_id").fetchall()
     if findings:
-        layer = build_navigator_layer("Fleet Layer", [dict(f) for f in findings], "Fleet Aggregation")
-        filepath = os.path.join(BASE_DIR, "exports", "full", "fleet_layer.json")
-        with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(layer, f, indent=2, ensure_ascii=False)
+        layer_ent = build_navigator_layer("Fleet Enterprise", [dict(f) for f in findings], "Fleet Aggregation", domain="enterprise-attack")
+        filepath_ent = os.path.join(BASE_DIR, "exports", "fleet", "fleet_enterprise.json")
+        with open(filepath_ent, "w", encoding="utf-8") as f:
+            json.dump(layer_ent, f, indent=2, ensure_ascii=False)
+            
+        layer_ics = build_navigator_layer("Fleet ICS", [dict(f) for f in findings], "Fleet Aggregation", domain="ics-attack")
+        filepath_ics = os.path.join(BASE_DIR, "exports", "fleet", "fleet_ics.json")
+        with open(filepath_ics, "w", encoding="utf-8") as f:
+            json.dump(layer_ics, f, indent=2, ensure_ascii=False)
     conn.close()
 
 def export_incident_layer(attack_id):
@@ -1343,13 +1348,45 @@ def export_incident_layer(attack_id):
         evidence_list = f["evidence"].split("\n") if f["evidence"] else []
         trans_reason = get_translation_reason(f["technique_id"], f["ics_tech_id"])
         
+        # Build Semantic Path
+        semantic_path = []
+        if f["technique_id"]:
+            semantic_path.append({
+                "layer": "IT",
+                "technique": f["technique_id"],
+                "description": f["technique_name"]
+            })
+            
+        semantic_path.append({
+            "layer": "Communication",
+            "description": "Remote Command Delivery" if "T1071" in (f["technique_id"] or "") else "Semantic Overlap Channel"
+        })
+        
+        if f["ics_tech_id"]:
+            semantic_path.append({
+                "layer": "Physical",
+                "technique": f["ics_tech_id"],
+                "description": "ICS Control Message" if f["ics_tech_id"] == "T0855" else "Physical Effect"
+            })
+            
+        # extract matched rule
+        matched_rule = "UNKNOWN"
+        if f["reason"] and "Matched Rule " in f["reason"]:
+            matched_rule = f["reason"].split("Matched Rule ")[1].split(":")[0]
+            
         raw_data = {
             "attack_id": attack_id,
             "drone_id": f["drone_id"],
             "sample": "Q2_DroneFlood",
             "attack_type": attack_type,
-            "enterprise_technique": f["technique_id"],
-            "ics_technique": f["ics_tech_id"]
+            "enterprise_technique": {
+                "id": f["technique_id"],
+                "name": f["technique_name"]
+            },
+            "ics_technique": {
+                "id": f["ics_tech_id"],
+                "name": "Command Message" if f["ics_tech_id"] == "T0855" else "ICS Control"
+            }
         }
         
         if trans_reason:
@@ -1358,8 +1395,9 @@ def export_incident_layer(attack_id):
         raw_data.update({
             "confidence": f["confidence"],
             "evidence": evidence_list,
+            "matched_rule": matched_rule,
             "timestamp": f["timestamp"],
-            "reason": f["reason"]
+            "semantic_path": semantic_path
         })
         
         with open(raw_filepath, "w", encoding="utf-8") as r:
@@ -2200,8 +2238,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         filepath = os.path.join(BASE_DIR, "exports", "drones", f"{drone_id}_{domain}.json")
                         filename = f"navigator_{drone_id}_{domain}.json"
                     else:
-                        filepath = os.path.join(BASE_DIR, "exports", "full", "fleet_layer.json")
-                        filename = "fleet_layer.json"
+                        filepath = os.path.join(BASE_DIR, "exports", "fleet", f"fleet_{domain}.json")
+                        filename = f"fleet_{domain}.json"
                         
                     if os.path.exists(filepath):
                         with open(filepath, "r", encoding="utf-8") as f:
