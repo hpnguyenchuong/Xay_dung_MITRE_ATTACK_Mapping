@@ -2305,6 +2305,16 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     
                     cursor.execute("SELECT * FROM re_findings WHERE drone_id=?", (drone_id,))
                     re_findings = [dict(row) for row in cursor.fetchall()]
+                    
+                    if not re_findings and mitre:
+                        techs = [m['technique_id'] for m in mitre if m.get('technique_id')]
+                        ent_techs = [m['enterprise_tech_id'] for m in mitre if m.get('enterprise_tech_id')]
+                        all_techs = list(set(techs + ent_techs))
+                        if all_techs:
+                            placeholders = ",".join(["?"] * len(all_techs))
+                            query = f"SELECT * FROM re_findings WHERE drone_id='GLOBAL' AND (enterprise_tech_id IN ({placeholders}) OR technique_id IN ({placeholders}) OR ics_tech_id IN ({placeholders}))"
+                            cursor.execute(query, all_techs + all_techs + all_techs)
+                            re_findings = [dict(row) for row in cursor.fetchall()]
                     re_html = ""
                     for f in re_findings:
                         conf = 50
