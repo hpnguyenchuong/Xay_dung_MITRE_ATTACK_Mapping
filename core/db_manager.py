@@ -1,13 +1,11 @@
-import os, json, time, sqlite3, threading, base64, socket, hashlib, math, re, queue
+import os
+import json
 from datetime import datetime
-from typing import Dict
-from urllib.parse import urlparse, parse_qs
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from utils.constants import *
 from utils.helpers import *
 from core.state import *
-from core.mapping_engine import MITREMappingEngine, mitre_engine
+from core.mapping_engine import mitre_engine
 
 def init_forensic_db():
     with db_write_lock:

@@ -4,19 +4,15 @@ DRONEFLOOD SIMULATOR - Attack Tool (Kali)
 Nhận lệnh từ C2, thực thi tấn công, báo trạng thái
 """
 
-import socket
-import sys
 import time
 import json
 import base64
 import random
 import threading
-import uuid
 import urllib.request
 import urllib.error
 import argparse
 import os
-from datetime import datetime
 
 C_GREEN = "\033[92m"
 C_RED = "\033[91m"

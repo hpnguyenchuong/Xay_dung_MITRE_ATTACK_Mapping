@@ -5,7 +5,6 @@ Chạy bình thường, có backdoor để bị chiếm quyền
 """
 
 import socket
-import sys
 import time
 import json
 import base64

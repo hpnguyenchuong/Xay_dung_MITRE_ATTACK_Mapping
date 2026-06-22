@@ -1,14 +1,12 @@
-import os, json, time, sqlite3, threading, base64, socket, hashlib, math, re, queue
+import os
+import json
+import sqlite3
 from datetime import datetime
-from typing import Dict
-from urllib.parse import urlparse, parse_qs
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from utils.constants import *
 from utils.helpers import *
 from core.state import *
 
-from core.mapping_engine import MITREMappingEngine
 
 def build_navigator_layer(name, findings, attack_type="Unknown", domain="enterprise-attack"):
     tech_map = {}
@@ -260,6 +258,32 @@ def export_incident_layer(attack_id):
         
         with open(raw_filepath, "w", encoding="utf-8") as r:
             json.dump(raw_data, r, indent=2, ensure_ascii=False)
+            
+        # NÂNG CẤP: Sinh file JSON MITRE Navigator layer cho cuộc tấn công (Incident)
+        # và lưu vào reports/attacks để Forensic Report UI có thể hiển thị
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        drone_id = f["drone_id"]
+        
+        # Build Navigator layer cho incident
+        incident_layer = build_navigator_layer(
+            f"Incident {attack_id}", 
+            [dict(f)], 
+            attack_type, 
+            domain="enterprise-attack"
+        )
+        
+        # Lưu vào exports/incidents
+        inc_filepath = os.path.join(BASE_DIR, "exports", "incidents", f"DRONE-{drone_id}_ATTACK-{attack_id}_{ts}.json")
+        with open(inc_filepath, "w", encoding="utf-8") as r:
+            json.dump(incident_layer, r, indent=2, ensure_ascii=False)
+            
+        # Copy sang reports/attacks để Frontend Dashboard có thể list file
+        reports_attacks_dir = os.path.join(BASE_DIR, "reports", "attacks")
+        os.makedirs(reports_attacks_dir, exist_ok=True)
+        report_filepath = os.path.join(reports_attacks_dir, f"DRONE-{drone_id}_ATTACK-{attack_id}_{ts}.json")
+        with open(report_filepath, "w", encoding="utf-8") as r:
+            json.dump(incident_layer, r, indent=2, ensure_ascii=False)
+            
     conn.close()
 
 def generate_navigator_exports(drone_id=None, attack_id=None):
