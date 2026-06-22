@@ -1184,16 +1184,10 @@ def tcp_server():
             print(f"Connection error: {e}")
             break
 
-def get_color(score, tactic_name=None):
+def get_color(score):
     if score >= 90: return "#ef4444"
-    if score >= 70: return "#f59e0b"
-    if score >= 50: return "#fbbf24"
-    if tactic_name:
-        t = tactic_name.lower()
-        if "command" in t: return "#f59e0b"
-        if "discovery" in t: return "#3b82f6"
-        if "lateral" in t: return "#8b5cf6"
-        if "exfiltration" in t: return "#10b981"
+    if score >= 75: return "#f97316"
+    if score >= 60: return "#eab308"
     return "#3b82f6"
 
 def build_navigator_layer(name, findings):
@@ -1203,19 +1197,29 @@ def build_navigator_layer(name, findings):
         if not t_id: continue
         
         score = f.get("confidence") or 50
+        occ = f.get("occ", 1)
         
         comment = f"Attack Type: {f.get('attack_type', 'Unknown')}\n"
         if f.get("drone_id"):
             comment += f"Drone ID: {f.get('drone_id')}\n"
-        comment += f"Evidence: {f.get('evidence', 'N/A')}\n"
-        comment += f"Confidence: {score}%\n"
-        
+        if f.get("timestamp"):
+            comment += f"Timestamp: {f.get('timestamp')}\n"
+        comment += f"\nEvidence:\n{f.get('evidence', 'N/A')}\n"
+        comment += f"\nConfidence:\n{score}%\n"
+        comment += f"\nEnterprise:\n{t_id}\n"
+        if f.get("ics_tech_id"):
+            comment += f"\nICS:\n{f.get('ics_tech_id')}\n"
+        if f.get("reason"):
+            comment += f"\nReason:\n{f.get('reason')}\n"
+        if occ > 1:
+            comment += f"\nOccurrences: {occ}\n"
+            
         techniques.append({
             "techniqueID": t_id,
             "score": int(score),
             "enabled": True,
             "comment": comment,
-            "color": get_color(int(score), f.get("tactic_name"))
+            "color": get_color(int(score))
         })
         
     return {
@@ -1225,19 +1229,24 @@ def build_navigator_layer(name, findings):
             "layer": "4.5"
         },
         "domain": "enterprise-attack",
-        "description": name,
+        "description": "Auto-generated MITRE ATT&CK mapping",
+        "filters": {
+            "platforms": ["Windows", "Linux", "Network"]
+        },
+        "sorting": 0,
+        "layout": {
+            "layout": "side"
+        },
+        "hideDisabled": False,
         "techniques": techniques
     }
 
-def export_drone_layers():
+def export_drone_layer(drone_id):
     conn = sqlite3.connect(DB_FILE_PATH, check_same_thread=False)
     conn.row_factory = sqlite3.Row
-    drones = conn.execute("SELECT DISTINCT drone_id FROM attack_mapping WHERE drone_id IS NOT NULL").fetchall()
+    findings = conn.execute("SELECT technique_id, enterprise_tech_id, ics_tech_id, MAX(confidence) as confidence, MAX(evidence) as evidence, tactic_name, MAX(name) as attack_type, COUNT(*) as occ, MAX(timestamp) as timestamp, MAX(reason) as reason, drone_id FROM attack_mapping WHERE drone_id=? GROUP BY technique_id", (drone_id,)).fetchall()
     
-    for row in drones:
-        drone_id = row["drone_id"]
-        findings = conn.execute("SELECT technique_id, enterprise_tech_id, ics_tech_id, MAX(confidence) as confidence, MAX(evidence) as evidence, tactic_name, MAX(name) as attack_type FROM attack_mapping WHERE drone_id=? GROUP BY technique_id", (drone_id,)).fetchall()
-        
+    if findings:
         layer = build_navigator_layer(f"Drone {drone_id}", [dict(f) for f in findings])
         filepath = os.path.join(BASE_DIR, "exports", "drones", f"{drone_id}_layer.json")
         with open(filepath, "w", encoding="utf-8") as f:
@@ -1251,7 +1260,7 @@ def export_campaign_layers():
     
     for row in tactics:
         tactic = row["tactic_name"]
-        findings = conn.execute("SELECT technique_id, enterprise_tech_id, ics_tech_id, MAX(confidence) as confidence, MAX(evidence) as evidence, tactic_name, MAX(name) as attack_type FROM attack_mapping WHERE tactic_name=? GROUP BY technique_id", (tactic,)).fetchall()
+        findings = conn.execute("SELECT technique_id, enterprise_tech_id, ics_tech_id, MAX(confidence) as confidence, MAX(evidence) as evidence, tactic_name, MAX(name) as attack_type, COUNT(*) as occ, MAX(timestamp) as timestamp, MAX(reason) as reason FROM attack_mapping WHERE tactic_name=? GROUP BY technique_id", (tactic,)).fetchall()
         
         campaign_name = tactic.lower().replace(" ", "_")
         layer = build_navigator_layer(f"{tactic} Campaign", [dict(f) for f in findings])
@@ -1259,7 +1268,7 @@ def export_campaign_layers():
         with open(filepath, "w", encoding="utf-8") as f:
             json.dump(layer, f, indent=2, ensure_ascii=False)
             
-    findings = conn.execute("SELECT technique_id, enterprise_tech_id, ics_tech_id, MAX(confidence) as confidence, MAX(evidence) as evidence, tactic_name, MAX(name) as attack_type FROM attack_mapping GROUP BY technique_id").fetchall()
+    findings = conn.execute("SELECT technique_id, enterprise_tech_id, ics_tech_id, MAX(confidence) as confidence, MAX(evidence) as evidence, tactic_name, MAX(name) as attack_type, COUNT(*) as occ, MAX(timestamp) as timestamp, MAX(reason) as reason FROM attack_mapping GROUP BY technique_id").fetchall()
     if findings:
         layer = build_navigator_layer("Full Campaign", [dict(f) for f in findings])
         filepath = os.path.join(BASE_DIR, "exports", "campaigns", "full_campaign.json")
@@ -1267,28 +1276,50 @@ def export_campaign_layers():
             json.dump(layer, f, indent=2, ensure_ascii=False)
     conn.close()
 
-def export_incident_layers(attack_id=None):
+def export_incident_layer(attack_id):
+    if not attack_id: return
     conn = sqlite3.connect(DB_FILE_PATH, check_same_thread=False)
     conn.row_factory = sqlite3.Row
-    findings_raw = conn.execute("SELECT id, technique_id, enterprise_tech_id, ics_tech_id, confidence, evidence, tactic_name, name as attack_type, drone_id FROM attack_mapping ORDER BY id DESC LIMIT 50").fetchall()
     
-    # We will export the most recent incident as the requested attack_id, and others by DB id.
-    for i, f in enumerate(findings_raw):
-        atk_id = attack_id if (i == 0 and attack_id) else f"ATK-{f['id']:08x}"
-        layer = build_navigator_layer(f"Incident {atk_id}", [dict(f)])
-        filepath = os.path.join(BASE_DIR, "exports", "incidents", f"{atk_id}.json")
+    # Lấy event gần nhất
+    findings_raw = conn.execute("SELECT id, technique_id, enterprise_tech_id, ics_tech_id, confidence, evidence, tactic_name, name as attack_type, drone_id, timestamp, reason FROM attack_mapping ORDER BY id DESC LIMIT 1").fetchall()
+    
+    for f in findings_raw:
+        layer = build_navigator_layer(f"Incident {attack_id}", [dict(f)])
+        filepath = os.path.join(BASE_DIR, "exports", "incidents", f"{attack_id}.json")
         with open(filepath, "w", encoding="utf-8") as f:
             json.dump(layer, f, indent=2, ensure_ascii=False)
+            
+        # Xuất RAW file
+        raw_filepath = os.path.join(BASE_DIR, "exports", "raw", f"{attack_id}_raw.json")
+        raw_data = {
+            "attack_id": attack_id,
+            "target": f["drone_id"],
+            "timestamp": f["timestamp"],
+            "type": f["attack_type"],
+            "tactic": f["tactic_name"],
+            "technique": f["technique_id"],
+            "evidence": f["evidence"],
+            "reason": f["reason"]
+        }
+        with open(raw_filepath, "w", encoding="utf-8") as r:
+            json.dump(raw_data, r, indent=2, ensure_ascii=False)
     conn.close()
 
-def generate_navigator_exports(attack_id=None):
+def generate_navigator_exports(drone_id=None, attack_id=None):
     try:
         os.makedirs(os.path.join(BASE_DIR, "exports", "drones"), exist_ok=True)
         os.makedirs(os.path.join(BASE_DIR, "exports", "campaigns"), exist_ok=True)
         os.makedirs(os.path.join(BASE_DIR, "exports", "incidents"), exist_ok=True)
-        export_drone_layers()
+        os.makedirs(os.path.join(BASE_DIR, "exports", "raw"), exist_ok=True)
+        
+        if drone_id:
+            export_drone_layer(drone_id)
+            
+        if attack_id:
+            export_incident_layer(attack_id)
+            
         export_campaign_layers()
-        export_incident_layers(attack_id)
     except Exception as e:
         print(f"Error generating navigator exports: {e}")
 
@@ -1337,7 +1368,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     )
                     
                     # --- AUTO-GENERATE FORENSIC JSON REPORT ---
-                    generate_navigator_exports(attack_id)
+                    generate_navigator_exports(drone_id, attack_id)
                     
                     try:
                         cursor.execute("SELECT technique_id FROM attack_mapping WHERE drone_id=? ORDER BY id DESC LIMIT 1", (drone_id,))
