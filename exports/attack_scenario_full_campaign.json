@@ -1,0 +1,71 @@
+{
+    "name": "Full DroneFleet Campaign",
+    "versions": {
+        "attack": "14",
+        "navigator": "4.9.1",
+        "layer": "4.5"
+    },
+    "domain": "ics-attack",
+    "description": "A comprehensive multi-stage attack on the entire drone fleet, representing ALL attack techniques.",
+    "gradient": {
+        "colors": ["#ffffff", "#ff6666", "#e11d48"],
+        "minValue": 0,
+        "maxValue": 100
+    },
+    "techniques": [
+        {
+            "techniqueID": "T0885",
+            "score": 95,
+            "color": "#be123c",
+            "comment": "Occurrences: 500+ | Mapped rule: Commonly Used Port (Mass C2 Beaconing)"
+        },
+        {
+            "techniqueID": "T0831",
+            "score": 100,
+            "color": "#be123c",
+            "comment": "Occurrences: 34 | Mapped rule: Manipulation of Control (GPS Spoofing, Collision, Emergency Land)"
+        },
+        {
+            "techniqueID": "T0832",
+            "score": 88,
+            "color": "#e11d48",
+            "comment": "Occurrences: 42 | Mapped rule: Manipulation of View (IMU Drift & Telemetry Fuzzing)"
+        },
+        {
+            "techniqueID": "T0879",
+            "score": 90,
+            "color": "#e11d48",
+            "comment": "Occurrences: 10 | Mapped rule: Damage to Property (Aggressive Battery Drain)"
+        },
+        {
+            "techniqueID": "T0816",
+            "score": 75,
+            "color": "#f43f5e",
+            "comment": "Occurrences: 8 | Mapped rule: Device Restart/Shutdown (Forced reboot via Firmware Hook)"
+        },
+        {
+            "techniqueID": "T0843",
+            "score": 60,
+            "color": "#fb7185",
+            "comment": "Occurrences: 3 | Mapped rule: Program Download (Payload updates)"
+        },
+        {
+            "techniqueID": "T0886",
+            "score": 45,
+            "color": "#fb923c",
+            "comment": "Occurrences: 12 | Mapped rule: Remote System Discovery (Scanning mesh network)"
+        },
+        {
+            "techniqueID": "T0806",
+            "score": 70,
+            "color": "#f43f5e",
+            "comment": "Occurrences: 15 | Mapped rule: Brute Force I/O (Sensor Spam/LiDAR)"
+        },
+        {
+            "techniqueID": "T0856",
+            "score": 30,
+            "color": "#fbbf24",
+            "comment": "Occurrences: 2 | Mapped rule: Spoof Reporting Message"
+        }
+    ]
+}

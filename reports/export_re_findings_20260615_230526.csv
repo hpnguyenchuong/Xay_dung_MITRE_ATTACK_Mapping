@@ -1,0 +1,34 @@
+﻿Drone ID,Artifact,Evidence Source,Behavior,Enterprise Technique,ICS Technique,Confidence,Timestamp
+DRONE-786,Encoded C2 command payload,XOR+Base64 Obfuscation,Obfuscated Command Channel,T1027,T0832,85,2026-06-10 12:41:46
+DRONE-786,Mutex exists in RAM,DF_MUTEX_01,,T1547.001,T0866,100,2026-06-10 12:41:46
+DRONE-786,Hardcoded C2 domain,c2.dronefleet.net,,T1071,T0869,98,2026-06-10 12:41:46
+DRONE-786,Payload content intentionally encoded,XOR+Base64,,T1027,T0832,100,2026-06-10 12:41:46
+DRONE-786,Code block injecting random coordinates,gps_spoof,,,,95,2026-06-10 12:41:46
+DRONE-786,Code block altering battery sensor data,battery_drain,,,,90,2026-06-10 12:41:46
+DRONE-786,Network broadcast function with sync header,FLEET_SYNC,,,,88,2026-06-10 12:41:46
+DRONE-786,P2P command relay mechanism,FLEET_COMMAND_PUSH,,,,92,2026-06-10 12:41:46
+DRONE-786,Non-standard telemetry format,custom_protocol_v1,,,,95,2026-06-10 12:41:46
+DRONE-786,Writes to Windows Run key,DF_REG_RUN,,T1547.001,T0866,94,2026-06-10 12:41:46
+DRONE-786,Modifies init.d startup script,DF_STARTUP_CFG,,T1547.001,T0866,94,2026-06-10 12:41:46
+DRONE-995,Encoded C2 command payload,XOR+Base64 Obfuscation,Obfuscated Command Channel,T1027,T0832,85,2026-06-10 12:41:45
+DRONE-995,Mutex exists in RAM,DF_MUTEX_01,,T1547.001,T0866,100,2026-06-10 12:41:45
+DRONE-995,Hardcoded C2 domain,c2.dronefleet.net,,T1071,T0869,98,2026-06-10 12:41:45
+DRONE-995,Payload content intentionally encoded,XOR+Base64,,T1027,T0832,100,2026-06-10 12:41:45
+DRONE-995,Code block injecting random coordinates,gps_spoof,,,,95,2026-06-10 12:41:45
+DRONE-995,Code block altering battery sensor data,battery_drain,,,,90,2026-06-10 12:41:45
+DRONE-995,Network broadcast function with sync header,FLEET_SYNC,,,,88,2026-06-10 12:41:45
+DRONE-995,P2P command relay mechanism,FLEET_COMMAND_PUSH,,,,92,2026-06-10 12:41:45
+DRONE-995,Non-standard telemetry format,custom_protocol_v1,,,,95,2026-06-10 12:41:45
+DRONE-995,Writes to Windows Run key,DF_REG_RUN,,T1547.001,T0866,94,2026-06-10 12:41:45
+DRONE-995,Modifies init.d startup script,DF_STARTUP_CFG,,T1547.001,T0866,94,2026-06-10 12:41:45
+DRONE-806,Encoded C2 command payload,XOR+Base64 Obfuscation,Obfuscated Command Channel,T1027,T0832,85,2026-06-10 12:41:45
+DRONE-806,Mutex exists in RAM,DF_MUTEX_01,,T1547.001,T0866,100,2026-06-10 12:41:45
+DRONE-806,Hardcoded C2 domain,c2.dronefleet.net,,T1071,T0869,98,2026-06-10 12:41:45
+DRONE-806,Payload content intentionally encoded,XOR+Base64,,T1027,T0832,100,2026-06-10 12:41:45
+DRONE-806,Code block injecting random coordinates,gps_spoof,,,,95,2026-06-10 12:41:45
+DRONE-806,Code block altering battery sensor data,battery_drain,,,,90,2026-06-10 12:41:45
+DRONE-806,Network broadcast function with sync header,FLEET_SYNC,,,,88,2026-06-10 12:41:45
+DRONE-806,P2P command relay mechanism,FLEET_COMMAND_PUSH,,,,92,2026-06-10 12:41:45
+DRONE-806,Non-standard telemetry format,custom_protocol_v1,,,,95,2026-06-10 12:41:45
+DRONE-806,Writes to Windows Run key,DF_REG_RUN,,T1547.001,T0866,94,2026-06-10 12:41:45
+DRONE-806,Modifies init.d startup script,DF_STARTUP_CFG,,T1547.001,T0866,94,2026-06-10 12:41:45

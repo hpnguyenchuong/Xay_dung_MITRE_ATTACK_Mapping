@@ -1,0 +1,41 @@
+{
+    "name": "Drone Command & Control (C2) Compromise",
+    "versions": {
+        "attack": "14",
+        "navigator": "4.9.1",
+        "layer": "4.5"
+    },
+    "domain": "ics-attack",
+    "description": "Simulation focusing on initial compromise, backdoor channel, and remote discovery.",
+    "gradient": {
+        "colors": ["#ffffff", "#ff6666", "#e11d48"],
+        "minValue": 0,
+        "maxValue": 100
+    },
+    "techniques": [
+        {
+            "techniqueID": "T0885",
+            "score": 100,
+            "color": "#be123c",
+            "comment": "Occurrences: 204 | Mapped rule: Commonly Used Port (C2 Beaconing over TCP 5555)"
+        },
+        {
+            "techniqueID": "T0843",
+            "score": 75,
+            "color": "#f43f5e",
+            "comment": "Occurrences: 1 | Mapped rule: Program Download (Secondary Payload Injection)"
+        },
+        {
+            "techniqueID": "T0886",
+            "score": 50,
+            "color": "#fb7185",
+            "comment": "Occurrences: 4 | Mapped rule: Remote System Discovery (Scanning local drone fleet)"
+        },
+        {
+            "techniqueID": "T0814",
+            "score": 88,
+            "color": "#e11d48",
+            "comment": "Occurrences: 45 | Mapped rule: Denial of Service (C2 Communication Flood)"
+        }
+    ]
+}

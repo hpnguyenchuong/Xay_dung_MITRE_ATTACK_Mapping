@@ -1,0 +1,40 @@
+{
+  "name": "Command and Control Campaign",
+  "versions": {
+    "navigator": "5.1.0",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "MITRE ATT&CK Mapping for Command and Control Campaign",
+  "gradient": {
+    "colors": [
+      "#ff6666",
+      "#ffe766",
+      "#8ec843"
+    ],
+    "minValue": 0,
+    "maxValue": 100
+  },
+  "filters": {
+    "platforms": [
+      "Windows",
+      "Linux",
+      "Network"
+    ]
+  },
+  "sorting": 0,
+  "layout": {
+    "layout": "side"
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1071.001",
+      "score": 50,
+      "enabled": true,
+      "showSubtechniques": true,
+      "comment": "Attack Type: Campaign Aggregation\nTechnique: T1071.001\nTechnique Name: Standard Application Layer Protocol: Web Traffic\nTimestamp: 2026-06-21 23:33:49\nEvidence: None\nConfidence: 50%\nOccurrences: 4\n",
+      "color": "#3b82f6"
+    }
+  ]
+}

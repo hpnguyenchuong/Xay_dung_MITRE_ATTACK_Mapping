@@ -232,7 +232,7 @@ class DroneFloodSimulator:
             drone_id = drone.get("id", "Unknown")[:16]
             try:
                 battery = float(drone.get("battery", 0))
-            except:
+            except (ValueError, TypeError):
                 battery = 0.0
             batt_str = f"{battery:.1f}%"
             
@@ -555,7 +555,10 @@ class DroneFloodSimulator:
                     self.send_header("Access-Control-Allow-Origin", "*")
                     self.end_headers()
         
-        server = HTTPServer(("0.0.0.0", self.http_port), CommandHandler)
+        class ThreadingReusableServer(HTTPServer):
+            allow_reuse_address = True
+            
+        server = ThreadingReusableServer(("0.0.0.0", self.http_port), CommandHandler)
         server.simulator = self
         print(f"{C_GREEN}[+] Attack HTTP server running on port {self.http_port}{C_END}")
         server.serve_forever()

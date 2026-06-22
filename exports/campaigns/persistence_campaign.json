@@ -1,0 +1,40 @@
+{
+  "name": "Persistence Campaign",
+  "versions": {
+    "navigator": "5.1.0",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "MITRE ATT&CK Mapping for Persistence Campaign",
+  "gradient": {
+    "colors": [
+      "#ff6666",
+      "#ffe766",
+      "#8ec843"
+    ],
+    "minValue": 0,
+    "maxValue": 100
+  },
+  "filters": {
+    "platforms": [
+      "Windows",
+      "Linux",
+      "Network"
+    ]
+  },
+  "sorting": 0,
+  "layout": {
+    "layout": "side"
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1547.001",
+      "score": 100,
+      "enabled": true,
+      "showSubtechniques": true,
+      "comment": "Attack Type: Campaign Aggregation\nTechnique: T1547.001\nTechnique Name: Persistence\nTimestamp: 2026-06-10 12:41:46\nEvidence: Writes to Windows Run key\nConfidence: 100%\nICS: T0866\nReason: Matched Rule RULE_001: Persistence\nOccurrences: 9\n",
+      "color": "#ef4444"
+    }
+  ]
+}

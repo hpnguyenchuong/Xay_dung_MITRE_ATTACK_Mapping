@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Incident Report - DRONE-ALL</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #e2e8f0; padding: 20px; } 
+        h1, h2, h3 { color: #38bdf8; border-bottom: 1px solid #334155; padding-bottom: 5px; } 
+        .card { background: #1e293b; padding: 15px; margin-bottom: 15px; border: 1px solid #334155; border-radius: 5px; } 
+        .risk-high { color: #f43f5e; font-weight: bold; font-size: 24px; } 
+        ul { list-style-type: none; padding-left: 0; } 
+        li { margin-bottom: 5px; padding: 5px; background: #0f172a; border-left: 3px solid #38bdf8; } 
+        th, td { padding: 8px; text-align: left; } 
+        th { background-color: #334155; } 
+        pre { white-space: pre-wrap; font-family: monospace; }
+        @media print {
+            body { background: white !important; color: black !important; padding: 0; }
+            .card { background: #f8fafc !important; border: 1px solid #cbd5e1 !important; break-inside: avoid; }
+            h1, h2, h3 { color: #0f172a !important; border-bottom: 1px solid #cbd5e1 !important; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; text-shadow: none !important; }
+            pre { background: #f1f5f9 !important; border: 1px solid #cbd5e1 !important; color: #334155 !important; }
+            li { background: #f8fafc !important; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Drone Malware Analysis Report</h1>
+    
+    <h2>FINAL VERDICT</h2>
+    <div class="card">
+        <p><strong>Family:</strong> Unknown</p>
+        <p><strong>Campaign:</strong> Unknown</p>
+        <p><strong>Threat Score:</strong> <span class="risk-high">0</span></p>
+        <p><strong>Severity:</strong> <span style="color:#34d399; font-weight:bold;">LOW</span></p>
+        <p><strong>MITRE Coverage:</strong> <span style="color:#38bdf8">0/5</span></p>
+        <p><strong>Assessment:</strong> Anomalous artifacts detected on drone node. Further investigation required.</p>
+    </div>
+    
+    <h2>1. Executive Summary</h2>
+    <div class="card">
+        <p><strong>Target Drone:</strong> DRONE-ALL</p>
+        <p><strong>Exfiltration Risk:</strong> <span style="color:#f43f5e">LOW</span></p>
+        
+        
+    </div>
+    
+    <h2>2. ICS Operational Impact</h2>
+    <div class="card">
+        <ul>
+            <li>No ICS impact mapped</li>
+        </ul>
+    </div>
+    
+    <h2>3. Discovered IOCs</h2>
+    <div class="card">
+        <table style='width:100%; text-align:left; border-collapse:collapse;'><tr style='border-bottom:1px solid #334155;'><th>IOC Type</th><th>Value</th><th>Source</th></tr></table>
+    </div>
+    
+    <h2>4. Attack Chain Analysis</h2>
+    <div class="card">
+        <ul style="list-style-type: none; padding: 0;">
+            <li style='margin-bottom: 10px; background: #1e293b; border-left: 3px solid #38bdf8; padding: 8px;'><strong style='color: #e2e8f0'>1. Persistence</strong><br/><span style='color: #94a3b8; font-family: monospace; font-size: 12px;'>&#8627; DF_MUTEX_01</span></li><li style='margin-bottom: 10px; background: #1e293b; border-left: 3px solid #38bdf8; padding: 8px;'><strong style='color: #e2e8f0'>2. Persistence</strong><br/><span style='color: #94a3b8; font-family: monospace; font-size: 12px;'>&#8627; DF_REG_RUN</span></li><li style='margin-bottom: 10px; background: #1e293b; border-left: 3px solid #38bdf8; padding: 8px;'><strong style='color: #e2e8f0'>3. Gps Spoof</strong><br/><span style='color: #94a3b8; font-family: monospace; font-size: 12px;'>&#8627; gps_spoof</span></li><li style='margin-bottom: 10px; background: #1e293b; border-left: 3px solid #38bdf8; padding: 8px;'><strong style='color: #e2e8f0'>4. Battery Drain</strong><br/><span style='color: #94a3b8; font-family: monospace; font-size: 12px;'>&#8627; battery_drain</span></li><li style='margin-bottom: 10px; background: #1e293b; border-left: 3px solid #38bdf8; padding: 8px;'><strong style='color: #e2e8f0'>5. Imu Drift</strong><br/><span style='color: #94a3b8; font-family: monospace; font-size: 12px;'>&#8627; imu_drift_injection</span></li><li style='margin-bottom: 10px; background: #1e293b; border-left: 3px solid #38bdf8; padding: 8px;'><strong style='color: #e2e8f0'>6. Lidar Jamming</strong><br/><span style='color: #94a3b8; font-family: monospace; font-size: 12px;'>&#8627; lidar_jamming</span></li><li style='margin-bottom: 10px; background: #1e293b; border-left: 3px solid #38bdf8; padding: 8px;'><strong style='color: #e2e8f0'>7. Collision</strong><br/><span style='color: #94a3b8; font-family: monospace; font-size: 12px;'>&#8627; collision_vector</span></li><li style='margin-bottom: 10px; background: #1e293b; border-left: 3px solid #38bdf8; padding: 8px;'><strong style='color: #e2e8f0'>8. Swarm Takeover</strong><br/><span style='color: #94a3b8; font-family: monospace; font-size: 12px;'>&#8627; FLEET_SYNC</span></li>
+        </ul>
+    </div>
+
+    <h2>5. Reverse Engineering Findings</h2>
+    <div class="card">
+        <div style='margin-bottom:10px; padding:10px; border-left:3px solid #a855f7; background:#1e293b;'><strong>Artifact:</strong> DF_MUTEX_01<br/><strong>Evidence:</strong> Mutex object in kernel space<br/><strong>Finding:</strong> Persistence<br/><strong>Detection Confidence:</strong> <span style='color:#eab308; font-weight:bold;'>MEDIUM</span><br/><strong>Mapped Technique:</strong> None<br/><strong>Mapping Reason:</strong> <span style='color:#a855f7'>RE Finding: Persistence attack vector</span></div><div style='margin-bottom:10px; padding:10px; border-left:3px solid #a855f7; background:#1e293b;'><strong>Artifact:</strong> DF_REG_RUN<br/><strong>Evidence:</strong> HKLM\Run registry write<br/><strong>Finding:</strong> Persistence<br/><strong>Detection Confidence:</strong> <span style='color:#eab308; font-weight:bold;'>MEDIUM</span><br/><strong>Mapped Technique:</strong> None<br/><strong>Mapping Reason:</strong> <span style='color:#a855f7'>RE Finding: Persistence attack vector</span></div><div style='margin-bottom:10px; padding:10px; border-left:3px solid #a855f7; background:#1e293b;'><strong>Artifact:</strong> gps_spoof<br/><strong>Evidence:</strong> GPS coordinate injection<br/><strong>Finding:</strong> Gps Spoof<br/><strong>Detection Confidence:</strong> <span style='color:#eab308; font-weight:bold;'>MEDIUM</span><br/><strong>Mapped Technique:</strong> None<br/><strong>Mapping Reason:</strong> <span style='color:#a855f7'>RE Finding: GPS Spoof attack vector</span></div><div style='margin-bottom:10px; padding:10px; border-left:3px solid #a855f7; background:#1e293b;'><strong>Artifact:</strong> battery_drain<br/><strong>Evidence:</strong> Battery sensor alteration<br/><strong>Finding:</strong> Battery Drain<br/><strong>Detection Confidence:</strong> <span style='color:#eab308; font-weight:bold;'>MEDIUM</span><br/><strong>Mapped Technique:</strong> None<br/><strong>Mapping Reason:</strong> <span style='color:#a855f7'>RE Finding: Battery Drain attack vector</span></div><div style='margin-bottom:10px; padding:10px; border-left:3px solid #a855f7; background:#1e293b;'><strong>Artifact:</strong> imu_drift_injection<br/><strong>Evidence:</strong> Gyroscope data corruption<br/><strong>Finding:</strong> Imu Drift<br/><strong>Detection Confidence:</strong> <span style='color:#eab308; font-weight:bold;'>MEDIUM</span><br/><strong>Mapped Technique:</strong> None<br/><strong>Mapping Reason:</strong> <span style='color:#a855f7'>RE Finding: IMU Drift attack vector</span></div><div style='margin-bottom:10px; padding:10px; border-left:3px solid #a855f7; background:#1e293b;'><strong>Artifact:</strong> lidar_jamming<br/><strong>Evidence:</strong> LiDAR signal manipulation<br/><strong>Finding:</strong> Lidar Jamming<br/><strong>Detection Confidence:</strong> <span style='color:#eab308; font-weight:bold;'>MEDIUM</span><br/><strong>Mapped Technique:</strong> None<br/><strong>Mapping Reason:</strong> <span style='color:#a855f7'>RE Finding: LiDAR Jamming attack vector</span></div><div style='margin-bottom:10px; padding:10px; border-left:3px solid #a855f7; background:#1e293b;'><strong>Artifact:</strong> collision_vector<br/><strong>Evidence:</strong> Waypoint override<br/><strong>Finding:</strong> Collision<br/><strong>Detection Confidence:</strong> <span style='color:#eab308; font-weight:bold;'>MEDIUM</span><br/><strong>Mapped Technique:</strong> None<br/><strong>Mapping Reason:</strong> <span style='color:#a855f7'>RE Finding: Collision attack vector</span></div><div style='margin-bottom:10px; padding:10px; border-left:3px solid #a855f7; background:#1e293b;'><strong>Artifact:</strong> FLEET_SYNC<br/><strong>Evidence:</strong> Broadcast sync header<br/><strong>Finding:</strong> Swarm Takeover<br/><strong>Detection Confidence:</strong> <span style='color:#eab308; font-weight:bold;'>MEDIUM</span><br/><strong>Mapped Technique:</strong> None<br/><strong>Mapping Reason:</strong> <span style='color:#a855f7'>RE Finding: Swarm Takeover attack vector</span></div><div style='margin-bottom:10px; padding:10px; border-left:3px solid #a855f7; background:#1e293b;'><strong>Artifact:</strong> FLEET_COMMAND_PUSH<br/><strong>Evidence:</strong> P2P command relay<br/><strong>Finding:</strong> Swarm Takeover<br/><strong>Detection Confidence:</strong> <span style='color:#eab308; font-weight:bold;'>MEDIUM</span><br/><strong>Mapped Technique:</strong> None<br/><strong>Mapping Reason:</strong> <span style='color:#a855f7'>RE Finding: Swarm Takeover attack vector</span></div><div style='margin-bottom:10px; padding:10px; border-left:3px solid #a855f7; background:#1e293b;'><strong>Artifact:</strong> forced_landing<br/><strong>Evidence:</strong> Emergency landing command<br/><strong>Finding:</strong> Emergency Land<br/><strong>Detection Confidence:</strong> <span style='color:#eab308; font-weight:bold;'>MEDIUM</span><br/><strong>Mapped Technique:</strong> None<br/><strong>Mapping Reason:</strong> <span style='color:#a855f7'>RE Finding: Emergency Land attack vector</span></div>
+    </div>
+
+    <h2>6. Similar High-Risk Drones</h2>
+    <div class="card">
+        <ul style="list-style-type: none; padding: 0;">
+            <li style='margin-bottom: 5px; background: #0f172a; border-left: 3px solid #f43f5e; padding:5px;'><strong style='color:#e2e8f0'>DRONE-995</strong> - Threat Score: <span style='color:#f43f5e'>0</span></li><li style='margin-bottom: 5px; background: #0f172a; border-left: 3px solid #f43f5e; padding:5px;'><strong style='color:#e2e8f0'>DRONE-806</strong> - Threat Score: <span style='color:#f43f5e'>0</span></li><li style='margin-bottom: 5px; background: #0f172a; border-left: 3px solid #f43f5e; padding:5px;'><strong style='color:#e2e8f0'>DRONE-786</strong> - Threat Score: <span style='color:#f43f5e'>0</span></li>
+        </ul>
+    </div>
+
+    <h2>7. Raw Telemetry & Event Timeline</h2>
+    <div class="card"><ul style="font-size:13px; max-height:400px; overflow-y:auto;">
+        
+    </ul></div>
+    
+    <h2>8. Incident Response Checklist</h2>
+    <div class="card">
+        
+                    <ul style="list-style-type: none; padding: 0;">
+                        <li style="margin-bottom: 8px;"><label><input type="checkbox" style="margin-right:8px;"> Verify drone isolation from Fleet Network</label></li>
+                        <li style="margin-bottom: 8px;"><label><input type="checkbox" style="margin-right:8px;"> Block C2 domains/IPs at firewall</label></li>
+                        <li style="margin-bottom: 8px;"><label><input type="checkbox" style="margin-right:8px;"> Collect full memory dump via forensic interface</label></li>
+                        <li style="margin-bottom: 8px;"><label><input type="checkbox" style="margin-right:8px;"> Eradicate persistent RunKeys & Tasks</label></li>
+                        <li style="margin-bottom: 8px;"><label><input type="checkbox" style="margin-right:8px;"> Re-flash firmware to golden image</label></li>
+                        <li style="margin-bottom: 8px;"><label><input type="checkbox" style="margin-right:8px;"> Rotate all associated credentials/keys</label></li>
+                    </ul>
+                    
+    </div>
+</body>
+</html>

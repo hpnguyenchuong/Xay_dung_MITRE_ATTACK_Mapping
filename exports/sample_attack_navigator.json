@@ -1,0 +1,33 @@
+{
+    "name": "Sample Attack Simulation - DRONE-TEST",
+    "versions": {
+        "attack": "14",
+        "navigator": "4.9.1",
+        "layer": "4.5"
+    },
+    "domain": "ics-attack",
+    "description": "Mock file containing GPS Spoofing, Emergency Landing, and Battery Drain attacks.",
+    "gradient": {
+        "colors": [
+            "#ffffff",
+            "#ff6666",
+            "#e11d48"
+        ],
+        "minValue": 0,
+        "maxValue": 100
+    },
+    "techniques": [
+        {
+            "techniqueID": "T0831",
+            "score": 95,
+            "color": "#be123c",
+            "comment": "Occurrences: 5 | Mapped rule: Manipulation of Control (GPS Spoofing & Emergency Landing)"
+        },
+        {
+            "techniqueID": "T0879",
+            "score": 80,
+            "color": "#f43f5e",
+            "comment": "Occurrences: 2 | Mapped rule: Damage to Property (Battery Drain)"
+        }
+    ]
+}

@@ -1,0 +1,40 @@
+{
+  "name": "Application Layer C2 Campaign",
+  "versions": {
+    "navigator": "5.1.0",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "MITRE ATT&CK Mapping for Application Layer C2 Campaign",
+  "gradient": {
+    "colors": [
+      "#ff6666",
+      "#ffe766",
+      "#8ec843"
+    ],
+    "minValue": 0,
+    "maxValue": 100
+  },
+  "filters": {
+    "platforms": [
+      "Windows",
+      "Linux",
+      "Network"
+    ]
+  },
+  "sorting": 0,
+  "layout": {
+    "layout": "side"
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T0885",
+      "score": 98,
+      "enabled": true,
+      "showSubtechniques": true,
+      "comment": "Attack Type: Campaign Aggregation\nTechnique: T0885\nTechnique Name: Application Layer C2\nTimestamp: 2026-06-10 12:41:46\nEvidence: Hardcoded C2 domain\nConfidence: 98%\nICS: T0869\nReason: Matched Rule RULE_002: Command and Control\nOccurrences: 3\n",
+      "color": "#ef4444"
+    }
+  ]
+}

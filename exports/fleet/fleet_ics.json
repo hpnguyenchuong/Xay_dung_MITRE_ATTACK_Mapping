@@ -1,0 +1,46 @@
+{
+  "name": "Fleet ICS",
+  "versions": {
+    "navigator": "5.1.0",
+    "layer": "4.5"
+  },
+  "domain": "ics-attack",
+  "description": "MITRE ATT&CK Mapping for Fleet ICS",
+  "gradient": {
+    "colors": [
+      "#ff6666",
+      "#ffe766",
+      "#8ec843"
+    ],
+    "minValue": 0,
+    "maxValue": 100
+  },
+  "filters": {
+    "platforms": [
+      "None"
+    ]
+  },
+  "sorting": 0,
+  "layout": {
+    "layout": "side"
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T0832",
+      "score": 100,
+      "enabled": true,
+      "showSubtechniques": true,
+      "comment": "Attack Type: Fleet Aggregation\nTechnique: T0832\nMapped from Enterprise: T1027\nTechnique Name: Persistence\nTimestamp: 2026-06-10 12:41:46\nEvidence: Writes to Windows Run key\nConfidence: 100%\nReason: Matched Rule RULE_004: Evasion\nOccurrences: 12\n",
+      "color": "#ef4444"
+    },
+    {
+      "techniqueID": "T0869",
+      "score": 98,
+      "enabled": true,
+      "showSubtechniques": true,
+      "comment": "Attack Type: Fleet Aggregation\nTechnique: T0869\nMapped from Enterprise: T0885\nTechnique Name: Application Layer C2\nTimestamp: 2026-06-10 12:41:46\nEvidence: Hardcoded C2 domain\nConfidence: 98%\nReason: Matched Rule RULE_002: Command and Control\nOccurrences: 3\n",
+      "color": "#ef4444"
+    }
+  ]
+}
