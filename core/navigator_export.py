@@ -112,7 +112,7 @@ def build_navigator_layer(name, findings, attack_type="Unknown", domain="enterpr
 def export_drone_layer(drone_id):
     conn = sqlite3.connect(DB_FILE_PATH, check_same_thread=False)
     conn.row_factory = sqlite3.Row
-    findings = conn.execute("SELECT technique_id, enterprise_tech_id, ics_tech_id, MAX(confidence) as confidence, MAX(evidence) as evidence, tactic_name, MAX(name) as technique_name, COUNT(*) as occ, MAX(timestamp) as timestamp, MAX(reason) as reason, drone_id FROM attack_mapping WHERE drone_id=? GROUP BY technique_id", (drone_id,)).fetchall()
+    findings = conn.execute("SELECT technique_id, enterprise_tech_id, ics_tech_id, MAX(confidence) as confidence, MAX(evidence) as evidence, tactic_name, MAX(name) as technique_name, COUNT(*) as occ, MAX(timestamp) as timestamp, MAX(reason) as reason, drone_id FROM attack_mapping WHERE drone_id=? GROUP BY COALESCE(technique_id, enterprise_tech_id, ics_tech_id)", (drone_id,)).fetchall()
     
     atk_row = conn.execute("SELECT attack_type FROM active_attacks WHERE drone_id=? ORDER BY started_at DESC LIMIT 1", (drone_id,)).fetchone()
     attack_type = atk_row["attack_type"] if atk_row else "Unknown"
@@ -140,7 +140,7 @@ def export_campaign_layers():
     
     for row in tactics:
         tactic = row["tactic_name"]
-        findings = conn.execute("SELECT technique_id, enterprise_tech_id, ics_tech_id, MAX(confidence) as confidence, MAX(evidence) as evidence, tactic_name, MAX(name) as technique_name, COUNT(*) as occ, MAX(timestamp) as timestamp, MAX(reason) as reason FROM attack_mapping WHERE tactic_name=? GROUP BY technique_id", (tactic,)).fetchall()
+        findings = conn.execute("SELECT technique_id, enterprise_tech_id, ics_tech_id, MAX(confidence) as confidence, MAX(evidence) as evidence, tactic_name, MAX(name) as technique_name, COUNT(*) as occ, MAX(timestamp) as timestamp, MAX(reason) as reason FROM attack_mapping WHERE tactic_name=? GROUP BY COALESCE(technique_id, enterprise_tech_id, ics_tech_id)", (tactic,)).fetchall()
         
         all_campaign_findings.extend(findings)
         
@@ -161,7 +161,7 @@ def export_campaign_layers():
 def export_fleet_layer():
     conn = sqlite3.connect(DB_FILE_PATH, check_same_thread=False)
     conn.row_factory = sqlite3.Row
-    findings = conn.execute("SELECT technique_id, enterprise_tech_id, ics_tech_id, MAX(confidence) as confidence, MAX(evidence) as evidence, tactic_name, MAX(name) as technique_name, COUNT(*) as occ, MAX(timestamp) as timestamp, MAX(reason) as reason FROM attack_mapping GROUP BY technique_id").fetchall()
+    findings = conn.execute("SELECT technique_id, enterprise_tech_id, ics_tech_id, MAX(confidence) as confidence, MAX(evidence) as evidence, tactic_name, MAX(name) as technique_name, COUNT(*) as occ, MAX(timestamp) as timestamp, MAX(reason) as reason FROM attack_mapping GROUP BY COALESCE(technique_id, enterprise_tech_id, ics_tech_id)").fetchall()
     if findings:
         layer_ent = build_navigator_layer("Fleet Enterprise", [dict(f) for f in findings], "Fleet Aggregation", domain="enterprise-attack")
         filepath_ent = os.path.join(BASE_DIR, "exports", "fleet", "fleet_enterprise.json")
@@ -236,7 +236,7 @@ def export_incident_layer(attack_id):
             "sample": "Q2_DroneFlood",
             "attack_type": attack_type,
             "enterprise_technique": {
-                "id": f["technique_id"],
+                "id": f["technique_id"] or f["enterprise_tech_id"],
                 "name": f["technique_name"]
             },
             "ics_technique": {

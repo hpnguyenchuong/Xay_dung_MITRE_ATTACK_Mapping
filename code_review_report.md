@@ -29,6 +29,10 @@
   - Tên hiển thị: `DroneFlood Security`
   - Email: `security@droneflood.local`
 
+### 2.4. Khắc phục lỗi nhóm dữ liệu và thiếu Technique ID khi xuất JSON
+- **Phân tích:** Trong `core/navigator_export.py`, hàm tạo RAW JSON bị thiếu cơ chế dự phòng khi `technique_id` có giá trị `null`, khiến file JSON RAW xuất ra hiển thị "null" thay vì dùng `enterprise_tech_id`. Ngoài ra, việc sử dụng `GROUP BY technique_id` khi gộp nhóm dữ liệu cho các layer Campaign/Drone/Fleet đã gộp sai tất cả các bản ghi có `technique_id` bị NULL lại thành một nhóm duy nhất, gây mất mát dữ liệu quan trọng.
+- **Khắc phục:** Đã cập nhật định dạng RAW JSON để sử dụng `f["technique_id"] or f["enterprise_tech_id"]`. Sửa đổi tất cả các lệnh `GROUP BY technique_id` thành `GROUP BY COALESCE(technique_id, enterprise_tech_id, ics_tech_id)` trong các truy vấn xuất MITRE Navigator Layer. Điều này đảm bảo tính toàn vẹn 100% khi tổng hợp dữ liệu xuất ra file JSON.
+
 ## 3. Tổng kết
 - Hệ thống backend đã ổn định, toàn bộ luồng tạo JSON MITRE Navigator layer từ lúc tấn công đến lúc hiển thị trên UI đã thông suốt.
 - Codebase được dọn dẹp sạch sẽ, không còn lỗi logic và lỗi cú pháp.
