@@ -101,10 +101,10 @@ ICS_TRANSLATION_RULES = {
 }
 
 ATTACK_TO_ENTERPRISE = {
-    "gps_spoof": "T1565.001",
-    "imu_drift": "T1565",
-    "lidar_jamming": "T1498",
-    "battery_drain": "T1496",
+    "gps_spoof": "T0831",
+    "imu_drift": "T0832",
+    "lidar_jamming": "T0831",
+    "battery_drain": "T1498",
     "beacon": "T1071.001",
     "network_scan": "T1046",
     "payload_transfer": "T1105"
@@ -114,10 +114,9 @@ ENTERPRISE_TO_ICS = {
     "T1071.001": "T0855",
     "T1046": "T0846",
     "T1105": "T0867",
-    "T1496": "T0814",
-    "T1565.001": "T0832",
-    "T1565": "T0831",
-    "T1498": "T0828"
+    "T1498": "T0879",
+    "T0831": "T0831",
+    "T0832": "T0832"
 }
 
 TRANSLATION_REASON = {
@@ -411,15 +410,15 @@ def init_forensic_db():
             cursor.execute("SELECT COUNT(*) as count FROM mapping_rules")
             if cursor.fetchone()["count"] == 0:
                 rules = [
-                    ("RULE_001", r"DF_MUTEX_.*", "Memory Dump", "Persistence", "T1547.001", None, 95, 100, "MITRE ATT&CK Enterprise"),
+                    ("RULE_001", r"DF_MUTEX_.*", "Memory Dump", "Persistence", "T1547.001", "T0866", 95, 100, "MITRE ATT&CK Enterprise"),
                     ("RULE_002", r".*\.dronefleet\.net", ".rdata", "Application Layer C2", "T1071", "T0885", 90, 90, "MITRE ATT&CK Enterprise/ICS"),
                     ("RULE_003", r"telemetry_exfil", "Network Flow", "Exfiltration", "T1041", "T0811", 85, 80, "MITRE ATT&CK Enterprise/ICS"),
-                    ("RULE_004", r"XOR\+Base64|XOR_KEY_.*|encoded_payload", "Config Block", "Evasion", "T1027", None, 95, 95, "MITRE ATT&CK Enterprise"),
+                    ("RULE_004", r"XOR\+Base64|XOR_KEY_.*|encoded_payload", "Config Block", "Evasion", "T1027", "T0832", 95, 95, "MITRE ATT&CK Enterprise"),
                     ("RULE_005", r"drone_agent", "Process List", "Service Execution", "T1569.002", None, 80, 50, "MITRE ATT&CK Enterprise"),
-                    ("RULE_006", r"gps_spoof", "Memory Artifact", "Navigation Manipulation", "T1565.001", "T0832", 90, 85, "MITRE ATT&CK ICS"),
-                    ("RULE_007", r"imu_drift", "Memory Artifact", "IMU Manipulation", "T1565", "T0831", 85, 80, "MITRE ATT&CK ICS"),
-                    ("RULE_008", r"battery_drain", "Memory Artifact", "Battery Drain", "T1496", "T0814", 95, 90, "MITRE ATT&CK Enterprise/ICS"),
-                    ("RULE_009", r"lidar_jamming", "Memory Artifact", "Sensor Jamming", "T1498", "T0828", 90, 85, "MITRE ATT&CK ICS"),
+                    ("RULE_006", r"gps_spoof", "Memory Artifact", "Navigation Manipulation", "T0831", "T0831", 90, 85, "MITRE ATT&CK ICS"),
+                    ("RULE_007", r"imu_drift", "Memory Artifact", "IMU Manipulation", "T0832", "T0832", 85, 80, "MITRE ATT&CK ICS"),
+                    ("RULE_008", r"battery_drain", "Memory Artifact", "Battery Drain", "T1498", "T0879", 95, 90, "MITRE ATT&CK Enterprise/ICS"),
+                    ("RULE_009", r"lidar_jamming", "Memory Artifact", "Sensor Jamming", "T0831", "T0831", 90, 85, "MITRE ATT&CK ICS"),
                     ("RULE_010", r"collision", "Memory Artifact", "Kinetic Impact", "T0831", "T0831", 100, 95, "MITRE ATT&CK ICS"),
                     ("RULE_011", r"emergency_land", "Memory Artifact", "Kinetic Impact", "T0831", "T0831", 100, 95, "MITRE ATT&CK ICS")
                 ]
@@ -439,6 +438,13 @@ def init_forensic_db():
                     reference='MITRE ATT&CK Enterprise'
                 WHERE rule_id='RULE_005'
             """)
+
+            # Fix user reported mappings
+            cursor.execute("UPDATE mapping_rules SET ics_technique='T0866' WHERE rule_id='RULE_001'")
+            cursor.execute("UPDATE mapping_rules SET enterprise_technique='T0831', ics_technique='T0831' WHERE rule_id='RULE_006'")
+            cursor.execute("UPDATE mapping_rules SET enterprise_technique='T0832', ics_technique='T0832' WHERE rule_id='RULE_007'")
+            cursor.execute("UPDATE mapping_rules SET enterprise_technique='T1498', ics_technique='T0879' WHERE rule_id='RULE_008'")
+            cursor.execute("UPDATE mapping_rules SET enterprise_technique='T0831', ics_technique='T0831' WHERE rule_id='RULE_009'")
 
             # Populate Ground Truth
             cursor.execute("SELECT COUNT(*) as count FROM ground_truth_mapping")
