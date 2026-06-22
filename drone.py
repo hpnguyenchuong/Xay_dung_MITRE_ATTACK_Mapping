@@ -1190,10 +1190,15 @@ def get_color(score):
     if score >= 60: return "#eab308"
     return "#3b82f6"
 
-def build_navigator_layer(name, findings, attack_type="Unknown"):
+def build_navigator_layer(name, findings, attack_type="Unknown", domain="enterprise-attack"):
     techniques = []
     for f in findings:
-        t_id = f.get("technique_id") or f.get("enterprise_tech_id")
+        # Determine technique ID based on domain
+        if domain == "ics-attack":
+            t_id = f.get("ics_tech_id")
+        else:
+            t_id = f.get("technique_id") or f.get("enterprise_tech_id")
+            
         if not t_id: continue
         
         score = f.get("confidence") or 50
@@ -1205,6 +1210,11 @@ def build_navigator_layer(name, findings, attack_type="Unknown"):
             comment += f"Drone ID: {f.get('drone_id')}\n"
         comment += f"Attack Type: {attack_type}\n"
         comment += f"Technique: {t_id}\n"
+        
+        if domain == "ics-attack" and (f.get("technique_id") or f.get("enterprise_tech_id")):
+            ent_id = f.get("technique_id") or f.get("enterprise_tech_id")
+            comment += f"Mapped from Enterprise: {ent_id}\n"
+            
         comment += f"Technique Name: {tech_name}\n"
         if f.get("timestamp"):
             comment += f"Timestamp: {f.get('timestamp')}\n"
@@ -1212,8 +1222,9 @@ def build_navigator_layer(name, findings, attack_type="Unknown"):
         comment += f"Evidence: {f.get('evidence', 'N/A')}\n"
         comment += f"Confidence: {score}%\n"
         
-        if f.get("ics_tech_id"):
+        if domain == "enterprise-attack" and f.get("ics_tech_id"):
             comment += f"ICS: {f.get('ics_tech_id')}\n"
+            
         if f.get("reason"):
             comment += f"Reason: {f.get('reason')}\n"
         if occ > 1:
@@ -1234,7 +1245,7 @@ def build_navigator_layer(name, findings, attack_type="Unknown"):
             "navigator": "5.1.0",
             "layer": "4.5"
         },
-        "domain": "enterprise-attack",
+        "domain": domain,
         "description": f"MITRE ATT&CK Mapping for {name}",
         "gradient": {
             "colors": ["#ff6666", "#ffe766", "#8ec843"],
@@ -1242,7 +1253,7 @@ def build_navigator_layer(name, findings, attack_type="Unknown"):
             "maxValue": 100
         },
         "filters": {
-            "platforms": ["Windows", "Linux", "Network"]
+            "platforms": ["Windows", "Linux", "Network"] if domain == "enterprise-attack" else ["None"]
         },
         "sorting": 0,
         "layout": {
@@ -1261,10 +1272,17 @@ def export_drone_layer(drone_id):
     attack_type = atk_row["attack_type"] if atk_row else "Unknown"
     
     if findings:
-        layer = build_navigator_layer(f"Drone {drone_id}", [dict(f) for f in findings], attack_type)
-        filepath = os.path.join(BASE_DIR, "exports", "drones", f"{drone_id}_layer.json")
-        with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(layer, f, indent=2, ensure_ascii=False)
+        # Enterprise Layer
+        layer_ent = build_navigator_layer(f"Drone {drone_id} Enterprise", [dict(f) for f in findings], attack_type, domain="enterprise-attack")
+        filepath_ent = os.path.join(BASE_DIR, "exports", "drones", f"{drone_id}_enterprise.json")
+        with open(filepath_ent, "w", encoding="utf-8") as f:
+            json.dump(layer_ent, f, indent=2, ensure_ascii=False)
+            
+        # ICS Layer
+        layer_ics = build_navigator_layer(f"Drone {drone_id} ICS", [dict(f) for f in findings], attack_type, domain="ics-attack")
+        filepath_ics = os.path.join(BASE_DIR, "exports", "drones", f"{drone_id}_ics.json")
+        with open(filepath_ics, "w", encoding="utf-8") as f:
+            json.dump(layer_ics, f, indent=2, ensure_ascii=False)
     conn.close()
 
 def export_campaign_layers():
@@ -1284,8 +1302,8 @@ def export_campaign_layers():
             
     findings = conn.execute("SELECT technique_id, enterprise_tech_id, ics_tech_id, MAX(confidence) as confidence, MAX(evidence) as evidence, tactic_name, MAX(name) as technique_name, COUNT(*) as occ, MAX(timestamp) as timestamp, MAX(reason) as reason FROM attack_mapping GROUP BY technique_id").fetchall()
     if findings:
-        layer = build_navigator_layer("Full Campaign", [dict(f) for f in findings], "Full Campaign")
-        filepath = os.path.join(BASE_DIR, "exports", "campaigns", "full_campaign.json")
+        layer = build_navigator_layer("Fleet Layer", [dict(f) for f in findings], "Fleet Aggregation")
+        filepath = os.path.join(BASE_DIR, "exports", "full", "fleet_layer.json")
         with open(filepath, "w", encoding="utf-8") as f:
             json.dump(layer, f, indent=2, ensure_ascii=False)
     conn.close()
@@ -1301,24 +1319,49 @@ def export_incident_layer(attack_id):
     # Lấy event gần nhất
     findings_raw = conn.execute("SELECT id, technique_id, enterprise_tech_id, ics_tech_id, confidence, evidence, tactic_name, name as technique_name, drone_id, timestamp, reason FROM attack_mapping ORDER BY id DESC LIMIT 1").fetchall()
     
+    def get_translation_reason(ent, ics):
+        if not ent or not ics: return None
+        if "T1071" in ent and "T0855" in ics:
+            return "HTTP beaconing observed in Enterprise layer indicates remote command delivery capability, therefore mapped to ICS T0855 Command Message."
+        if "T1046" in ent:
+            return f"Network service scanning ({ent}) directly translates to ICS Network Sniffing ({ics}) to identify drone telemetry endpoints."
+        if "T1105" in ent:
+            return f"Ingress tool transfer ({ent}) is utilized to deliver malicious payloads to the ICS asset, mapping to ICS {ics}."
+        if "T1027" in ent:
+            return f"Obfuscated files or information ({ent}) maps to evasion techniques impacting the ICS environment ({ics})."
+        return f"Enterprise behavior {ent} maps to ICS {ics} due to semantic overlap in cyber-physical impact."
+    
     for f in findings_raw:
         layer = build_navigator_layer(f"Incident {attack_id}", [dict(f)], attack_type)
         filepath = os.path.join(BASE_DIR, "exports", "incidents", f"{attack_id}.json")
-        with open(filepath, "w", encoding="utf-8") as f:
-            json.dump(layer, f, indent=2, ensure_ascii=False)
+        with open(filepath, "w", encoding="utf-8") as f_out:
+            json.dump(layer, f_out, indent=2, ensure_ascii=False)
             
-        # Xuất RAW file
+        # Xuất RAW file (chuẩn nghiên cứu)
         raw_filepath = os.path.join(BASE_DIR, "exports", "raw", f"{attack_id}_raw.json")
+        
+        evidence_list = f["evidence"].split("\n") if f["evidence"] else []
+        trans_reason = get_translation_reason(f["technique_id"], f["ics_tech_id"])
+        
         raw_data = {
             "attack_id": attack_id,
-            "target": f["drone_id"],
-            "timestamp": f["timestamp"],
-            "type": attack_type,
-            "tactic": f["tactic_name"],
-            "technique": f["technique_id"],
-            "evidence": f["evidence"],
-            "reason": f["reason"]
+            "drone_id": f["drone_id"],
+            "sample": "Q2_DroneFlood",
+            "attack_type": attack_type,
+            "enterprise_technique": f["technique_id"],
+            "ics_technique": f["ics_tech_id"]
         }
+        
+        if trans_reason:
+            raw_data["translation_reason"] = trans_reason
+            
+        raw_data.update({
+            "confidence": f["confidence"],
+            "evidence": evidence_list,
+            "timestamp": f["timestamp"],
+            "reason": f["reason"]
+        })
+        
         with open(raw_filepath, "w", encoding="utf-8") as r:
             json.dump(raw_data, r, indent=2, ensure_ascii=False)
     conn.close()
@@ -1329,6 +1372,7 @@ def generate_navigator_exports(drone_id=None, attack_id=None):
         os.makedirs(os.path.join(BASE_DIR, "exports", "campaigns"), exist_ok=True)
         os.makedirs(os.path.join(BASE_DIR, "exports", "incidents"), exist_ok=True)
         os.makedirs(os.path.join(BASE_DIR, "exports", "raw"), exist_ok=True)
+        os.makedirs(os.path.join(BASE_DIR, "exports", "full"), exist_ok=True)
         
         if drone_id:
             export_drone_layer(drone_id)
@@ -2150,13 +2194,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     
                 elif endpoint == "navigator_export":
                     drone_id = query_params.get("drone_id", [None])[0]
+                    domain = query_params.get("domain", ["enterprise"])[0] # enterprise or ics
                     
                     if drone_id:
-                        filepath = os.path.join(BASE_DIR, "exports", "drones", f"{drone_id}_layer.json")
-                        filename = f"navigator_{drone_id}.json"
+                        filepath = os.path.join(BASE_DIR, "exports", "drones", f"{drone_id}_{domain}.json")
+                        filename = f"navigator_{drone_id}_{domain}.json"
                     else:
-                        filepath = os.path.join(BASE_DIR, "exports", "campaigns", "full_campaign.json")
-                        filename = "navigator_all_drones.json"
+                        filepath = os.path.join(BASE_DIR, "exports", "full", "fleet_layer.json")
+                        filename = "fleet_layer.json"
                         
                     if os.path.exists(filepath):
                         with open(filepath, "r", encoding="utf-8") as f:
