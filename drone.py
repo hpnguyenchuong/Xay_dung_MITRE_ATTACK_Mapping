@@ -1191,7 +1191,7 @@ def get_color(score):
     return "#3b82f6"
 
 def build_navigator_layer(name, findings, attack_type="Unknown", domain="enterprise-attack"):
-    techniques = []
+    tech_map = {}
     for f in findings:
         # Determine technique ID based on domain
         if domain == "ics-attack":
@@ -1204,39 +1204,70 @@ def build_navigator_layer(name, findings, attack_type="Unknown", domain="enterpr
         score = f.get("confidence") or 50
         occ = f.get("occ", 1)
         tech_name = f.get("technique_name", "Unknown")
+        atk_type = f.get("attack_type", attack_type)
         
+        if t_id not in tech_map:
+            tech_map[t_id] = {
+                "score": score,
+                "occ": occ,
+                "attack_types": {atk_type},
+                "tech_name": tech_name,
+                "drone_ids": {f.get("drone_id")} if f.get("drone_id") else set(),
+                "evidence": {f.get("evidence")} if f.get("evidence") else set(),
+                "reason": {f.get("reason")} if f.get("reason") else set(),
+                "ent_id": f.get("technique_id") or f.get("enterprise_tech_id"),
+                "ics_id": f.get("ics_tech_id"),
+                "timestamp": f.get("timestamp")
+            }
+        else:
+            tech_map[t_id]["score"] = max(tech_map[t_id]["score"], score)
+            tech_map[t_id]["occ"] += occ
+            tech_map[t_id]["attack_types"].add(atk_type)
+            if f.get("drone_id"): tech_map[t_id]["drone_ids"].add(f.get("drone_id"))
+            if f.get("evidence"): tech_map[t_id]["evidence"].add(f.get("evidence"))
+            if f.get("reason"): tech_map[t_id]["reason"].add(f.get("reason"))
+
+    techniques = []
+    for t_id, data in tech_map.items():
         comment = ""
-        if f.get("drone_id"):
-            comment += f"Drone ID: {f.get('drone_id')}\n"
-        comment += f"Attack Type: {attack_type}\n"
+        if data["drone_ids"]:
+            comment += f"Drone IDs: {', '.join(data['drone_ids'])}\n"
+            
+        atk_types_str = ", ".join(data['attack_types'])
+        if atk_types_str and atk_types_str != "Unknown":
+            comment += f"Attack Types: {atk_types_str}\n"
+            
         comment += f"Technique: {t_id}\n"
         
-        if domain == "ics-attack" and (f.get("technique_id") or f.get("enterprise_tech_id")):
-            ent_id = f.get("technique_id") or f.get("enterprise_tech_id")
-            comment += f"Mapped from Enterprise: {ent_id}\n"
+        if domain == "ics-attack" and data["ent_id"]:
+            comment += f"Mapped from Enterprise: {data['ent_id']}\n"
             
-        comment += f"Technique Name: {tech_name}\n"
-        if f.get("timestamp"):
-            comment += f"Timestamp: {f.get('timestamp')}\n"
+        comment += f"Technique Name: {data['tech_name']}\n"
+        if data["timestamp"]:
+            comment += f"Last Seen: {data['timestamp']}\n"
             
-        comment += f"Evidence: {f.get('evidence', 'N/A')}\n"
-        comment += f"Confidence: {score}%\n"
+        evs = [e for e in data["evidence"] if e and e != "N/A"]
+        if evs:
+            comment += f"Evidence: {', '.join(evs)[:150]}\n"
+            
+        comment += f"Max Confidence: {data['score']}%\n"
         
-        if domain == "enterprise-attack" and f.get("ics_tech_id"):
-            comment += f"ICS: {f.get('ics_tech_id')}\n"
+        if domain == "enterprise-attack" and data["ics_id"]:
+            comment += f"ICS: {data['ics_id']}\n"
             
-        if f.get("reason"):
-            comment += f"Reason: {f.get('reason')}\n"
-        if occ > 1:
-            comment += f"Occurrences: {occ}\n"
+        rs = [r for r in data["reason"] if r]
+        if rs:
+            comment += f"Reason: {', '.join(rs)[:150]}\n"
             
+        comment += f"Occurrences: {data['occ']}"
+        
         techniques.append({
             "techniqueID": t_id,
-            "score": int(score),
+            "score": int(data["score"]),
             "enabled": True,
             "showSubtechniques": True,
-            "comment": comment,
-            "color": get_color(int(score))
+            "comment": comment.strip(),
+            "color": get_color(int(data["score"]))
         })
         
     return {
