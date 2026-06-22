@@ -1321,7 +1321,9 @@ def build_navigator_layer(name, findings, attack_type="Unknown", domain="enterpr
         
     return {
         "name": name,
+        "version": "4.5",
         "versions": {
+            "attack": "14",
             "navigator": "5.1.0",
             "layer": "4.5"
         },
@@ -1338,7 +1340,7 @@ def build_navigator_layer(name, findings, attack_type="Unknown", domain="enterpr
 def export_drone_layer(drone_id):
     conn = sqlite3.connect(DB_FILE_PATH, check_same_thread=False)
     conn.row_factory = sqlite3.Row
-    findings = conn.execute("SELECT technique_id, enterprise_tech_id, ics_tech_id, MAX(confidence) as confidence, MAX(evidence) as evidence, tactic_name, MAX(name) as technique_name, COUNT(*) as occ, MAX(timestamp) as timestamp, MAX(reason) as reason, drone_id FROM attack_mapping WHERE drone_id=? GROUP BY technique_id", (drone_id,)).fetchall()
+    findings = conn.execute("SELECT technique_id, enterprise_tech_id, ics_tech_id, MAX(confidence) as confidence, MAX(evidence) as evidence, tactic_name, MAX(name) as technique_name, COUNT(*) as occ, MAX(timestamp) as timestamp, MAX(reason) as reason, drone_id FROM attack_mapping WHERE drone_id=? GROUP BY COALESCE(technique_id, enterprise_tech_id, ics_tech_id)", (drone_id,)).fetchall()
     
     atk_row = conn.execute("SELECT attack_type FROM active_attacks WHERE drone_id=? ORDER BY started_at DESC LIMIT 1", (drone_id,)).fetchone()
     attack_type = atk_row["attack_type"] if atk_row else "Unknown"
@@ -1366,7 +1368,7 @@ def export_campaign_layers():
     
     for row in tactics:
         tactic = row["tactic_name"]
-        findings = conn.execute("SELECT technique_id, enterprise_tech_id, ics_tech_id, MAX(confidence) as confidence, MAX(evidence) as evidence, tactic_name, MAX(name) as technique_name, COUNT(*) as occ, MAX(timestamp) as timestamp, MAX(reason) as reason FROM attack_mapping WHERE tactic_name=? GROUP BY technique_id", (tactic,)).fetchall()
+        findings = conn.execute("SELECT technique_id, enterprise_tech_id, ics_tech_id, MAX(confidence) as confidence, MAX(evidence) as evidence, tactic_name, MAX(name) as technique_name, COUNT(*) as occ, MAX(timestamp) as timestamp, MAX(reason) as reason FROM attack_mapping WHERE tactic_name=? GROUP BY COALESCE(technique_id, enterprise_tech_id, ics_tech_id)", (tactic,)).fetchall()
         
         all_campaign_findings.extend(findings)
         
@@ -1387,7 +1389,7 @@ def export_campaign_layers():
 def export_fleet_layer():
     conn = sqlite3.connect(DB_FILE_PATH, check_same_thread=False)
     conn.row_factory = sqlite3.Row
-    findings = conn.execute("SELECT technique_id, enterprise_tech_id, ics_tech_id, MAX(confidence) as confidence, MAX(evidence) as evidence, tactic_name, MAX(name) as technique_name, COUNT(*) as occ, MAX(timestamp) as timestamp, MAX(reason) as reason FROM attack_mapping GROUP BY technique_id").fetchall()
+    findings = conn.execute("SELECT technique_id, enterprise_tech_id, ics_tech_id, MAX(confidence) as confidence, MAX(evidence) as evidence, tactic_name, MAX(name) as technique_name, COUNT(*) as occ, MAX(timestamp) as timestamp, MAX(reason) as reason FROM attack_mapping GROUP BY COALESCE(technique_id, enterprise_tech_id, ics_tech_id)").fetchall()
     if findings:
         layer_ent = build_navigator_layer("Fleet Enterprise", [dict(f) for f in findings], "Fleet Aggregation", domain="enterprise-attack")
         filepath_ent = os.path.join(BASE_DIR, "exports", "fleet", "fleet_enterprise.json")
@@ -1427,6 +1429,29 @@ def export_incident_layer(attack_id):
         # Xuất RAW file (chuẩn nghiên cứu)
         raw_filepath = os.path.join(BASE_DIR, "exports", "raw", f"{attack_id}_raw.json")
         
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        drone_id = f["drone_id"]
+        
+        # Build Navigator layer cho incident
+        incident_layer = build_navigator_layer(
+            f"Incident {attack_id}", 
+            [dict(f)], 
+            attack_type, 
+            domain="enterprise-attack"
+        )
+        
+        # Lưu vào exports/incidents
+        inc_filepath = os.path.join(BASE_DIR, "exports", "incidents", f"DRONE-{drone_id}_ATTACK-{attack_id}_{ts}.json")
+        with open(inc_filepath, "w", encoding="utf-8") as r:
+            json.dump(incident_layer, r, indent=2, ensure_ascii=False)
+            
+        # Copy sang reports/attacks để Frontend Dashboard có thể list file
+        reports_attacks_dir = os.path.join(BASE_DIR, "reports", "attacks")
+        os.makedirs(reports_attacks_dir, exist_ok=True)
+        report_filepath = os.path.join(reports_attacks_dir, f"DRONE-{drone_id}_ATTACK-{attack_id}_{ts}.json")
+        with open(report_filepath, "w", encoding="utf-8") as r:
+            json.dump(incident_layer, r, indent=2, ensure_ascii=False)
+        
         evidence_list = f["evidence"].split("\n") if f["evidence"] else []
         trans_reason = get_translation_reason(f["technique_id"], f["ics_tech_id"])
         
@@ -1462,7 +1487,7 @@ def export_incident_layer(attack_id):
             "sample": "Q2_DroneFlood",
             "attack_type": attack_type,
             "enterprise_technique": {
-                "id": f["technique_id"],
+                "id": f["technique_id"] or f["enterprise_tech_id"],
                 "name": f["technique_name"]
             },
             "ics_technique": {
