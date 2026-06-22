@@ -1552,11 +1552,47 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     # --- AUTO-GENERATE FORENSIC JSON REPORT ---
                     generate_navigator_exports(drone_id, attack_id)
                     
+                    mitre_map_dict = {
+                        "enterprise_tech_id": None,
+                        "ics_tech_id": None,
+                        "confidence": None,
+                        "reason": None,
+                        "evidence": None
+                    }
                     try:
-                        cursor.execute("SELECT technique_id FROM attack_mapping WHERE drone_id=? ORDER BY id DESC LIMIT 1", (drone_id,))
+                        cursor.execute("""
+                            SELECT * FROM attack_mapping 
+                            WHERE drone_id=? AND technique_id IN (
+                                SELECT ics_technique FROM mapping_rules 
+                                WHERE artifact_regex LIKE ? OR behavior LIKE ?
+                            )
+                            ORDER BY id DESC LIMIT 1
+                        """, (drone_id, f"%{command}%", f"%{command}%"))
                         mitre_map = cursor.fetchone()
-                        tech_str = mitre_map[0] if mitre_map else "Unknown"
                         
+                        tech_str = "Unknown"
+                        if mitre_map:
+                            tech_str = mitre_map["technique_id"]
+                            mitre_map_dict = {
+                                "enterprise_tech_id": mitre_map["enterprise_tech_id"],
+                                "ics_tech_id": mitre_map["ics_tech_id"],
+                                "confidence": mitre_map["confidence"],
+                                "reason": mitre_map["reason"],
+                                "evidence": mitre_map["evidence"]
+                            }
+                        else:
+                            cursor.execute("SELECT * FROM attack_mapping WHERE drone_id=? ORDER BY id DESC LIMIT 1", (drone_id,))
+                            fallback_map = cursor.fetchone()
+                            if fallback_map:
+                                tech_str = fallback_map["technique_id"]
+                                mitre_map_dict = {
+                                    "enterprise_tech_id": fallback_map["enterprise_tech_id"],
+                                    "ics_tech_id": fallback_map["ics_tech_id"],
+                                    "confidence": fallback_map["confidence"],
+                                    "reason": fallback_map["reason"],
+                                    "evidence": fallback_map["evidence"]
+                                }
+
                         time_only = datetime.now().strftime("%H:%M:%S")
                         stage_str = command.upper()
                         cursor.execute("INSERT INTO campaign_timeline (drone_id, time, stage, artifact, technique) VALUES (?, ?, ?, ?, ?)", (drone_id or 'ALL_DRONES', time_only, stage_str, "C2 Attack Command: " + command, tech_str))
@@ -1565,7 +1601,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     # ------------------------------------------
 
                 conn.commit()
-                result = {"success": True, "attack_id": attack_id}
+                result = {
+                    "success": True, 
+                    "attack_id": attack_id,
+                    "mitre_mapping": [mitre_map_dict]
+                }
                 
                 # Tự động chuyển trạng thái sang COMPLETED sau 15s để đồng bộ lịch sử UI
                 def auto_complete(a_id):

@@ -95,8 +95,10 @@ def build_navigator_layer(name, findings, attack_type="Unknown", domain="enterpr
         
     return {
         "name": name,
+        "version": "4.5",
         "versions": {
-            "navigator": "5.1.0",
+            "attack": "14",
+            "navigator": "4.9.1",
             "layer": "4.5"
         },
         "domain": domain,
