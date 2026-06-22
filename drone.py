@@ -1410,7 +1410,7 @@ def generate_navigator_exports(drone_id=None, attack_id=None):
         os.makedirs(os.path.join(BASE_DIR, "exports", "campaigns"), exist_ok=True)
         os.makedirs(os.path.join(BASE_DIR, "exports", "incidents"), exist_ok=True)
         os.makedirs(os.path.join(BASE_DIR, "exports", "raw"), exist_ok=True)
-        os.makedirs(os.path.join(BASE_DIR, "exports", "full"), exist_ok=True)
+        os.makedirs(os.path.join(BASE_DIR, "exports", "fleet"), exist_ok=True)
         
         if drone_id:
             export_drone_layer(drone_id)
