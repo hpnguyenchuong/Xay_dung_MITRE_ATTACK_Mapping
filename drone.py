@@ -1230,36 +1230,48 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     
                     # --- AUTO-GENERATE FORENSIC JSON REPORT ---
                     try:
-                        cursor.execute("SELECT * FROM attack_mapping WHERE drone_id=? ORDER BY id DESC LIMIT 1", (drone_id,))
-                        mitre_map = cursor.fetchone()
-                        mitre_maps = [dict(mitre_map)] if mitre_map else []
+                        cursor.execute("SELECT technique_id, MAX(confidence) as conf, COUNT(*) as occ, MAX(name) as name FROM attack_mapping WHERE technique_id IS NOT NULL AND drone_id=? GROUP BY technique_id", (drone_id,))
+                        techs_data = cursor.fetchall()
                         
-                        incident_entry = {
-                            "attack_id": attack_id,
-                            "timestamp": t_str,
-                            "attack_type": command,
-                            "mitre_technique": mitre_maps[0]["technique_id"] if mitre_maps else "Unknown",
-                            "ics_technique": mitre_maps[0].get("ics_tech_id", "Unknown") if mitre_maps else "Unknown",
-                            "state_transition": "NORMAL -> UNDER_ATTACK",
-                            "mitre_mapping": mitre_maps
+                        nav = {
+                            "name": f"AERO-SHIELD Analysis - Drone {drone_id}",
+                            "versions": { "attack": "14", "navigator": "4.9.1", "layer": "4.5" },
+                            "domain": "ics-attack",
+                            "description": f"Auto-generated attack report for {drone_id} based on actual runtime actions.",
+                            "gradient": {
+                                "colors": ["#ffffff", "#ff6666", "#e11d48"],
+                                "minValue": 0,
+                                "maxValue": 100
+                            },
+                            "techniques": []
                         }
                         
+                        for row in techs_data:
+                            t = row["technique_id"]
+                            score = row["conf"] if row["conf"] else (row["occ"] * 15)
+                            if score > 100: score = 100
+                            
+                            if score >= 80: color = "#be123c"
+                            elif score >= 60: color = "#f43f5e"
+                            elif score >= 40: color = "#fb7185"
+                            elif score >= 20: color = "#fb923c"
+                            else: color = "#fbbf24"
+                                
+                            comment = f"Occurrences: {row['occ']}"
+                            if row["name"]: comment += f" | Mapped rule: {row['name']}"
+                                
+                            nav["techniques"].append({
+                                "techniqueID": t, 
+                                "color": color, 
+                                "score": score,
+                                "comment": comment
+                            })
+                            
                         filename = f"attack_{drone_id}_report.json"
                         filepath = os.path.join(ATTACKS_DIR, filename)
                         
-                        if os.path.exists(filepath):
-                            with open(filepath, "r", encoding="utf-8") as f:
-                                try:
-                                    existing_report = json.load(f)
-                                except:
-                                    existing_report = {"target_drone": drone_id, "incidents": []}
-                        else:
-                            existing_report = {"target_drone": drone_id, "incidents": []}
-                            
-                        existing_report["incidents"].append(incident_entry)
-                        
                         with open(filepath, "w", encoding="utf-8") as f:
-                            json.dump(existing_report, f, indent=2, ensure_ascii=False)
+                            json.dump(nav, f, indent=2, ensure_ascii=False)
                             
                         # Tự động cập nhật vào Campaign Timeline để UI hiển thị ngay lập tức
                         time_only = datetime.now().strftime("%H:%M:%S")
