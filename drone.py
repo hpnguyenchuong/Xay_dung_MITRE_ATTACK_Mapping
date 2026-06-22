@@ -1184,6 +1184,114 @@ def tcp_server():
             print(f"Connection error: {e}")
             break
 
+def get_color(score, tactic_name=None):
+    if score >= 90: return "#ef4444"
+    if score >= 70: return "#f59e0b"
+    if score >= 50: return "#fbbf24"
+    if tactic_name:
+        t = tactic_name.lower()
+        if "command" in t: return "#f59e0b"
+        if "discovery" in t: return "#3b82f6"
+        if "lateral" in t: return "#8b5cf6"
+        if "exfiltration" in t: return "#10b981"
+    return "#3b82f6"
+
+def build_navigator_layer(name, findings):
+    techniques = []
+    for f in findings:
+        t_id = f.get("technique_id") or f.get("enterprise_tech_id")
+        if not t_id: continue
+        
+        score = f.get("confidence") or 50
+        
+        comment = f"Attack Type: {f.get('attack_type', 'Unknown')}\n"
+        if f.get("drone_id"):
+            comment += f"Drone ID: {f.get('drone_id')}\n"
+        comment += f"Evidence: {f.get('evidence', 'N/A')}\n"
+        comment += f"Confidence: {score}%\n"
+        
+        techniques.append({
+            "techniqueID": t_id,
+            "score": int(score),
+            "enabled": True,
+            "comment": comment,
+            "color": get_color(int(score), f.get("tactic_name"))
+        })
+        
+    return {
+        "name": name,
+        "versions": {
+            "navigator": "5.1.0",
+            "layer": "4.5"
+        },
+        "domain": "enterprise-attack",
+        "description": name,
+        "techniques": techniques
+    }
+
+def export_drone_layers():
+    conn = sqlite3.connect(DB_FILE_PATH, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    drones = conn.execute("SELECT DISTINCT drone_id FROM attack_mapping WHERE drone_id IS NOT NULL").fetchall()
+    
+    for row in drones:
+        drone_id = row["drone_id"]
+        findings = conn.execute("SELECT technique_id, enterprise_tech_id, ics_tech_id, MAX(confidence) as confidence, MAX(evidence) as evidence, tactic_name, MAX(name) as attack_type FROM attack_mapping WHERE drone_id=? GROUP BY technique_id", (drone_id,)).fetchall()
+        
+        layer = build_navigator_layer(f"Drone {drone_id}", [dict(f) for f in findings])
+        filepath = os.path.join(BASE_DIR, "exports", "drones", f"{drone_id}_layer.json")
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(layer, f, indent=2, ensure_ascii=False)
+    conn.close()
+
+def export_campaign_layers():
+    conn = sqlite3.connect(DB_FILE_PATH, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    tactics = conn.execute("SELECT DISTINCT tactic_name FROM attack_mapping WHERE tactic_name IS NOT NULL").fetchall()
+    
+    for row in tactics:
+        tactic = row["tactic_name"]
+        findings = conn.execute("SELECT technique_id, enterprise_tech_id, ics_tech_id, MAX(confidence) as confidence, MAX(evidence) as evidence, tactic_name, MAX(name) as attack_type FROM attack_mapping WHERE tactic_name=? GROUP BY technique_id", (tactic,)).fetchall()
+        
+        campaign_name = tactic.lower().replace(" ", "_")
+        layer = build_navigator_layer(f"{tactic} Campaign", [dict(f) for f in findings])
+        filepath = os.path.join(BASE_DIR, "exports", "campaigns", f"{campaign_name}_campaign.json")
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(layer, f, indent=2, ensure_ascii=False)
+            
+    findings = conn.execute("SELECT technique_id, enterprise_tech_id, ics_tech_id, MAX(confidence) as confidence, MAX(evidence) as evidence, tactic_name, MAX(name) as attack_type FROM attack_mapping GROUP BY technique_id").fetchall()
+    if findings:
+        layer = build_navigator_layer("Full Campaign", [dict(f) for f in findings])
+        filepath = os.path.join(BASE_DIR, "exports", "campaigns", "full_campaign.json")
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(layer, f, indent=2, ensure_ascii=False)
+    conn.close()
+
+def export_incident_layers(attack_id=None):
+    conn = sqlite3.connect(DB_FILE_PATH, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    findings_raw = conn.execute("SELECT id, technique_id, enterprise_tech_id, ics_tech_id, confidence, evidence, tactic_name, name as attack_type, drone_id FROM attack_mapping ORDER BY id DESC LIMIT 50").fetchall()
+    
+    # We will export the most recent incident as the requested attack_id, and others by DB id.
+    for i, f in enumerate(findings_raw):
+        atk_id = attack_id if (i == 0 and attack_id) else f"ATK-{f['id']:08x}"
+        layer = build_navigator_layer(f"Incident {atk_id}", [dict(f)])
+        filepath = os.path.join(BASE_DIR, "exports", "incidents", f"{atk_id}.json")
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(layer, f, indent=2, ensure_ascii=False)
+    conn.close()
+
+def generate_navigator_exports(attack_id=None):
+    try:
+        os.makedirs(os.path.join(BASE_DIR, "exports", "drones"), exist_ok=True)
+        os.makedirs(os.path.join(BASE_DIR, "exports", "campaigns"), exist_ok=True)
+        os.makedirs(os.path.join(BASE_DIR, "exports", "incidents"), exist_ok=True)
+        export_drone_layers()
+        export_campaign_layers()
+        export_incident_layers(attack_id)
+    except Exception as e:
+        print(f"Error generating navigator exports: {e}")
+
 class DashboardHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args): return
 
@@ -1229,58 +1337,18 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     )
                     
                     # --- AUTO-GENERATE FORENSIC JSON REPORT ---
+                    generate_navigator_exports(attack_id)
+                    
                     try:
-                        cursor.execute("SELECT technique_id, MAX(confidence) as conf, COUNT(*) as occ, MAX(name) as name FROM attack_mapping WHERE technique_id IS NOT NULL AND drone_id=? GROUP BY technique_id", (drone_id,))
-                        techs_data = cursor.fetchall()
+                        cursor.execute("SELECT technique_id FROM attack_mapping WHERE drone_id=? ORDER BY id DESC LIMIT 1", (drone_id,))
+                        mitre_map = cursor.fetchone()
+                        tech_str = mitre_map[0] if mitre_map else "Unknown"
                         
-                        nav = {
-                            "name": f"AERO-SHIELD Analysis - Drone {drone_id}",
-                            "versions": { "attack": "14", "navigator": "4.9.1", "layer": "4.5" },
-                            "domain": "ics-attack",
-                            "description": f"Auto-generated attack report for {drone_id} based on actual runtime actions.",
-                            "gradient": {
-                                "colors": ["#ffffff", "#ff6666", "#e11d48"],
-                                "minValue": 0,
-                                "maxValue": 100
-                            },
-                            "techniques": []
-                        }
-                        
-                        for row in techs_data:
-                            t = row["technique_id"]
-                            score = row["conf"] if row["conf"] else (row["occ"] * 15)
-                            if score > 100: score = 100
-                            
-                            if score >= 80: color = "#be123c"
-                            elif score >= 60: color = "#f43f5e"
-                            elif score >= 40: color = "#fb7185"
-                            elif score >= 20: color = "#fb923c"
-                            else: color = "#fbbf24"
-                                
-                            comment = f"Occurrences: {row['occ']}"
-                            if row["name"]: comment += f" | Mapped rule: {row['name']}"
-                                
-                            nav["techniques"].append({
-                                "techniqueID": t, 
-                                "color": color, 
-                                "score": score,
-                                "comment": comment
-                            })
-                            
-                        filename = f"attack_{drone_id}_report.json"
-                        filepath = os.path.join(ATTACKS_DIR, filename)
-                        
-                        with open(filepath, "w", encoding="utf-8") as f:
-                            json.dump(nav, f, indent=2, ensure_ascii=False)
-                            
-                        # Tự động cập nhật vào Campaign Timeline để UI hiển thị ngay lập tức
                         time_only = datetime.now().strftime("%H:%M:%S")
                         stage_str = command.upper()
-                        tech_str = incident_entry["mitre_technique"]
                         cursor.execute("INSERT INTO campaign_timeline (drone_id, time, stage, artifact, technique) VALUES (?, ?, ?, ?, ?)", (drone_id or 'ALL_DRONES', time_only, stage_str, "C2 Attack Command: " + command, tech_str))
-                        
                     except Exception as e:
-                        print(f"Error exporting attack JSON from API: {e}")
+                        print(f"Error updating timeline: {e}")
                     # ------------------------------------------
 
                 conn.commit()
