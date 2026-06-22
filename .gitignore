@@ -1,28 +1,33 @@
 # Python
 __pycache__/
 *.pyc
+*.pyo
 
-# Logs
-logs/*.log
+# Database
+*.db
+*.sqlite
+logs/
 
-# Database cache
-*.db-journal
+# Reports & Exports
+reports/
+navigator_exports/
+*.csv
+*.json
+*.html
 
-# Export files
-exports/raw/*
-exports/incidents/*
-
-# VSCode
-.vscode/
+# Scratch scripts (local only)
+scratch/
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Giữ lại ngoại lệ cho datasets
-!datasets/re_findings.json
+# IDE
+.vscode/
+.idea/
 
-*.db
-*.db-shm
-*.db-wal
-~$*.doc
+# Logs
+*.log
+client_log.txt
+
+!datasets/re_findings.json

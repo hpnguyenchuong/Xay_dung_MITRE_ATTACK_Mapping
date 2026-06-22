@@ -7,7 +7,6 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from utils.constants import *
 from utils.helpers import *
 from core.state import *
-from core.mapping_engine import mitre_engine
 
 def init_forensic_db():
     with db_write_lock:

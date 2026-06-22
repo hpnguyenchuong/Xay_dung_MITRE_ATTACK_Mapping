@@ -8,7 +8,7 @@ from utils.constants import *
 from utils.helpers import *
 from core.state import *
 
-from core.mapping_engine import MITREMappingEngine, mitre_engine
+from core.mapping_engine import MITREMappingEngine
 from core.navigator_export import *
 from simulator.attack_simulator import AttackRelay
 
