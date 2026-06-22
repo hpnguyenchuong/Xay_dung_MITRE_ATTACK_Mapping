@@ -385,13 +385,19 @@ def init_forensic_db():
                     ("RULE_002", r".*\.dronefleet\.net", ".rdata", "Application Layer C2", "T1071", "T0885", 90, 90, "MITRE ATT&CK Enterprise/ICS"),
                     ("RULE_003", r"telemetry_exfil", "Network Flow", "Exfiltration", "T1041", "T0811", 85, 80, "MITRE ATT&CK Enterprise/ICS"),
                     ("RULE_004", r"XOR\+Base64|XOR_KEY_.*|encoded_payload", "Config Block", "Evasion", "T1027", None, 95, 95, "MITRE ATT&CK Enterprise"),
-                    ("RULE_005", r"drone_agent", "Process List", "Service Execution", "T1569.002", None, 80, 50, "MITRE ATT&CK Enterprise")
+                    ("RULE_005", r"drone_agent", "Process List", "Service Execution", "T1569.002", None, 80, 50, "MITRE ATT&CK Enterprise"),
+                    ("RULE_006", r"gps_spoof", "Memory Artifact", "Navigation Manipulation", "T0831", "T0831", 90, 85, "MITRE ATT&CK ICS"),
+                    ("RULE_007", r"imu_drift", "Memory Artifact", "IMU Manipulation", "T0832", "T0832", 85, 80, "MITRE ATT&CK ICS"),
+                    ("RULE_008", r"battery_drain", "Memory Artifact", "Battery Drain", "T1498", "T0879", 95, 90, "MITRE ATT&CK Enterprise/ICS"),
+                    ("RULE_009", r"lidar_jamming", "Memory Artifact", "Sensor Jamming", "T0831", "T0831", 90, 85, "MITRE ATT&CK ICS"),
+                    ("RULE_010", r"collision", "Memory Artifact", "Kinetic Impact", "T0831", "T0831", 100, 95, "MITRE ATT&CK ICS"),
+                    ("RULE_011", r"emergency_land", "Memory Artifact", "Kinetic Impact", "T0831", "T0831", 100, 95, "MITRE ATT&CK ICS")
                 ]
                 cursor.executemany("INSERT INTO mapping_rules VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", rules)
 
             cursor.execute("""
                 UPDATE mapping_rules
-                SET artifact_regex='XOR\\+Base64|XOR_KEY_.*|encoded_payload'
+                SET artifact_regex='XOR\+Base64|XOR_KEY_.*|encoded_payload'
                 WHERE rule_id='RULE_004'
             """)
 
@@ -2747,6 +2753,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 
                 elif endpoint == "reset":
                     cursor.execute("DELETE FROM attack_mapping")
+                    cursor.execute("DELETE FROM re_findings WHERE drone_id != 'GLOBAL'")
                     cursor.execute("DELETE FROM timeline WHERE message LIKE '%TECHNIQUE_MAPPED%' OR message LIKE '%CORRELATION%'")
                     db_conn.commit()
                     self._send_json({"status": "success", "message": "Attack history reset."})
