@@ -159,6 +159,64 @@ def get_breakdown(row):
             return {}
     return {}
 
+def enrich_finding(row):
+    row_dict = dict(row)
+    ics = row_dict.get("ics_tech_id") or ""
+    if ics and ics.startswith("T108") and len(ics) == 6:
+        ics = "T08" + ics[4:]
+    elif ics and ics.startswith("T108") and len(ics) == 5:
+        ics = "T08" + ics[4:]
+        
+    finding_val = row_dict.get("artifact", row_dict.get("finding", "")) or ""
+    evidence_val = row_dict.get("evidence_source", row_dict.get("evidence", "")) or ""
+    behavior = row_dict.get("behavior") or ""
+    if not behavior: behavior = "Unknown"
+    enterprise = row_dict.get("enterprise_tech_id") or ""
+    
+    def match_key(k):
+        return k in finding_val or k in evidence_val
+
+    if match_key("gps_spoof"):
+        ics = "T0831"
+        if behavior == "Unknown": behavior = "Navigation Manipulation"
+        if not enterprise: enterprise = "T0831"
+    elif match_key("battery_drain"):
+        ics = "T0879"
+        if behavior == "Unknown": behavior = "Battery Drain"
+        if not enterprise: enterprise = "T1498"
+    elif match_key("lidar_jamming"):
+        ics = "T0831"
+        if behavior == "Unknown": behavior = "Sensor Jamming"
+        if not enterprise: enterprise = "T0831"
+    elif match_key("imu_drift_injection"):
+        ics = "T0832"
+        if behavior == "Unknown": behavior = "IMU Manipulation"
+        if not enterprise: enterprise = "T0832"
+    elif match_key("collision_vector") or match_key("forced_landing"):
+        ics = "T0831"
+        if behavior == "Unknown": behavior = "Kinetic Impact"
+        if not enterprise: enterprise = "T0831"
+    elif match_key("FLEET_SYNC") or match_key("FLEET_COMMAND_PUSH") or match_key("custom_protocol_v1"):
+        ics = "T0869" if match_key("FLEET_SYNC") else "T0885"
+        if behavior == "Unknown": behavior = "Swarm Takeover"
+        if not enterprise: enterprise = "T1059"
+    
+    final_artifact = finding_val
+    final_evidence = evidence_val
+    short_ids = ["gps_spoof", "battery_drain", "lidar_jamming", "imu_drift_injection", "collision_vector", "forced_landing", "FLEET_SYNC", "FLEET_COMMAND_PUSH", "custom_protocol_v1", "DF_MUTEX_01", "DF_REG_RUN", "DF_STARTUP_CFG"]
+    if final_artifact in short_ids and final_evidence not in short_ids:
+        final_artifact, final_evidence = final_evidence, final_artifact
+
+    row_dict["ics_tech_id"] = ics
+    row_dict["behavior"] = behavior
+    row_dict["enterprise_tech_id"] = enterprise
+    row_dict["finding"] = final_artifact
+    row_dict["artifact"] = final_artifact
+    row_dict["evidence"] = final_evidence
+    row_dict["evidence_source"] = final_evidence
+    
+    return row_dict
+
 def load_re_findings_from_json():
     """Load RE findings từ file JSON vào database theo cấu trúc phân loại attack_type"""
     try:
@@ -197,7 +255,7 @@ def load_re_findings_from_json():
                     attack_type.replace("_", " ").title(),
                     f"RE Finding: {attack_type} attack vector",
                     datetime.now().isoformat(),
-                    "DRONE-ALL",
+                    "GLOBAL",
                     artifact.get("address", "Unknown")
                 ))
                 total_loaded += 1
@@ -327,10 +385,10 @@ def init_forensic_db():
             cursor.execute("SELECT COUNT(*) as count FROM campaign_timeline")
             if cursor.fetchone()["count"] == 0:
                 timeline_data = [
-                    ("00:00:00", "DRONE-ALL", "Initial Access", "c2_connect.exe", "T1071 (Application Layer Protocol)"),
-                    ("00:15:30", "DRONE-01", "Persistence", "run_key_add", "T1547.001 (Registry Run Keys)"),
-                    ("00:30:15", "DRONE-07", "Collection", "telemetry_dump", "T1005 (Data from Local System)"),
-                    ("00:45:00", "DRONE-ALL", "Impact", "gps_spoof", "T0831 (Manipulation of Control)"),
+                    ("00:00:00", "GLOBAL", "Initial Access", "c2_connect.exe", "T1071 (Application Layer Protocol)"),
+                    ("00:05:00", "GLOBAL", "Execution", "payload_injector.dll", "T1059 (Command and Scripting Interpreter)"),
+                    ("00:15:00", "GLOBAL", "Persistence", "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", "T1547.001 (Registry Run Keys)"),
+                    ("00:45:00", "GLOBAL", "Impact", "gps_spoof", "T0831 (Manipulation of Control)"),
                     ("00:55:20", "DRONE-03", "Exfiltration", "TCP Flood", "T1041 (Exfiltration Over C2 Channel)")
                 ]
                 cursor.executemany("INSERT INTO campaign_timeline (drone_id, time, stage, artifact, technique) VALUES (?, ?, ?, ?, ?)", [(d, t, s, a, tech) for t, d, s, a, tech in timeline_data])
@@ -2472,7 +2530,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         """
                     
                     cursor.execute("SELECT * FROM re_findings WHERE drone_id=?", (drone_id,))
-                    re_findings = [dict(row) for row in cursor.fetchall()]
+                    re_findings = [enrich_finding(dict(row)) for row in cursor.fetchall()]
                     
                     if not re_findings and mitre:
                         techs = [m['technique_id'] for m in mitre if m.get('technique_id')]
@@ -2482,7 +2540,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                             placeholders = ",".join(["?"] * len(all_techs))
                             query = f"SELECT * FROM re_findings WHERE drone_id='GLOBAL' AND (enterprise_tech_id IN ({placeholders}) OR technique_id IN ({placeholders}) OR ics_tech_id IN ({placeholders}))"
                             cursor.execute(query, all_techs + all_techs + all_techs)
-                            re_findings = [dict(row) for row in cursor.fetchall()]
+                            re_findings = [enrich_finding(dict(row)) for row in cursor.fetchall()]
                     re_html = ""
                     for f in re_findings:
                         conf = 50
@@ -2689,8 +2747,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     active_attacks_row = cursor.fetchone()
                     active_attacks = active_attacks_row["cnt"] if active_attacks_row else 0
                     
-                    cursor.execute("SELECT finding, behavior, enterprise_tech_id, ics_tech_id, confidence, timestamp FROM re_findings ORDER BY id DESC LIMIT 50")
-                    findings = [dict(row) for row in cursor.fetchall()]
+                    cursor.execute("SELECT finding, evidence, behavior, enterprise_tech_id, ics_tech_id, confidence, timestamp FROM re_findings ORDER BY id DESC LIMIT 50")
+                    findings = [enrich_finding(dict(row)) for row in cursor.fetchall()]
                     
                     # Fetch Active Attacks
                     cursor.execute("SELECT drone_id, attack_type, status FROM active_attacks WHERE status='IN PROGRESS'")
@@ -2827,57 +2885,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         writer = csv.writer(f)
                         writer.writerow(["Drone ID", "Artifact", "Evidence Source", "Behavior", "Enterprise Technique", "ICS Technique", "Confidence", "Timestamp"])
                         for row in rows:
-                            ics = row["ics_tech_id"]
-                            # Tự động fix lỗi dư số 8 (Ví dụ: T10885 -> T0885)
-                            if ics and ics.startswith("T108") and len(ics) == 6:
-                                ics = "T08" + ics[4:]
-                            elif ics and ics.startswith("T108") and len(ics) == 5:
-                                ics = "T08" + ics[4:]
-                                
-                            finding_val = row["artifact"] or ""
-                            evidence_val = row["evidence_source"] or ""
-                            behavior = row["behavior"]
-                            if not behavior: behavior = "Unknown"
-                            enterprise = row["enterprise_tech_id"] or ""
-                            
-                            def match_key(k):
-                                return k in finding_val or k in evidence_val
-
-                            if match_key("gps_spoof"):
-                                ics = "T0831"
-                                if behavior == "Unknown": behavior = "Navigation Manipulation"
-                                if not enterprise: enterprise = "T0831"
-                            elif match_key("battery_drain"):
-                                ics = "T0879"
-                                if behavior == "Unknown": behavior = "Battery Drain"
-                                if not enterprise: enterprise = "T1498"
-                            elif match_key("lidar_jamming"):
-                                ics = "T0831"
-                                if behavior == "Unknown": behavior = "Sensor Jamming"
-                                if not enterprise: enterprise = "T0831"
-                            elif match_key("imu_drift_injection"):
-                                ics = "T0832"
-                                if behavior == "Unknown": behavior = "IMU Manipulation"
-                                if not enterprise: enterprise = "T0832"
-                            elif match_key("collision_vector") or match_key("forced_landing"):
-                                ics = "T0831"
-                                if behavior == "Unknown": behavior = "Kinetic Impact"
-                                if not enterprise: enterprise = "T0831"
-                            elif match_key("FLEET_SYNC") or match_key("FLEET_COMMAND_PUSH") or match_key("custom_protocol_v1"):
-                                ics = "T0869" if match_key("FLEET_SYNC") else "T0885"
-                                if behavior == "Unknown": behavior = "Swarm Takeover"
-                                if not enterprise: enterprise = "T1059"
-                            
-                            # Cố gắng đảo lại cho đẹp nếu artifact chứa ID ngắn (ví dụ gps_spoof)
-                            # để cột Artifact luôn là tên mô tả, Evidence là ID
-                            final_artifact = finding_val
-                            final_evidence = evidence_val
-                            short_ids = ["gps_spoof", "battery_drain", "lidar_jamming", "imu_drift_injection", "collision_vector", "forced_landing", "FLEET_SYNC", "FLEET_COMMAND_PUSH", "custom_protocol_v1", "DF_MUTEX_01", "DF_REG_RUN", "DF_STARTUP_CFG"]
-                            if final_artifact in short_ids and final_evidence not in short_ids:
-                                final_artifact, final_evidence = final_evidence, final_artifact
-
-                            # Xuất cột theo đúng thứ tự logic, không đảo ngược nữa
-                            writer.writerow([row["drone_id"], final_artifact, final_evidence, behavior, enterprise, ics, row["confidence"], row["timestamp"]])
+                            enriched = enrich_finding(row)
+                            writer.writerow([enriched["drone_id"], enriched["artifact"], enriched["evidence_source"], enriched["behavior"], enriched["enterprise_tech_id"], enriched["ics_tech_id"], enriched["confidence"], enriched["timestamp"]])
                             
                     self._send_json({"status": "success", "file": f"reports/export_re_findings_{report_ts}.csv"})
 
