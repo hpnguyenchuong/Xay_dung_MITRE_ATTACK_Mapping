@@ -1996,11 +1996,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     self._send_json([dict(r) for r in cursor.fetchall()])
 
                 elif endpoint == "mapping_explanation_tree":
-                    cursor.execute("SELECT finding, behavior, evidence, mapping_reason, enterprise_tech_id, ics_tech_id FROM re_findings ORDER BY id DESC LIMIT 20")
+                    cursor.execute("SELECT finding, behavior, evidence, mapping_reason, enterprise_tech_id, ics_tech_id FROM re_findings WHERE drone_id != 'GLOBAL' ORDER BY id DESC LIMIT 20")
                     self._send_json([dict(r) for r in cursor.fetchall()])
                     
                 elif endpoint == "re_findings":
-                    cursor.execute("SELECT artifact_address as offset, finding as artifact, artifact_type, source as re_source, validation_level, behavior, mapping_reason as reason, enterprise_tech_id as selected_technique, rejected_candidates, confidence, confidence_breakdown, campaign_stage FROM re_findings ORDER BY id DESC LIMIT 50")
+                    cursor.execute("SELECT artifact_address as offset, finding as artifact, artifact_type, source as re_source, validation_level, behavior, mapping_reason as reason, enterprise_tech_id as selected_technique, rejected_candidates, confidence, confidence_breakdown, campaign_stage FROM re_findings WHERE drone_id != 'GLOBAL' ORDER BY id DESC LIMIT 50")
                     findings = []
                     for row in cursor.fetchall():
                         r = dict(row)
@@ -2029,7 +2029,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     self._send_json({"findings": findings})
                     
                 elif endpoint == "attack_coverage":
-                    cursor.execute("SELECT tactic_name, COUNT(DISTINCT technique_id) as count FROM attack_mapping GROUP BY tactic_name")
+                    cursor.execute("SELECT tactic_name, COUNT(DISTINCT technique_id) as count FROM attack_mapping WHERE drone_id != 'GLOBAL' GROUP BY tactic_name")
                     tactics = {}
                     total_techs = 0
                     for row in cursor.fetchall():
