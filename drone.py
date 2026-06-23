@@ -215,6 +215,9 @@ def enrich_finding(row):
     row_dict["evidence"] = final_evidence
     row_dict["evidence_source"] = final_evidence
     
+    if not row_dict.get("technique_id"):
+        row_dict["technique_id"] = enterprise or ics or "Unknown"
+        
     return row_dict
 
 def load_re_findings_from_json():
