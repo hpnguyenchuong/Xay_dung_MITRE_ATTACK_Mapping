@@ -2535,15 +2535,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     cursor.execute("SELECT * FROM re_findings WHERE drone_id=?", (drone_id,))
                     re_findings = [enrich_finding(dict(row)) for row in cursor.fetchall()]
                     
-                    if not re_findings and mitre:
-                        techs = [m['technique_id'] for m in mitre if m.get('technique_id')]
-                        ent_techs = [m['enterprise_tech_id'] for m in mitre if m.get('enterprise_tech_id')]
-                        all_techs = list(set(techs + ent_techs))
-                        if all_techs:
-                            placeholders = ",".join(["?"] * len(all_techs))
-                            query = f"SELECT * FROM re_findings WHERE drone_id='GLOBAL' AND (enterprise_tech_id IN ({placeholders}) OR technique_id IN ({placeholders}) OR ics_tech_id IN ({placeholders}))"
-                            cursor.execute(query, all_techs + all_techs + all_techs)
-                            re_findings = [enrich_finding(dict(row)) for row in cursor.fetchall()]
                     re_html = ""
                     for f in re_findings:
                         conf = 50
@@ -2750,7 +2741,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     active_attacks_row = cursor.fetchone()
                     active_attacks = active_attacks_row["cnt"] if active_attacks_row else 0
                     
-                    cursor.execute("SELECT finding, evidence, behavior, enterprise_tech_id, ics_tech_id, confidence, timestamp FROM re_findings ORDER BY id DESC LIMIT 50")
+                    cursor.execute("SELECT finding, evidence, behavior, enterprise_tech_id, ics_tech_id, confidence, timestamp FROM re_findings WHERE drone_id != 'GLOBAL' ORDER BY id DESC LIMIT 50")
                     findings = [enrich_finding(dict(row)) for row in cursor.fetchall()]
                     
                     # Fetch Active Attacks
@@ -2763,7 +2754,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     if not active_campaigns: active_attacks_html = "<p>No active campaigns detected.</p>"
 
                     # Fetch Most Targeted Drones
-                    cursor.execute("SELECT drone_id, COUNT(*) as cnt FROM attack_mapping GROUP BY drone_id ORDER BY cnt DESC LIMIT 5")
+                    cursor.execute("SELECT drone_id, COUNT(*) as cnt FROM attack_mapping WHERE drone_id != 'GLOBAL' GROUP BY drone_id ORDER BY cnt DESC LIMIT 5")
                     targeted = cursor.fetchall()
                     targeted_html = "<ul style='list-style-type: none; padding: 0;'>"
                     for row in targeted:
@@ -2789,7 +2780,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     """
 
                     # Fetch Technique Distribution
-                    cursor.execute("SELECT technique_id, COUNT(*) as cnt FROM attack_mapping GROUP BY technique_id ORDER BY cnt DESC LIMIT 10")
+                    cursor.execute("SELECT technique_id, COUNT(*) as cnt FROM attack_mapping WHERE drone_id != 'GLOBAL' GROUP BY technique_id ORDER BY cnt DESC LIMIT 10")
                     techniques = cursor.fetchall()
                     tech_html = "<div style='display:grid; grid-template-columns: repeat(2, 1fr); gap: 10px;'>"
                     for row in techniques:
@@ -2881,7 +2872,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     report_ts = datetime.now().strftime("%Y%m%d_%H%M%S")
                     report_path = os.path.join(REPORTS_DIR, f"export_re_findings_{report_ts}.csv")
                     
-                    cursor.execute("SELECT drone_id, finding as artifact, evidence as evidence_source, behavior, enterprise_tech_id, ics_tech_id, confidence, timestamp FROM re_findings ORDER BY timestamp DESC")
+                    cursor.execute("SELECT drone_id, finding as artifact, evidence as evidence_source, behavior, enterprise_tech_id, ics_tech_id, confidence, timestamp FROM re_findings WHERE drone_id != 'GLOBAL' ORDER BY timestamp DESC")
                     rows = cursor.fetchall()
                     
                     with open(report_path, "w", encoding="utf-8-sig", newline="") as f:
