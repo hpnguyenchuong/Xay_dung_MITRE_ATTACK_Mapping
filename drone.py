@@ -180,7 +180,7 @@ def enrich_finding(row):
         ics = "T0831"
         if behavior == "Unknown": behavior = "Navigation Manipulation"
         if not enterprise: enterprise = "T0831"
-    elif match_key("battery_drain"):
+    elif match_key("battery_drain") or match_key("critical_battery"):
         ics = "T0879"
         if behavior == "Unknown": behavior = "Battery Drain"
         if not enterprise: enterprise = "T1498"
@@ -188,11 +188,11 @@ def enrich_finding(row):
         ics = "T0831"
         if behavior == "Unknown": behavior = "Sensor Jamming"
         if not enterprise: enterprise = "T0831"
-    elif match_key("imu_drift_injection"):
+    elif match_key("imu_drift") or match_key("imu_drift_injection"):
         ics = "T0832"
         if behavior == "Unknown": behavior = "IMU Manipulation"
         if not enterprise: enterprise = "T0832"
-    elif match_key("collision_vector") or match_key("forced_landing"):
+    elif match_key("collision") or match_key("collision_vector") or match_key("emergency_land") or match_key("forced_landing"):
         ics = "T0831"
         if behavior == "Unknown": behavior = "Kinetic Impact"
         if not enterprise: enterprise = "T0831"
@@ -203,7 +203,7 @@ def enrich_finding(row):
     
     final_artifact = finding_val
     final_evidence = evidence_val
-    short_ids = ["gps_spoof", "battery_drain", "lidar_jamming", "imu_drift_injection", "collision_vector", "forced_landing", "FLEET_SYNC", "FLEET_COMMAND_PUSH", "custom_protocol_v1", "DF_MUTEX_01", "DF_REG_RUN", "DF_STARTUP_CFG"]
+    short_ids = ["gps_spoof", "battery_drain", "critical_battery", "lidar_jamming", "imu_drift", "imu_drift_injection", "collision", "collision_vector", "emergency_land", "forced_landing", "FLEET_SYNC", "FLEET_COMMAND_PUSH", "custom_protocol_v1", "DF_MUTEX_01", "DF_REG_RUN", "DF_STARTUP_CFG"]
     if final_artifact in short_ids and final_evidence not in short_ids:
         final_artifact, final_evidence = final_evidence, final_artifact
 
@@ -478,7 +478,7 @@ def init_forensic_db():
                     ("RULE_005", r"drone_agent", "Process List", "Service Execution", "T1569.002", None, 80, 50, "MITRE ATT&CK Enterprise"),
                     ("RULE_006", r"gps_spoof", "Memory Artifact", "Navigation Manipulation", "T0831", "T0831", 90, 85, "MITRE ATT&CK ICS"),
                     ("RULE_007", r"imu_drift", "Memory Artifact", "IMU Manipulation", "T0832", "T0832", 85, 80, "MITRE ATT&CK ICS"),
-                    ("RULE_008", r"battery_drain", "Memory Artifact", "Battery Drain", "T1498", "T0879", 95, 90, "MITRE ATT&CK Enterprise/ICS"),
+                    ("RULE_008", r"battery_drain|critical_battery", "Memory Artifact", "Battery Drain", "T1498", "T0879", 95, 90, "MITRE ATT&CK Enterprise/ICS"),
                     ("RULE_009", r"lidar_jamming", "Memory Artifact", "Sensor Jamming", "T0831", "T0831", 90, 85, "MITRE ATT&CK ICS"),
                     ("RULE_010", r"collision", "Memory Artifact", "Kinetic Impact", "T0831", "T0831", 100, 95, "MITRE ATT&CK ICS"),
                     ("RULE_011", r"emergency_land", "Memory Artifact", "Kinetic Impact", "T0831", "T0831", 100, 95, "MITRE ATT&CK ICS")
