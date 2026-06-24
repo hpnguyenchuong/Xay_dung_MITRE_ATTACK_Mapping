@@ -276,7 +276,8 @@ Date.now() - b.t < 2000)); } } }, 50); return ()=> clearInterval(intv);
  { id: 4, name:"Simulation", icon:"sports_esports" },
  { id: 5, name:"Evaluation & Limitations", icon:"gavel" },
  { id: 6, name:"Forensic Reports", icon:"manage_search" },
- { id: 7, name:"Drone Lifecycle", icon:"timeline" }
+ { id: 7, name:"Drone Lifecycle", icon:"timeline" },
+ { id: 8, name:"Terminal", icon:"terminal" }
  ];
 
  const renderTabContent = () => {
@@ -414,6 +415,13 @@ Date.now() - b.t < 2000)); } } }, 50); return ()=> clearInterval(intv);
  case 7: return (
  <div className="flex gap-4 h-full animate-slide-in-fade w-full">
  <DroneLifecyclePanel />
+ </div>
+ );
+ case 8: return (
+ <div className="flex gap-4 h-full animate-slide-in-fade w-full">
+ <div className="flex-[1.0] flex flex-col min-w-0 h-full">
+ <window.CommandTerminalPanel />
+ </div>
  </div>
  );
  default: return null;

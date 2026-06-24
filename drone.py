@@ -1777,8 +1777,299 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     
             self._send_json({"status": "success"})
             return
+
+        elif self.path == "/api/cli":
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = json.loads(self.rfile.read(content_length))
             
+            command = post_data.get("command", "").strip()
+            drone_id = post_data.get("drone_id", None)
+            
+            # Parse command
+            parts = command.split()
+            cmd = parts[0].lower() if parts else ""
+            args = parts[1:] if len(parts) > 1 else []
+            
+            result = self.execute_command(cmd, args, drone_id)
+            self._send_json(result)
+            return
+
         self.send_error(404, "API endpoint not found")
+
+    def execute_command(self, cmd, args, drone_id):
+        if cmd == "telemetry":
+            return self.cmd_telemetry(args, drone_id)
+        elif cmd == "whoami":
+            return self.cmd_whoami(args, drone_id)
+        elif cmd == "list":
+            return self.cmd_list(args)
+        elif cmd == "status":
+            return self.cmd_status()
+        elif cmd == "history":
+            return self.cmd_history(args, drone_id)
+        elif cmd == "artifacts":
+            return self.cmd_artifacts(args, drone_id)
+        elif cmd == "help":
+            return self.cmd_help(args)
+        else:
+            return {"error": f"Unknown command: {cmd}", "available": ["telemetry", "whoami", "list", "status", "history", "artifacts", "help"]}
+
+    def cmd_telemetry(self, args, drone_id):
+        target = args[0] if args else drone_id
+        
+        conn = sqlite3.connect(DB_FILE_PATH, timeout=30)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        if target == "all":
+            cursor.execute("""
+                SELECT drone_id, battery, altitude, speed, gps
+                FROM telemetry 
+                WHERE id IN (SELECT MAX(id) FROM telemetry GROUP BY drone_id)
+                AND battery > 0
+            """)
+            drones = cursor.fetchall()
+            return {
+                "command": "telemetry",
+                "type": "fleet",
+                "data": [dict(d) for d in drones]
+            }
+        else:
+            if not target:
+                return {"error": "Please specify a drone_id"}
+            cursor.execute("""
+                SELECT drone_id, battery, altitude, speed, gps
+                FROM telemetry 
+                WHERE drone_id = ? 
+                ORDER BY id DESC LIMIT 1
+            """, (target,))
+            drone = cursor.fetchone()
+            if drone:
+                return {
+                    "command": "telemetry",
+                    "type": "single",
+                    "data": dict(drone)
+                }
+            else:
+                return {"error": f"Drone {target} not found"}
+
+    def cmd_whoami(self, args, drone_id):
+        target = args[0] if args else drone_id
+        if not target:
+            return {"error": "Please specify a drone_id"}
+        
+        conn = sqlite3.connect(DB_FILE_PATH, timeout=30)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT t.drone_id, t.battery, t.altitude, t.speed, t.gps,
+                   r.score as threat_score, m.family, m.version
+            FROM telemetry t
+            LEFT JOIN drone_risk r ON t.drone_id = r.drone_id
+            LEFT JOIN malware_profiles m ON t.drone_id = m.drone_id
+            WHERE t.drone_id = ? AND t.id IN (SELECT MAX(id) FROM telemetry WHERE drone_id = ?)
+        """, (target, target))
+        drone = cursor.fetchone()
+        
+        if not drone:
+            return {"error": f"Drone {target} not found"}
+        
+        # Determine campaign stage from memory
+        meta = client_metadata.get(target, {})
+        c_stage = meta.get("campaign_stage", "NORMAL")
+        
+        # Get artifacts
+        cursor.execute("SELECT finding FROM re_findings WHERE drone_id = ? ORDER BY id DESC LIMIT 10", (target,))
+        artifacts = [row["finding"] for row in cursor.fetchall()]
+        
+        return {
+            "command": "whoami",
+            "data": {
+                "drone_id": drone["drone_id"],
+                "status": c_stage,
+                "battery": drone["battery"],
+                "altitude": drone["altitude"],
+                "speed": drone["speed"],
+                "gps": drone["gps"],
+                "threat_score": drone["threat_score"] or 0,
+                "family": drone["family"] or "Unknown",
+                "artifacts": artifacts,
+                "artifact_count": len(artifacts)
+            }
+        }
+
+    def cmd_list(self, args):
+        status_filter = None
+        campaign_filter = None
+        
+        for arg in args:
+            if arg.startswith("--status="):
+                status_filter = arg.split("=")[1].upper()
+            elif arg.startswith("--campaign="):
+                campaign_filter = arg.split("=")[1].upper()
+        
+        conn = sqlite3.connect(DB_FILE_PATH, timeout=30)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        query = """
+            SELECT t.drone_id, t.battery, t.altitude, t.speed,
+                   r.score as threat_score
+            FROM telemetry t
+            LEFT JOIN drone_risk r ON t.drone_id = r.drone_id
+            WHERE t.id IN (SELECT MAX(id) FROM telemetry GROUP BY drone_id)
+            AND t.battery > 0
+        """
+        cursor.execute(query)
+        drones = cursor.fetchall()
+        
+        result_drones = []
+        for d in drones:
+            d_dict = dict(d)
+            meta = client_metadata.get(d_dict["drone_id"], {})
+            d_dict["campaign_stage"] = meta.get("campaign_stage", "NORMAL").upper()
+            
+            # Simple status logic
+            d_dict["status"] = "NORMAL"
+            if d_dict["campaign_stage"] in ["COMPROMISED", "BEACONING", "PERSISTENCE"]: d_dict["status"] = "COMPROMISED"
+            elif d_dict["campaign_stage"] in ["ATTACK_IN_PROGRESS", "GPS_SPOOF", "BATTERY_DRAIN"]: d_dict["status"] = "UNDER_ATTACK"
+            elif d_dict["battery"] <= 15: d_dict["status"] = "CRITICAL"
+            
+            if status_filter and d_dict["status"] != status_filter:
+                continue
+            if campaign_filter and d_dict["campaign_stage"] != campaign_filter:
+                continue
+                
+            result_drones.append(d_dict)
+        
+        return {
+            "command": "list",
+            "total": len(result_drones),
+            "data": result_drones
+        }
+
+    def cmd_status(self):
+        conn = sqlite3.connect(DB_FILE_PATH, timeout=30)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT drone_id, battery FROM telemetry WHERE id IN (SELECT MAX(id) FROM telemetry GROUP BY drone_id)")
+        t_rows = cursor.fetchall()
+        
+        total = len(t_rows)
+        stats = {"normal": 0, "under_attack": 0, "critical": 0, "offline": 0}
+        total_battery = 0
+        
+        for row in t_rows:
+            d_id = row["drone_id"]
+            batt = row["battery"]
+            meta = client_metadata.get(d_id, {})
+            c_stage = meta.get("campaign_stage", "NORMAL").upper()
+            
+            with clients_lock:
+                is_connected = d_id in clients
+            if not is_connected or batt <= 0:
+                stats["offline"] += 1
+            else:
+                total_battery += batt
+                if c_stage in ["ATTACK_IN_PROGRESS", "GPS_SPOOF", "BATTERY_DRAIN"]:
+                    stats["under_attack"] += 1
+                elif batt <= 15:
+                    stats["critical"] += 1
+                else:
+                    stats["normal"] += 1
+                    
+        online_count = total - stats["offline"]
+        avg_battery = total_battery / online_count if online_count > 0 else 0
+        
+        return {
+            "command": "status",
+            "data": {
+                "total": total,
+                "online": online_count,
+                "offline": stats["offline"],
+                "normal": stats["normal"],
+                "under_attack": stats["under_attack"],
+                "critical": stats["critical"],
+                "avg_battery": round(avg_battery, 1)
+            }
+        }
+
+    def cmd_history(self, args, drone_id):
+        target = args[0] if args else drone_id
+        limit = 20
+        
+        for arg in args:
+            if arg.startswith("--limit="):
+                try: limit = int(arg.split("=")[1])
+                except: pass
+        
+        if not target:
+            return {"error": "Please specify a drone_id"}
+            
+        conn = sqlite3.connect(DB_FILE_PATH, timeout=30)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        # Use campaign_timeline as timeline
+        cursor.execute("""
+            SELECT time as timestamp, 'EVENT' as event_type, stage || ' - ' || artifact as message
+            FROM campaign_timeline 
+            WHERE drone_id = ? 
+            ORDER BY id DESC LIMIT ?
+        """, (target, limit))
+        events = [dict(row) for row in cursor.fetchall()]
+        events.reverse()
+        
+        return {
+            "command": "history",
+            "drone_id": target,
+            "total": len(events),
+            "data": events
+        }
+
+    def cmd_artifacts(self, args, drone_id):
+        target = args[0] if args else drone_id
+        if not target: return {"error": "Please specify a drone_id"}
+        
+        conn = sqlite3.connect(DB_FILE_PATH, timeout=30)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT finding, artifact_type, confidence, enterprise_tech_id, ics_tech_id
+            FROM re_findings 
+            WHERE drone_id = ? 
+            ORDER BY confidence DESC
+        """, (target,))
+        artifacts = [dict(row) for row in cursor.fetchall()]
+        
+        return {
+            "command": "artifacts",
+            "drone_id": target,
+            "total": len(artifacts),
+            "data": artifacts
+        }
+
+    def cmd_help(self, args):
+        help_text = """
+📚 AVAILABLE COMMANDS:
+
+  telemetry <drone_id|all>   - Xem telemetry của drone
+  whoami <drone_id>          - Xem thông tin chi tiết của drone
+  list [--status=STATUS]     - Liệt kê drone đang online
+  status                     - Trạng thái tổng quan fleet
+  history <drone_id> [--limit=N] - Lịch sử sự kiện
+  artifacts <drone_id>       - Danh sách artifact
+  help                       - Hiển thị trợ giúp này
+
+EXAMPLES:
+  telemetry DRONE-007
+  telemetry all
+  list --status=UNDER_ATTACK
+  history DRONE-007 --limit=10
+"""
+        return {"command": "help", "data": help_text}
 
     def do_GET(self):
         parsed_path = urlparse(self.path)
