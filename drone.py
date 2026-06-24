@@ -2296,70 +2296,75 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     self._send_json({"verdict": verdict})
 
                 elif endpoint == "drones_summary":
-                    cursor.execute("SELECT * FROM telemetry WHERE id IN (SELECT MAX(id) FROM telemetry GROUP BY drone_id)")
-                    t_rows = cursor.fetchall()
-                    fleet = []
-                    for row in t_rows:
-                        d_id = row["drone_id"]
-                        d_info = dict(row)
-                        
-                        # Fix #1 & #3
-                        with clients_lock:
-                            is_connected = d_id in clients
-                            meta = client_metadata.get(d_id, {})
-                            c_stage = str(meta.get("campaign_stage", "Normal")).upper()
-                            d_info["artifacts_count"] = meta.get("active_artifacts", 0)
+                    try:
+                        cursor.execute("SELECT * FROM telemetry WHERE id IN (SELECT MAX(id) FROM telemetry GROUP BY drone_id)")
+                        t_rows = cursor.fetchall()
+                        fleet = []
+                        for row in t_rows:
+                            d_id = row["drone_id"]
+                            d_info = dict(row)
                             
-                        # Use campaign_stage as main status logic
-                        status = "NORMAL"
-                        if c_stage == "COMPROMISED" or c_stage == "BEACONING" or c_stage == "PERSISTENCE" or d_info["artifacts_count"] > 0:
-                            status = "COMPROMISED"
-                        if c_stage == "ATTACK_IN_PROGRESS" or c_stage == "GPS_SPOOF" or c_stage == "BATTERY_DRAIN":
-                            status = "UNDER_ATTACK"
-                        elif d_info.get("battery", 0) <= 15:
-                            status = "CRITICAL"
-                            
-                        # Overrides for offline
-                        if is_connected:
-                            with mitre_engine.packet_lock:
-                                last_ping = mitre_engine.last_packet_time.get(d_id, 0)
-                            if time.time() - last_ping > 15:
-                                is_connected = False
+                            # Fix #1 & #3
+                            with clients_lock:
+                                is_connected = d_id in clients
+                                meta = client_metadata.get(d_id, {})
+                                c_stage = str(meta.get("campaign_stage", "Normal")).upper()
+                                d_info["artifacts_count"] = meta.get("active_artifacts", 0)
                                 
-                        if not is_connected or d_info.get("battery", 0) <= 0:
-                            status = "OFFLINE"
+                            # Use campaign_stage as main status logic
+                            status = "NORMAL"
+                            if c_stage == "COMPROMISED" or c_stage == "BEACONING" or c_stage == "PERSISTENCE" or d_info["artifacts_count"] > 0:
+                                status = "COMPROMISED"
+                            if c_stage == "ATTACK_IN_PROGRESS" or c_stage == "GPS_SPOOF" or c_stage == "BATTERY_DRAIN":
+                                status = "UNDER_ATTACK"
+                            elif d_info.get("battery", 0) <= 15:
+                                status = "CRITICAL"
+                                
+                            # Overrides for offline
+                            if is_connected:
+                                with mitre_engine.packet_lock:
+                                    last_ping = mitre_engine.last_packet_time.get(d_id, 0)
+                                if time.time() - last_ping > 15:
+                                    is_connected = False
+                                    
+                            if not is_connected or d_info.get("battery", 0) <= 0:
+                                status = "OFFLINE"
+                                
+                            d_info["status"] = status
+                            d_info["campaign_stage"] = c_stage
                             
-                        d_info["status"] = status
-                        d_info["campaign_stage"] = c_stage
-                        
-                        # Anomaly flags
-                        cursor.execute("SELECT score FROM drone_risk WHERE drone_id=?", (d_id,))
-                        risk = cursor.fetchone()
-                        d_info["threat_score"] = risk["score"] if risk else 0
-                        d_info["anomaly"] = d_info.get("speed", 0) > 200 or d_info["threat_score"] >= 80
-                        
-                        # Fix #2: offline_since
-                        if status == "OFFLINE":
-                            cursor.execute("SELECT timestamp FROM telemetry WHERE drone_id=? ORDER BY id DESC LIMIT 1", (d_id,))
-                            last_t = cursor.fetchone()
-                            d_info["offline_since"] = last_t["timestamp"] if last_t else "Unknown"
-                        
-                        # First seen
-                        cursor.execute("SELECT timestamp FROM telemetry WHERE drone_id=? ORDER BY id ASC LIMIT 1", (d_id,))
-                        first_t = cursor.fetchone()
-                        d_info["online_time"] = first_t["timestamp"] if first_t else d_info.get("timestamp", "Unknown")
-                        
-                        # Fix #10: last attack
-                        cursor.execute("SELECT attack_type, started_at FROM active_attacks WHERE drone_id=? ORDER BY id DESC LIMIT 1", (d_id,))
-                        last_atk = cursor.fetchone()
-                        if last_atk:
-                            d_info["last_attack"] = {"type": last_atk["attack_type"], "time": last_atk["started_at"]}
-                        else:
-                            d_info["last_attack"] = None
+                            # Anomaly flags
+                            cursor.execute("SELECT score FROM drone_risk WHERE drone_id=?", (d_id,))
+                            risk = cursor.fetchone()
+                            d_info["threat_score"] = risk["score"] if risk else 0
+                            d_info["anomaly"] = d_info.get("speed", 0) > 200 or d_info["threat_score"] >= 80
+                            
+                            # Fix #2: offline_since
+                            if status == "OFFLINE":
+                                cursor.execute("SELECT timestamp FROM telemetry WHERE drone_id=? ORDER BY id DESC LIMIT 1", (d_id,))
+                                last_t = cursor.fetchone()
+                                d_info["offline_since"] = last_t["timestamp"] if last_t else "Unknown"
+                            
+                            # First seen
+                            cursor.execute("SELECT timestamp FROM telemetry WHERE drone_id=? ORDER BY id ASC LIMIT 1", (d_id,))
+                            first_t = cursor.fetchone()
+                            d_info["online_time"] = first_t["timestamp"] if first_t else d_info.get("timestamp", "Unknown")
+                            
+                            # Fix #10: last attack
+                            cursor.execute("SELECT attack_type, started_at FROM active_attacks WHERE drone_id=? ORDER BY started_at DESC LIMIT 1", (d_id,))
+                            last_atk = cursor.fetchone()
+                            if last_atk:
+                                d_info["last_attack"] = {"type": last_atk["attack_type"], "time": last_atk["started_at"]}
+                            else:
+                                d_info["last_attack"] = None
 
-                        fleet.append(d_info)
-                        
-                    self._send_json({"drones_summary": fleet})
+                            fleet.append(d_info)
+                            
+                        self._send_json({"drones_summary": fleet})
+                    except Exception as e:
+                        import traceback
+                        traceback.print_exc()
+                        self._send_json({"error": str(e)}, 500)
 
                 elif endpoint == "fleet_stats":
                     cursor.execute("SELECT * FROM telemetry WHERE id IN (SELECT MAX(id) FROM telemetry GROUP BY drone_id)")
@@ -2429,7 +2434,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     cursor.execute("SELECT * FROM campaign_timeline WHERE drone_id=? OR drone_id='ALL_DRONES' ORDER BY id ASC", (d_id,))
                     timeline = [dict(row) for row in cursor.fetchall()]
                     
-                    cursor.execute("SELECT attack_type, status, started_at FROM active_attacks WHERE drone_id=? ORDER BY id ASC", (d_id,))
+                    cursor.execute("SELECT attack_type, status, started_at FROM active_attacks WHERE drone_id=? ORDER BY started_at ASC", (d_id,))
                     attacks = [dict(row) for row in cursor.fetchall()]
                     
                     # Fix #4: active_artifacts
