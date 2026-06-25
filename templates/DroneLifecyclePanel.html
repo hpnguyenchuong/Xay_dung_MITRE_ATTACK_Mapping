@@ -363,7 +363,7 @@ window.DroneLifecyclePanel = () => {
             </div>
 
             {/* Stats Bar */}
-            <div className="flex flex-wrap gap-4 p-4 bg-[#0b1020] border border-slate-700 rounded-lg shadow-md shrink-0 justify-between items-center">
+            <div className="flex flex-wrap gap-4 p-4 bg-slate-900/80 border border-slate-700 rounded-lg shadow-md shrink-0 justify-between items-center">
                 <div className="flex flex-wrap gap-4 font-mono text-sm items-center">
                     <div className="bg-slate-800 px-3 py-1.5 rounded border border-slate-700 text-slate-300">📦 Total: <span className="text-white font-bold">{stats.total || 0}</span></div>
                     <div className="bg-[#34d399]/10 px-3 py-1.5 rounded border border-[#34d399]/30 text-[#34d399]">🟢 Online: <span className="font-bold">{stats.normal || 0}</span></div>
@@ -380,7 +380,7 @@ window.DroneLifecyclePanel = () => {
             </div>
 
             {/* Toolbar */}
-            <div className="flex flex-wrap justify-between items-center bg-[#0b1020] border border-slate-700 rounded-lg shadow-md p-3 shrink-0 gap-4">
+            <div className="flex flex-wrap justify-between items-center bg-slate-900/80 border border-slate-700 rounded-lg shadow-md p-3 shrink-0 gap-4">
                 <div className="flex gap-3 flex-wrap">
                     <div className="relative">
                         <span className="absolute left-2 top-1.5 text-slate-400">🔍</span>
@@ -495,7 +495,7 @@ window.DroneLifecyclePanel = () => {
 
             {/* Pagination */}
             {totalPages > 1 && (
-                <div className="flex justify-between items-center p-3 bg-[#0b1020] border border-slate-700 rounded-lg text-sm text-slate-400 shrink-0">
+                <div className="flex justify-between items-center p-3 bg-slate-900/80 border border-slate-700 rounded-lg text-sm text-slate-400 shrink-0">
                     <div>Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, filteredDrones.length)} of {filteredDrones.length} drones</div>
                     <div className="flex gap-2">
                         <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="px-3 py-1.5 bg-slate-800 rounded hover:bg-slate-700 disabled:opacity-50 transition-colors">◀ Prev</button>
