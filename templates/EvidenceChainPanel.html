@@ -1,9 +1,10 @@
-window.EvidenceChainPanel = () => {
+window.EvidenceChainPanel = ({ selectedDrone }) => {
  const [chainData, setChainData] = useState([]);
  const [loading, setLoading] = useState(true);
 
  useEffect(() => {
- fetch('/api/evidence_chain')
+ const droneQuery = selectedDrone ? `?drone_id=${selectedDrone.drone_id}` : '';
+ fetch(`/api/evidence_chain${droneQuery}`)
  .then(res => res.json())
  .then(data => {
  setChainData(data.evidence_chain || []);

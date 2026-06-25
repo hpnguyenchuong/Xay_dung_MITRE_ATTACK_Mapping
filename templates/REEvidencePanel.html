@@ -1,20 +1,23 @@
-window.REEvidencePanel = () => {
+window.REEvidencePanel = ({ selectedDrone }) => {
  const [artifacts, setArtifacts] = useState([]);
  const [selectedArtifact, setSelectedArtifact] = useState(null);
  const [isLoading, setIsLoading] = useState(true);
 
  useEffect(() => {
- fetch('/api/re_findings')
+ setIsLoading(true);
+ const droneQuery = selectedDrone ? `?drone_id=${selectedDrone.drone_id}` : '';
+ fetch(`/api/re_findings${droneQuery}`)
  .then(res => res.json())
  .then(data => {
  if (data.findings) setArtifacts(data.findings);
+ else setArtifacts([]);
  setIsLoading(false);
  })
  .catch(e => {
  console.error("Error fetching RE findings:", e);
  setIsLoading(false);
  });
- }, []);
+ }, [selectedDrone]);
 
  const openJustification = (artifact) => {
  setSelectedArtifact(artifact);

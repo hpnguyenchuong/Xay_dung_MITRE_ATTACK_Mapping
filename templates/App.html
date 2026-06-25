@@ -309,23 +309,23 @@ Date.now() - b.t < 2000)); } } }, 50); return ()=> clearInterval(intv);
  {/* LEFT COLUMN - Metadata & Flow */}
  <div className="flex-[1.0] flex flex-col gap-4 min-w-0 h-full">
  <div className="flex-[0.5] flex min-w-0 min-h-0">
- <DatasetProvenancePanel />
+ <DatasetProvenancePanel selectedDrone={selectedDrone} />
  </div>
  <div className="shrink-0 h-[255px] flex min-w-0 min-h-0">
- <MalwareExecutionFlowPanel />
+ <MalwareExecutionFlowPanel selectedDrone={selectedDrone} />
  </div>
  <div className="flex-[1.2] flex min-w-0 min-h-0">
- <BehavioralSummaryPanel />
+ <BehavioralSummaryPanel drones={drones} selectedDrone={selectedDrone} />
  </div>
  </div>
  
  {/* RIGHT COLUMN - Large Tables & Matrices */}
  <div className="flex-[2.2] flex flex-col gap-4 min-w-0 h-full">
  <div className="flex-[0.8] flex min-w-0 min-h-0">
- <ArtifactMatrixPanel />
+ <ArtifactMatrixPanel selectedDrone={selectedDrone} />
  </div>
  <div className="flex-[1.2] flex min-w-0 min-h-0">
- <REEvidencePanel />
+ <REEvidencePanel selectedDrone={selectedDrone} />
  </div>
  </div>
  </div>
@@ -335,27 +335,27 @@ Date.now() - b.t < 2000)); } } }, 50); return ()=> clearInterval(intv);
  {/* ROW 1: Attack Graph */}
  <div className="shrink-0 flex min-h-0 h-[320px]">
  <div className="flex-1 flex min-w-0 min-h-0">
- <AttackGraphPanel />
+ <AttackGraphPanel selectedDrone={selectedDrone} />
  </div>
  </div>
  
  {/* ROW 2: Evidence Chain */}
  <div className="shrink-0 flex min-h-0 h-[350px]">
  <div className="flex-1 flex min-w-0 min-h-0">
- <EvidenceChainPanel />
+ <EvidenceChainPanel selectedDrone={selectedDrone} />
  </div>
  </div>
  
  {/* BOTTOM ROW: Tables & Metrics (Scroll down to see) */}
  <div className="shrink-0 flex gap-4 h-[320px]">
  <div className="flex-[1.6] flex min-w-0 min-h-0">
- <TranslationEnginePanel />
+ <TranslationEnginePanel selectedDrone={selectedDrone} />
  </div>
  <div className="flex-[1.0] flex min-w-0 min-h-0">
- <ATTACKTacticCoveragePanel />
+ <ATTACKTacticCoveragePanel selectedDrone={selectedDrone} />
  </div>
  <div className="flex-[0.8] flex min-w-0 min-h-0">
- <ICSContextCard />
+ <ICSContextCard selectedDrone={selectedDrone} />
  </div>
  </div>
  </div>

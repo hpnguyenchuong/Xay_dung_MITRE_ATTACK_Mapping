@@ -2290,7 +2290,11 @@ EXAMPLES:
                     self._send_json([dict(r) for r in cursor.fetchall()])
                     
                 elif endpoint == "re_findings":
-                    cursor.execute("SELECT artifact_address as offset, finding as artifact, artifact_type, source as re_source, validation_level, behavior, mapping_reason as reason, enterprise_tech_id as selected_technique, rejected_candidates, confidence, confidence_breakdown, campaign_stage FROM re_findings WHERE drone_id != 'GLOBAL' ORDER BY id DESC LIMIT 50")
+                    drone_id_param = query_params.get("drone_id", [None])[0]
+                    if drone_id_param:
+                        cursor.execute("SELECT artifact_address as offset, finding as artifact, artifact_type, source as re_source, validation_level, behavior, mapping_reason as reason, enterprise_tech_id as selected_technique, rejected_candidates, confidence, confidence_breakdown, campaign_stage FROM re_findings WHERE drone_id=? ORDER BY id DESC LIMIT 50", (drone_id_param,))
+                    else:
+                        cursor.execute("SELECT artifact_address as offset, finding as artifact, artifact_type, source as re_source, validation_level, behavior, mapping_reason as reason, enterprise_tech_id as selected_technique, rejected_candidates, confidence, confidence_breakdown, campaign_stage FROM re_findings WHERE drone_id != 'GLOBAL' ORDER BY id DESC LIMIT 50")
                     findings = []
                     for row in cursor.fetchall():
                         r = dict(row)
@@ -2358,7 +2362,11 @@ EXAMPLES:
                     graph_nodes = []
                     graph_edges = []
                     
-                    cursor.execute("SELECT drone_id, name, technique_id, ics_tech_id FROM attack_mapping ORDER BY id DESC LIMIT 10")
+                    drone_id_param = query_params.get("drone_id", [None])[0]
+                    if drone_id_param:
+                        cursor.execute("SELECT drone_id, name, technique_id, ics_tech_id FROM attack_mapping WHERE drone_id=? ORDER BY id DESC LIMIT 10", (drone_id_param,))
+                    else:
+                        cursor.execute("SELECT drone_id, name, technique_id, ics_tech_id FROM attack_mapping ORDER BY id DESC LIMIT 10")
                     mappings = cursor.fetchall()
                     
                     for i, row in enumerate(mappings):
@@ -2394,7 +2402,11 @@ EXAMPLES:
                     self._send_json({"nodes": graph_nodes, "edges": graph_edges})
                     
                 elif endpoint == "evidence_chain":
-                    cursor.execute("SELECT finding as artifact, behavior, mapping_reason as rule, enterprise_tech_id as technique, confidence, ics_tech_id as ics_translation, source as operational_effect FROM re_findings ORDER BY id DESC LIMIT 20")
+                    drone_id_param = query_params.get("drone_id", [None])[0]
+                    if drone_id_param:
+                        cursor.execute("SELECT finding as artifact, behavior, mapping_reason as rule, enterprise_tech_id as technique, confidence, ics_tech_id as ics_translation, source as operational_effect FROM re_findings WHERE drone_id=? ORDER BY id DESC LIMIT 20", (drone_id_param,))
+                    else:
+                        cursor.execute("SELECT finding as artifact, behavior, mapping_reason as rule, enterprise_tech_id as technique, confidence, ics_tech_id as ics_translation, source as operational_effect FROM re_findings ORDER BY id DESC LIMIT 20")
                     rows = cursor.fetchall()
                     chain = []
                     for r in rows:
@@ -2478,7 +2490,11 @@ EXAMPLES:
                     })
                     
                 elif endpoint == "evidence_correlation":
-                    cursor.execute("SELECT finding as artifact, evidence, mapping_reason as reason, ics_tech_id as technique, confidence, source, behavior FROM re_findings WHERE evidence IS NOT NULL AND confidence > 0 ORDER BY confidence DESC LIMIT 50")
+                    drone_id_param = query_params.get("drone_id", [None])[0]
+                    if drone_id_param:
+                        cursor.execute("SELECT finding as artifact, evidence, mapping_reason as reason, ics_tech_id as technique, confidence, source, behavior FROM re_findings WHERE evidence IS NOT NULL AND confidence > 0 AND drone_id=? ORDER BY confidence DESC LIMIT 50", (drone_id_param,))
+                    else:
+                        cursor.execute("SELECT finding as artifact, evidence, mapping_reason as reason, ics_tech_id as technique, confidence, source, behavior FROM re_findings WHERE evidence IS NOT NULL AND confidence > 0 ORDER BY confidence DESC LIMIT 50")
                     correlations = [dict(row) for row in cursor.fetchall()]
                     self._send_json({"correlations": correlations})
                     
