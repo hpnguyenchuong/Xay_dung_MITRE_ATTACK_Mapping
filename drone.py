@@ -2404,14 +2404,14 @@ EXAMPLES:
                 elif endpoint == "evidence_chain":
                     drone_id_param = query_params.get("drone_id", [None])[0]
                     if drone_id_param:
-                        cursor.execute("SELECT finding as artifact, behavior, mapping_reason as rule, enterprise_tech_id as technique, confidence, ics_tech_id as ics_translation, source as operational_effect FROM re_findings WHERE drone_id=? ORDER BY id DESC LIMIT 20", (drone_id_param,))
+                        cursor.execute("SELECT id, finding as artifact, behavior, mapping_reason as rule, enterprise_tech_id as technique, confidence, ics_tech_id as ics_translation, source as operational_effect FROM re_findings WHERE drone_id=? ORDER BY id DESC LIMIT 20", (drone_id_param,))
                     else:
-                        cursor.execute("SELECT finding as artifact, behavior, mapping_reason as rule, enterprise_tech_id as technique, confidence, ics_tech_id as ics_translation, source as operational_effect FROM re_findings ORDER BY id DESC LIMIT 20")
+                        cursor.execute("SELECT id, finding as artifact, behavior, mapping_reason as rule, enterprise_tech_id as technique, confidence, ics_tech_id as ics_translation, source as operational_effect FROM re_findings ORDER BY id DESC LIMIT 20")
                     rows = cursor.fetchall()
                     chain = []
                     for r in rows:
                         chain.append({
-                            "raw_packet": f"Packet #{hash(r['artifact']) % 1000}",
+                            "raw_packet": f"Packet #{r['id']}",
                             "decoded_json": f'{{"cmd": "{r["artifact"]}"}}' if "DF_" not in r["artifact"] else f'{{"mutex": "{r["artifact"]}"}}',
                             "artifact": r["artifact"],
                             "rule_trigger": r["rule"],
