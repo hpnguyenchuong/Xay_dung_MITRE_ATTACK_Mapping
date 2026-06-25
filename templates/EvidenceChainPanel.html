@@ -33,9 +33,13 @@ window.EvidenceChainPanel = ({ selectedDrone }) => {
  ) : (
  <div className="flex flex-col gap-6">
  {chainData.map((chain, i) => (
- <div key={i} className="bg-slate-800/40 rounded-sm-sm border border-slate-700 p-4 flex gap-4 overflow-x-auto min-w-max">
+ <div key={i} className="bg-slate-800/40 rounded-sm-sm border border-slate-700 p-4 flex gap-4 overflow-x-auto min-w-max relative">
  
- <div className="flex flex-col items-center min-w-[120px]">
+ <div className="absolute top-2 left-2 px-2 py-0.5 bg-slate-700/50 text-slate-300 text-[10px] rounded border border-slate-600">
+ Asset: {chain.drone_id || selectedDrone?.drone_id || 'UNKNOWN'}
+ </div>
+
+ <div className="flex flex-col items-center min-w-[120px] pt-4">
  <div className="text-slate-400 text-[10px] font-bold uppercase mb-2 tracking-widest">L1: Raw Evidence</div>
  <div className="bg-slate-900 border border-slate-700 p-2 rounded-sm text-[#cbd5e1] font-mono text-[12px] text-center w-full shadow-none break-words">
  {chain.raw_packet}
