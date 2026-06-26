@@ -261,6 +261,26 @@ def load_re_findings_from_json():
                     "GLOBAL",
                     artifact.get("address", "Unknown")
                 ))
+                
+                # Insert into attack_mapping to populate the MITRE dashboard
+                cursor.execute("""
+                    INSERT INTO attack_mapping
+                    (drone_id, tactic, tactic_name, technique_id, enterprise_tech_id, ics_tech_id, name, confidence, reason, evidence, timestamp)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    "GLOBAL",
+                    "TA0106" if artifact.get("ics") or artifact.get("ics_tech") else "TA0103",
+                    "Simulated Tactic",
+                    (artifact.get("enterprise") or artifact.get("enterprise_tech")) or (artifact.get("ics") or artifact.get("ics_tech")),
+                    artifact.get("enterprise") or artifact.get("enterprise_tech"),
+                    artifact.get("ics") or artifact.get("ics_tech"),
+                    attack_type.replace("_", " ").title(),
+                    95,
+                    f"RE Finding: {attack_type} attack vector",
+                    artifact.get("evidence"),
+                    datetime.now().isoformat()
+                ))
+                
                 total_loaded += 1
                 
         db_conn.commit()
@@ -1422,13 +1442,13 @@ def export_drone_layer(drone_id):
 def export_campaign_layers():
     conn = sqlite3.connect(DB_FILE_PATH, check_same_thread=False)
     conn.row_factory = sqlite3.Row
-    tactics = conn.execute("SELECT DISTINCT tactic_name FROM attack_mapping WHERE tactic_name IS NOT NULL AND drone_id != 'GLOBAL'").fetchall()
+    tactics = conn.execute("SELECT DISTINCT tactic_name FROM attack_mapping WHERE tactic_name IS NOT NULL ").fetchall()
     
     all_campaign_findings = []
     
     for row in tactics:
         tactic = row["tactic_name"]
-        findings = conn.execute("SELECT technique_id, enterprise_tech_id, ics_tech_id, MAX(confidence) as confidence, MAX(evidence) as evidence, tactic_name, MAX(name) as technique_name, COUNT(*) as occ, MAX(timestamp) as timestamp, MAX(reason) as reason FROM attack_mapping WHERE tactic_name=? AND drone_id != 'GLOBAL' GROUP BY COALESCE(technique_id, enterprise_tech_id, ics_tech_id)", (tactic,)).fetchall()
+        findings = conn.execute("SELECT technique_id, enterprise_tech_id, ics_tech_id, MAX(confidence) as confidence, MAX(evidence) as evidence, tactic_name, MAX(name) as technique_name, COUNT(*) as occ, MAX(timestamp) as timestamp, MAX(reason) as reason FROM attack_mapping WHERE tactic_name=?  GROUP BY COALESCE(technique_id, enterprise_tech_id, ics_tech_id)", (tactic,)).fetchall()
         
         all_campaign_findings.extend(findings)
         
@@ -1449,7 +1469,7 @@ def export_campaign_layers():
 def export_fleet_layer():
     conn = sqlite3.connect(DB_FILE_PATH, check_same_thread=False)
     conn.row_factory = sqlite3.Row
-    findings = conn.execute("SELECT technique_id, enterprise_tech_id, ics_tech_id, MAX(confidence) as confidence, MAX(evidence) as evidence, tactic_name, MAX(name) as technique_name, COUNT(*) as occ, MAX(timestamp) as timestamp, MAX(reason) as reason FROM attack_mapping WHERE drone_id != 'GLOBAL' GROUP BY COALESCE(technique_id, enterprise_tech_id, ics_tech_id)").fetchall()
+    findings = conn.execute("SELECT technique_id, enterprise_tech_id, ics_tech_id, MAX(confidence) as confidence, MAX(evidence) as evidence, tactic_name, MAX(name) as technique_name, COUNT(*) as occ, MAX(timestamp) as timestamp, MAX(reason) as reason FROM attack_mapping GROUP BY COALESCE(technique_id, enterprise_tech_id, ics_tech_id)").fetchall()
     if findings:
         layer_ent = build_navigator_layer("Fleet Enterprise", [dict(f) for f in findings], "Fleet Aggregation", domain="enterprise-attack")
         filepath_ent = os.path.join(BASE_DIR, "exports", "fleet", "fleet_enterprise.json")
@@ -2286,7 +2306,7 @@ EXAMPLES:
                     self._send_json([dict(r) for r in cursor.fetchall()])
 
                 elif endpoint == "mapping_explanation_tree":
-                    cursor.execute("SELECT finding, behavior, evidence, mapping_reason, enterprise_tech_id, ics_tech_id FROM re_findings WHERE drone_id != 'GLOBAL' ORDER BY id DESC LIMIT 20")
+                    cursor.execute("SELECT finding, behavior, evidence, mapping_reason, enterprise_tech_id, ics_tech_id FROM re_findings WHERE 1=1 ORDER BY id DESC LIMIT 20")
                     self._send_json([dict(r) for r in cursor.fetchall()])
                     
                 elif endpoint == "re_findings":
@@ -2294,7 +2314,7 @@ EXAMPLES:
                     if drone_id_param:
                         cursor.execute("SELECT artifact_address as offset, finding as artifact, artifact_type, source as re_source, validation_level, behavior, mapping_reason as reason, enterprise_tech_id as selected_technique, rejected_candidates, confidence, confidence_breakdown, campaign_stage FROM re_findings WHERE drone_id=? OR drone_id='GLOBAL' OR drone_id='ALL_DRONES' ORDER BY id DESC LIMIT 50", (drone_id_param,))
                     else:
-                        cursor.execute("SELECT artifact_address as offset, finding as artifact, artifact_type, source as re_source, validation_level, behavior, mapping_reason as reason, enterprise_tech_id as selected_technique, rejected_candidates, confidence, confidence_breakdown, campaign_stage FROM re_findings WHERE drone_id != 'GLOBAL' ORDER BY id DESC LIMIT 50")
+                        cursor.execute("SELECT artifact_address as offset, finding as artifact, artifact_type, source as re_source, validation_level, behavior, mapping_reason as reason, enterprise_tech_id as selected_technique, rejected_candidates, confidence, confidence_breakdown, campaign_stage FROM re_findings ORDER BY id DESC LIMIT 50")
                     findings = []
                     for row in cursor.fetchall():
                         r = dict(row)
@@ -2323,7 +2343,7 @@ EXAMPLES:
                     self._send_json({"findings": findings})
                     
                 elif endpoint == "attack_coverage":
-                    cursor.execute("SELECT tactic_name, COUNT(DISTINCT technique_id) as count FROM attack_mapping WHERE drone_id != 'GLOBAL' GROUP BY tactic_name")
+                    cursor.execute("SELECT tactic_name, COUNT(DISTINCT technique_id) as count FROM attack_mapping WHERE 1=1 GROUP BY tactic_name")
                     tactics = {}
                     total_techs = 0
                     for row in cursor.fetchall():
@@ -2506,9 +2526,9 @@ EXAMPLES:
                     
                     if layer_type in ("enterprise", "all"):
                         if drone_id:
-                            cursor.execute("SELECT enterprise_tech_id as technique, MAX(confidence) as conf, COUNT(*) as occ, MAX(name) as name FROM attack_mapping WHERE enterprise_tech_id IS NOT NULL AND drone_id=? AND drone_id != 'GLOBAL' GROUP BY enterprise_tech_id", (drone_id,))
+                            cursor.execute("SELECT enterprise_tech_id as technique, MAX(confidence) as conf, COUNT(*) as occ, MAX(name) as name FROM attack_mapping WHERE enterprise_tech_id IS NOT NULL AND drone_id=?  GROUP BY enterprise_tech_id", (drone_id,))
                         else:
-                            cursor.execute("SELECT enterprise_tech_id as technique, MAX(confidence) as conf, COUNT(*) as occ, MAX(name) as name FROM attack_mapping WHERE enterprise_tech_id IS NOT NULL AND drone_id != 'GLOBAL' GROUP BY enterprise_tech_id")
+                            cursor.execute("SELECT enterprise_tech_id as technique, MAX(confidence) as conf, COUNT(*) as occ, MAX(name) as name FROM attack_mapping WHERE enterprise_tech_id IS NOT NULL  GROUP BY enterprise_tech_id")
                         for row in cursor.fetchall():
                             t = row["technique"]
                             score = row["conf"] if row["conf"] else (row["occ"] * 15)
@@ -2517,9 +2537,9 @@ EXAMPLES:
                             
                     if layer_type in ("ics", "all"):
                         if drone_id:
-                            cursor.execute("SELECT ics_tech_id as technique, MAX(confidence) as conf, COUNT(*) as occ, MAX(name) as name FROM attack_mapping WHERE ics_tech_id IS NOT NULL AND drone_id=? AND drone_id != 'GLOBAL' GROUP BY ics_tech_id", (drone_id,))
+                            cursor.execute("SELECT ics_tech_id as technique, MAX(confidence) as conf, COUNT(*) as occ, MAX(name) as name FROM attack_mapping WHERE ics_tech_id IS NOT NULL AND drone_id=?  GROUP BY ics_tech_id", (drone_id,))
                         else:
-                            cursor.execute("SELECT ics_tech_id as technique, MAX(confidence) as conf, COUNT(*) as occ, MAX(name) as name FROM attack_mapping WHERE ics_tech_id IS NOT NULL AND drone_id != 'GLOBAL' GROUP BY ics_tech_id")
+                            cursor.execute("SELECT ics_tech_id as technique, MAX(confidence) as conf, COUNT(*) as occ, MAX(name) as name FROM attack_mapping WHERE ics_tech_id IS NOT NULL  GROUP BY ics_tech_id")
                         for row in cursor.fetchall():
                             t = row["technique"]
                             score = row["conf"] if row["conf"] else (row["occ"] * 15)
@@ -3305,7 +3325,7 @@ EXAMPLES:
                     active_attacks_row = cursor.fetchone()
                     active_attacks = active_attacks_row["cnt"] if active_attacks_row else 0
                     
-                    cursor.execute("SELECT finding, evidence, behavior, enterprise_tech_id, ics_tech_id, confidence, timestamp FROM re_findings WHERE drone_id != 'GLOBAL' ORDER BY id DESC LIMIT 50")
+                    cursor.execute("SELECT finding, evidence, behavior, enterprise_tech_id, ics_tech_id, confidence, timestamp FROM re_findings WHERE 1=1 ORDER BY id DESC LIMIT 50")
                     findings = [enrich_finding(dict(row)) for row in cursor.fetchall()]
                     
                     # Fetch Active Attacks
@@ -3318,7 +3338,7 @@ EXAMPLES:
                     if not active_campaigns: active_attacks_html = "<p>No active campaigns detected.</p>"
 
                     # Fetch Most Targeted Drones
-                    cursor.execute("SELECT drone_id, COUNT(*) as cnt FROM attack_mapping WHERE drone_id != 'GLOBAL' GROUP BY drone_id ORDER BY cnt DESC LIMIT 5")
+                    cursor.execute("SELECT drone_id, COUNT(*) as cnt FROM attack_mapping WHERE 1=1 GROUP BY drone_id ORDER BY cnt DESC LIMIT 5")
                     targeted = cursor.fetchall()
                     targeted_html = "<ul style='list-style-type: none; padding: 0;'>"
                     for row in targeted:
@@ -3344,7 +3364,7 @@ EXAMPLES:
                     """
 
                     # Fetch Technique Distribution
-                    cursor.execute("SELECT technique_id, COUNT(*) as cnt FROM attack_mapping WHERE drone_id != 'GLOBAL' GROUP BY technique_id ORDER BY cnt DESC LIMIT 10")
+                    cursor.execute("SELECT technique_id, COUNT(*) as cnt FROM attack_mapping WHERE 1=1 GROUP BY technique_id ORDER BY cnt DESC LIMIT 10")
                     techniques = cursor.fetchall()
                     tech_html = "<div style='display:grid; grid-template-columns: repeat(2, 1fr); gap: 10px;'>"
                     for row in techniques:
@@ -3436,7 +3456,7 @@ EXAMPLES:
                     report_ts = datetime.now().strftime("%Y%m%d_%H%M%S")
                     report_path = os.path.join(REPORTS_DIR, f"export_re_findings_{report_ts}.csv")
                     
-                    cursor.execute("SELECT drone_id, finding as artifact, evidence as evidence_source, behavior, enterprise_tech_id, ics_tech_id, confidence, timestamp FROM re_findings WHERE drone_id != 'GLOBAL' ORDER BY timestamp DESC")
+                    cursor.execute("SELECT drone_id, finding as artifact, evidence as evidence_source, behavior, enterprise_tech_id, ics_tech_id, confidence, timestamp FROM re_findings WHERE 1=1 ORDER BY timestamp DESC")
                     rows = cursor.fetchall()
                     
                     with open(report_path, "w", encoding="utf-8-sig", newline="") as f:
