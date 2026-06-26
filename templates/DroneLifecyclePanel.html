@@ -221,24 +221,20 @@ window.DroneLifecyclePanel = () => {
 
     const handleExportClick = (e, droneId) => {
         e.stopPropagation();
-        if (!droneDetail || !telemetryHistory) return;
-        const rows = [
-            ["Timestamp", "Battery", "Altitude", "Speed", "GPS", "Threat Score"],
-            ...telemetryHistory.map(h => [h.timestamp, h.battery, h.altitude, h.speed, h.gps, h.threat_score || 0])
-        ];
-        let csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\\n");
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `intelligence_${droneId}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        fetch(`/api/drone_detail?drone_id=${droneId}`)
+            .then(r => r.json())
+            .then(data => {
+                const jsonContent = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
+                const link = document.createElement("a");
+                link.setAttribute("href", jsonContent);
+                link.setAttribute("download", `drone_forensic_${droneId}.json`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }).catch(err => console.error("Export error", err));
     };
 
     const renderGridView = () => {
-        // ... (Keep the exact same Grid View as previously implemented, omitted here for brevity if I was splitting it, but since I'm overwriting I need to include it fully)
-        // I will re-implement the grid exactly as it was.
         
         const filteredDrones = drones.filter(d => {
             const matchesSearch = d.drone_id.toLowerCase().includes(searchQuery.toLowerCase());
@@ -400,7 +396,7 @@ window.DroneLifecyclePanel = () => {
                                             [ DETAIL ]
                                         </button>
                                         <button onClick={(e) => handleExportClick(e, d.drone_id)} className="text-xs text-slate-400 hover:text-slate-300 tracking-widest">
-                                            [ CSV ]
+                                            [ JSON ]
                                         </button>
                                     </div>
                                 </div>
@@ -448,7 +444,7 @@ window.DroneLifecyclePanel = () => {
                         </span>
                     </div>
                     <button onClick={(e) => handleExportClick(e, selectedDroneId)} className="text-indigo-400 hover:text-indigo-300 transition-colors tracking-widest">
-                        📄 EXPORT
+                        📄 EXPORT JSON
                     </button>
                 </div>
 
