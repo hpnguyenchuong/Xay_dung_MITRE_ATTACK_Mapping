@@ -221,13 +221,13 @@ window.DroneLifecyclePanel = () => {
 
     const handleExportClick = (e, droneId) => {
         e.stopPropagation();
-        fetch(`/api/drone_detail?drone_id=${droneId}`)
+        fetch(`/api/export_navigator?drone_id=${droneId}`)
             .then(r => r.json())
             .then(data => {
                 const jsonContent = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
                 const link = document.createElement("a");
                 link.setAttribute("href", jsonContent);
-                link.setAttribute("download", `drone_forensic_${droneId}.json`);
+                link.setAttribute("download", `navigator_layer_${droneId}.json`);
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);

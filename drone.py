@@ -2815,6 +2815,47 @@ EXAMPLES:
                     mapping = [dict(row) for row in cursor.fetchall()]
                     self._send_json({"attack_mapping": mapping})
 
+                elif endpoint == "export_navigator":
+                    d_id = query_params.get("drone_id", [""])[0]
+                    if not d_id:
+                        self._send_json({"error": "Missing drone_id"}, 400)
+                        return
+                    cursor.execute("SELECT enterprise_tech_id, confidence, name, reason FROM attack_mapping WHERE (drone_id=? OR drone_id='GLOBAL') AND enterprise_tech_id IS NOT NULL ORDER BY id DESC", (d_id,))
+                    
+                    techniques_dict = {}
+                    for row in cursor.fetchall():
+                        tid = row["enterprise_tech_id"]
+                        if tid not in techniques_dict:
+                            techniques_dict[tid] = {
+                                "techniqueID": tid,
+                                "score": row["confidence"] if row["confidence"] else 50,
+                                "enabled": True,
+                                "showSubtechniques": True,
+                                "comment": f"{row['name']} - {row['reason']}"
+                            }
+                            
+                    navigator_layer = {
+                        "name": f"Tactical Intelligence: {d_id}",
+                        "version": "4.5",
+                        "versions": {
+                            "attack": "14",
+                            "navigator": "5.1.0",
+                            "layer": "4.5"
+                        },
+                        "domain": "enterprise-attack",
+                        "description": f"MITRE ATT&CK Mapping for {d_id} based on RE findings",
+                        "sorting": 0,
+                        "layout": { "layout": "side" },
+                        "hideDisabled": False,
+                        "gradient": {
+                            "colors": ["#ffffff", "#60a5fa", "#2563eb"],
+                            "minValue": 0,
+                            "maxValue": 100
+                        },
+                        "techniques": list(techniques_dict.values())
+                    }
+                    self._send_json(navigator_layer)
+
                 elif endpoint == "alerts":
                     cursor.execute("SELECT * FROM alerts ORDER BY id DESC LIMIT 50")
                     alerts = [dict(row) for row in cursor.fetchall()]
