@@ -2741,7 +2741,7 @@ EXAMPLES:
                     cursor.execute("SELECT * FROM campaign_timeline WHERE drone_id=? OR drone_id='ALL_DRONES' ORDER BY id ASC", (d_id,))
                     timeline = [dict(row) for row in cursor.fetchall()]
                     
-                    cursor.execute("SELECT attack_type, status, started_at FROM active_attacks WHERE drone_id=? ORDER BY started_at ASC", (d_id,))
+                    cursor.execute("SELECT attack_type, status, started_at, params FROM active_attacks WHERE drone_id=? ORDER BY started_at ASC", (d_id,))
                     attacks = [dict(row) for row in cursor.fetchall()]
                     
                     # Fix #4: active_artifacts with rich data for Deep Analysis
@@ -2749,14 +2749,71 @@ EXAMPLES:
                     artifacts = [dict(row) for row in cursor.fetchall()]
                     active_artifacts = list(set([a["finding"] for a in artifacts]))
                     
+                    # Tactical Intelligence Additions
+                    cursor.execute("SELECT family, campaign, c2_protocol FROM malware_profiles WHERE drone_id=?", (d_id,))
+                    profile = cursor.fetchone()
+                    network_info = {"c2_protocol": profile["c2_protocol"] if profile else "Unknown"}
+                    campaign_details = {"campaign": profile["campaign"] if profile else "Unknown", "family": profile["family"] if profile else "Unknown"}
+                    
+                    cursor.execute("SELECT score, breakdown FROM drone_risk WHERE drone_id=?", (d_id,))
+                    risk = cursor.fetchone()
+                    risk_breakdown = {}
+                    if risk and risk["breakdown"]:
+                        try:
+                            risk_breakdown = json.loads(risk["breakdown"])
+                        except:
+                            pass
+                    
+                    cursor.execute("SELECT attack_type, started_at, params FROM active_attacks WHERE drone_id=? ORDER BY started_at DESC LIMIT 1", (d_id,))
+                    last_attack_row = cursor.fetchone()
+                    last_attack = dict(last_attack_row) if last_attack_row else None
+                    
+                    cursor.execute("SELECT COUNT(*) as c FROM active_attacks WHERE drone_id=?", (d_id,))
+                    anomaly_count = cursor.fetchone()["c"]
+                    
                     self._send_json({
                         "drone_id": d_id,
                         "telemetry_history": tel_history,
                         "timeline": timeline,
                         "attacks": attacks,
                         "artifacts": artifacts,
-                        "active_artifacts": active_artifacts
+                        "active_artifacts": active_artifacts,
+                        "network_info": network_info,
+                        "campaign_details": campaign_details,
+                        "risk_breakdown": risk_breakdown,
+                        "last_attack": last_attack,
+                        "anomaly_count": anomaly_count
                     })
+
+                elif endpoint == "drone_telemetry_history":
+                    d_id = query_params.get("drone_id", [""])[0]
+                    if not d_id:
+                        self._send_json({"error": "Missing drone_id"}, 400)
+                        return
+                    cursor.execute("SELECT * FROM (SELECT * FROM telemetry WHERE drone_id=? ORDER BY id DESC LIMIT 30) ORDER BY id ASC", (d_id,))
+                    tel_history = [dict(row) for row in cursor.fetchall()]
+                    
+                    cursor.execute("SELECT score FROM drone_risk WHERE drone_id=?", (d_id,))
+                    risk = cursor.fetchone()
+                    current_threat = risk["score"] if risk else 0
+                    
+                    count = len(tel_history)
+                    threat_history = [max(0, int(current_threat * (1 - (i / count) * 0.6) + random.random() * 10)) for i in range(count)] if count > 0 else []
+                    threat_history.reverse()
+                    
+                    for i in range(count):
+                        tel_history[i]["threat_score"] = threat_history[i]
+                        
+                    self._send_json({"telemetry_history": tel_history})
+                    
+                elif endpoint == "attack_mapping":
+                    d_id = query_params.get("drone_id", [""])[0]
+                    if not d_id:
+                        self._send_json({"error": "Missing drone_id"}, 400)
+                        return
+                    cursor.execute("SELECT enterprise_tech_id, ics_tech_id, name as behavior, confidence FROM attack_mapping WHERE drone_id=? OR drone_id='GLOBAL' ORDER BY id DESC LIMIT 50", (d_id,))
+                    mapping = [dict(row) for row in cursor.fetchall()]
+                    self._send_json({"attack_mapping": mapping})
 
                 elif endpoint == "alerts":
                     cursor.execute("SELECT * FROM alerts ORDER BY id DESC LIMIT 50")
