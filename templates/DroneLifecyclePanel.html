@@ -16,8 +16,17 @@ window.DroneLifecyclePanel = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const ITEMS_PER_PAGE = 12;
     
-    const chartRef = useRef(null);
-    const chartInstanceRef = useRef(null);
+    const chart1Ref = useRef(null);
+    const chart1InstanceRef = useRef(null);
+    const chart2Ref = useRef(null);
+    const chart2InstanceRef = useRef(null);
+
+    const mockThreatHistory = (currentScore, count) => {
+        return Array.from({ length: count }, (_, i) => {
+            const decay = 1 - (i / count) * 0.6;
+            return Math.max(0, Math.round(currentScore * decay + Math.random() * 10));
+        }).reverse();
+    };
 
     // Fetch Grid Data
     const fetchGridData = () => {
@@ -46,7 +55,7 @@ window.DroneLifecyclePanel = () => {
                     .then(r => r.json())
                     .then(data => {
                         setDroneDetail(data);
-                        renderCharts(data.telemetry_history);
+                        renderCharts(data.telemetry_history, drones.find(dr => dr.drone_id === selectedDroneId));
                     }).catch(e => console.error("Error fetching drone_detail", e));
             };
             fetchDetail();
@@ -55,49 +64,74 @@ window.DroneLifecyclePanel = () => {
         return () => clearInterval(detailInterval);
     }, [viewMode, selectedDroneId]);
 
-    const renderCharts = (history) => {
-        if (!chartRef.current) return;
+    const renderCharts = (history, d) => {
+        if (!chart1Ref.current || !chart2Ref.current) return;
         
         if (!history || history.length < 2) {
-            if (chartInstanceRef.current) {
-                chartInstanceRef.current.destroy();
-                chartInstanceRef.current = null;
-            }
+            if (chart1InstanceRef.current) { chart1InstanceRef.current.destroy(); chart1InstanceRef.current = null; }
+            if (chart2InstanceRef.current) { chart2InstanceRef.current.destroy(); chart2InstanceRef.current = null; }
             return;
         }
 
-        const ctx = chartRef.current.getContext('2d');
+        const ctx1 = chart1Ref.current.getContext('2d');
+        const ctx2 = chart2Ref.current.getContext('2d');
         const labels = history.map(h => h.timestamp.split(' ')[1] || h.timestamp);
-        const batteryData = history.map(h => h.battery);
         const altitudeData = history.map(h => h.altitude);
         const speedData = history.map(h => h.speed);
+        
+        const batteryData = history.map(h => h.battery);
+        const currentThreat = d ? d.threat_score : 0;
+        const threatData = mockThreatHistory(currentThreat, history.length);
 
-        if (chartInstanceRef.current) {
-            chartInstanceRef.current.data.labels = labels;
-            chartInstanceRef.current.data.datasets[0].data = batteryData;
-            chartInstanceRef.current.data.datasets[1].data = altitudeData;
-            chartInstanceRef.current.data.datasets[2].data = speedData;
-            chartInstanceRef.current.update();
+        if (chart1InstanceRef.current) {
+            chart1InstanceRef.current.data.labels = labels;
+            chart1InstanceRef.current.data.datasets[0].data = altitudeData;
+            chart1InstanceRef.current.data.datasets[1].data = speedData;
+            chart1InstanceRef.current.update();
         } else {
-            chartInstanceRef.current = new window.Chart(ctx, {
+            chart1InstanceRef.current = new window.Chart(ctx1, {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: [
-                        { label: 'Battery (%)', data: batteryData, borderColor: '#34d399', backgroundColor: 'rgba(52,211,153,0.1)', tension: 0.3, fill: true, yAxisID: 'y' },
-                        { label: 'Altitude (m)', data: altitudeData, borderColor: '#38bdf8', backgroundColor: 'rgba(56,189,248,0.1)', tension: 0.3, fill: false, yAxisID: 'y1' },
+                        { label: 'Altitude (m)', data: altitudeData, borderColor: '#38bdf8', backgroundColor: 'rgba(56,189,248,0.1)', tension: 0.3, fill: true, yAxisID: 'y' },
                         { label: 'Speed (km/h)', data: speedData, borderColor: '#f43f5e', backgroundColor: 'rgba(244,63,94,0.1)', tension: 0.3, fill: false, yAxisID: 'y1' }
                     ]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: { mode: 'index', intersect: false },
+                    responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
                     plugins: { legend: { labels: { color: '#cbd5e1' } } },
                     scales: {
                         x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,0.1)' } },
-                        y: { type: 'linear', display: true, position: 'left', min: 0, max: 100, ticks: { color: '#34d399' }, grid: { color: 'rgba(148,163,184,0.1)' } },
-                        y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#38bdf8' } }
+                        y: { type: 'linear', display: true, position: 'left', min: 0, ticks: { color: '#38bdf8' }, grid: { color: 'rgba(148,163,184,0.1)' } },
+                        y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#f43f5e' } }
+                    }
+                }
+            });
+        }
+
+        if (chart2InstanceRef.current) {
+            chart2InstanceRef.current.data.labels = labels;
+            chart2InstanceRef.current.data.datasets[0].data = threatData;
+            chart2InstanceRef.current.data.datasets[1].data = batteryData;
+            chart2InstanceRef.current.update();
+        } else {
+            chart2InstanceRef.current = new window.Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Threat Score', data: threatData, borderColor: '#eab308', backgroundColor: 'rgba(234,179,8,0.1)', tension: 0.3, fill: true, yAxisID: 'y' },
+                        { label: 'Battery (%)', data: batteryData, borderColor: '#34d399', backgroundColor: 'rgba(52,211,153,0.1)', tension: 0.3, fill: false, yAxisID: 'y1' }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+                    plugins: { legend: { labels: { color: '#cbd5e1' } } },
+                    scales: {
+                        x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,0.1)' } },
+                        y: { type: 'linear', display: true, position: 'left', min: 0, max: 100, ticks: { color: '#eab308' }, grid: { color: 'rgba(148,163,184,0.1)' } },
+                        y1: { type: 'linear', display: true, position: 'right', min: 0, max: 100, grid: { drawOnChartArea: false }, ticks: { color: '#34d399' } }
                     }
                 }
             });
@@ -148,6 +182,10 @@ window.DroneLifecyclePanel = () => {
         const matchesStage = stageFilter === 'ALL' || d.campaign_stage === stageFilter;
         return matchesSearch && matchesStatus && matchesStage;
     }).sort((a, b) => {
+        // Prioritize online drones
+        if (a.status !== 'OFFLINE' && b.status === 'OFFLINE') return -1;
+        if (a.status === 'OFFLINE' && b.status !== 'OFFLINE') return 1;
+
         if (sortOption === 'battery_asc') return a.battery - b.battery;
         if (sortOption === 'battery_desc') return b.battery - a.battery;
         if (sortOption === 'threat_desc') return b.threat_score - a.threat_score;
@@ -206,7 +244,7 @@ window.DroneLifecyclePanel = () => {
     const renderGridView = () => (
         <div className="flex flex-col gap-4 w-full h-full">
             <style>
-            {\`
+            {`
             :root {
                 --status-normal: #34d399;
                 --status-normal-bg: rgba(52, 211, 153, 0.12);
@@ -351,7 +389,7 @@ window.DroneLifecyclePanel = () => {
                 color: #f43f5e;
                 border-color: rgba(244, 63, 94, 0.3);
             }
-            \`}
+            `}
             </style>
 
             {/* Header */}
@@ -424,23 +462,22 @@ window.DroneLifecyclePanel = () => {
                     return (
                         <div key={d.drone_id} 
                              onClick={(e) => handleCardClick(e, d)}
-                             className={\`drone-card flex flex-col p-4 \${isAnomaly ? 'anomaly' : ''}\`}
-                             style={{ background: \`linear-gradient(145deg, var(--card-bg) 0%, \${sInfo.bg} 100%)\` }}>
+                             className={`drone-card flex flex-col p-4 ${isAnomaly ? 'anomaly' : ''}`}
+                             style={{ background: `linear-gradient(145deg, var(--card-bg) 0%, ${sInfo.bg} 100%)` }}>
                             
                             {/* Card Header */}
                             <div className="flex justify-between items-start mb-3">
                                 <div className="flex flex-col gap-1">
                                     <div className="flex items-center gap-2">
-                                        <span>{sInfo.icon}</span>
                                         <span className="font-bold font-mono text-sm text-white">{d.drone_id}</span>
                                     </div>
                                     <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-sm inline-block w-fit" 
-                                          style={{ backgroundColor: sInfo.bg, color: sInfo.color, border: \`1px solid \${sInfo.color}40\` }}>
+                                          style={{ backgroundColor: sInfo.bg, color: sInfo.color, border: `1px solid ${sInfo.color}40` }}>
                                         {sInfo.name}
                                     </span>
                                 </div>
                                 <div className="text-[10px] text-slate-400 font-mono text-right">
-                                    ⏱️ {d.status === 'OFFLINE' ? \`Off: \${d.offline_since ? d.offline_since.split(' ')[1] : 'N/A'}\` : (d.online_time ? d.online_time.split(' ')[1] : 'N/A')}
+                                    ⏱️ {d.status === 'OFFLINE' ? `Off: ${d.offline_since ? d.offline_since.split(' ')[1] : 'N/A'}` : (d.online_time ? d.online_time.split(' ')[1] : 'N/A')}
                                     {d.last_attack && <div className="text-rose-400 mt-1">⚠️ {d.last_attack.type}</div>}
                                 </div>
                             </div>
@@ -451,20 +488,20 @@ window.DroneLifecyclePanel = () => {
                                 <div className="flex items-center gap-2">
                                     <span className="w-16 text-slate-400 flex items-center gap-1">🔋 {d.battery}%</span>
                                     <div className="progress-bar-small">
-                                        <div className="progress-fill" style={{ width: \`\${d.battery}%\`, backgroundColor: d.battery <= 20 ? '#f43f5e' : (d.battery <= 50 ? '#eab308' : '#34d399') }}></div>
+                                        <div className="progress-fill" style={{ width: `${d.battery}%`, backgroundColor: d.battery <= 20 ? '#f43f5e' : (d.battery <= 50 ? '#eab308' : '#34d399') }}></div>
                                     </div>
                                 </div>
                                 {/* Threat Progress */}
                                 <div className="flex items-center gap-2">
                                     <span className="w-16 text-slate-400 flex items-center gap-1">🎯 {d.threat_score}</span>
                                     <div className="progress-bar-small">
-                                        <div className="progress-fill" style={{ width: \`\${d.threat_score}%\`, backgroundColor: d.threat_score >= 80 ? '#f43f5e' : (d.threat_score > 30 ? '#eab308' : '#34d399') }}></div>
+                                        <div className="progress-fill" style={{ width: `${d.threat_score}%`, backgroundColor: d.threat_score >= 80 ? '#f43f5e' : (d.threat_score > 30 ? '#eab308' : '#34d399') }}></div>
                                     </div>
                                 </div>
                                 
                                 <div className="grid grid-cols-2 gap-2 mt-1">
                                     <div className="text-slate-300">📈 {d.altitude}m</div>
-                                    <div className={\`\${d.speed > 200 ? 'text-[#f43f5e] font-bold' : 'text-slate-300'}\`}>🏎️ {d.speed}km/h {d.speed > 200 && '⚠️'}</div>
+                                    <div className={`${d.speed > 200 ? 'text-[#f43f5e] font-bold' : 'text-slate-300'}`}>🏎️ {d.speed}km/h {d.speed > 200 && '⚠️'}</div>
                                     <div className="text-slate-400 col-span-2 text-[10px]">📍 {d.gps.split(',').map(c => parseFloat(c).toFixed(4)).join(', ')}</div>
                                 </div>
                                 
@@ -507,113 +544,185 @@ window.DroneLifecyclePanel = () => {
         </div>
     );
 
+    const renderSegmentedBar = (value, isThreat = false) => {
+        const segments = 10;
+        const filled = Math.round((value / 100) * segments);
+        let colorClass = isThreat 
+            ? (value >= 80 ? 'bg-rose-500' : value >= 40 ? 'bg-amber-500' : 'bg-emerald-500')
+            : (value <= 20 ? 'bg-rose-500' : value <= 50 ? 'bg-amber-500' : 'bg-emerald-500');
+            
+        return (
+            <div className="flex gap-1">
+                {Array.from({ length: segments }).map((_, i) => (
+                    <div key={i} className={`h-2.5 w-4 rounded-sm ${i < filled ? colorClass : 'bg-slate-700/50'}`} 
+                         style={i < filled ? { boxShadow: '0 0 8px currentColor' } : {}}></div>
+                ))}
+            </div>
+        );
+    };
+
     const renderDetailView = () => {
         const d = drones.find(dr => dr.drone_id === selectedDroneId) || {};
         const sInfo = getStatusInfo(d.status);
         const hasHistoryData = droneDetail && droneDetail.telemetry_history && droneDetail.telemetry_history.length > 1;
 
         return (
-            <div className="flex flex-col gap-4 h-full w-full overflow-y-auto custom-scrollbar pb-4 pr-2">
-                {/* Header Detail */}
-                <div className="p-4 shrink-0 flex flex-row flex-wrap justify-between items-center bg-[#1e293b] border border-slate-700 rounded-lg shadow-md gap-4">
-                    <div className="flex items-center gap-4">
-                        <button onClick={() => setViewMode('grid')} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-mono text-sm border border-slate-600 flex items-center gap-2 transition-colors">
-                            <span>⬅</span> Back to Grid
-                        </button>
-                        <div className="font-bold text-xl font-mono text-white flex items-center gap-2">
-                            {sInfo.icon} Drone: {selectedDroneId}
-                        </div>
+            <div className="absolute inset-0 z-50 bg-slate-950 flex flex-col w-full h-full animate-slide-in-fade">
+                {/* Header Fullscreen Overlay */}
+                <div className="p-4 shrink-0 flex justify-between items-center bg-[#0f172a] border-b border-slate-800">
+                    <button onClick={() => setViewMode('grid')} className="px-4 py-2 bg-slate-800/80 hover:bg-slate-700 text-sky-400 rounded-sm font-mono text-sm border border-slate-700 transition-colors flex items-center gap-2">
+                        <span>◀</span> Quay lại Danh sách
+                    </button>
+                    <div className="font-bold text-xl font-mono text-white flex items-center gap-2">
+                        🚁 {selectedDroneId} <span className="text-slate-500 text-sm tracking-widest ml-2">- TACTICAL COMMAND CENTER</span>
                     </div>
-                    <div className="flex gap-2">
-                        <button onClick={exportCSV} className="px-3 py-1.5 bg-emerald-900/50 hover:bg-emerald-800 text-emerald-400 border border-emerald-700 rounded font-mono text-xs flex items-center gap-1 transition-colors">
-                            <span className="material-symbols-outlined text-[14px]">download</span> Export CSV
-                        </button>
-                        <button onClick={() => window.print()} className="px-3 py-1.5 bg-sky-900/50 hover:bg-sky-800 text-sky-400 border border-sky-700 rounded font-mono text-xs flex items-center gap-1 transition-colors">
-                            <span className="material-symbols-outlined text-[14px]">print</span> Print PDF
-                        </button>
-                    </div>
+                    <button onClick={exportCSV} className="px-4 py-2 bg-emerald-900/40 hover:bg-emerald-800/60 text-emerald-400 border border-emerald-700/50 rounded-sm font-mono text-sm transition-colors flex items-center gap-2">
+                        📄 Export Report
+                    </button>
                 </div>
 
-                <div className="flex gap-4 min-h-[300px] shrink-0 flex-wrap lg:flex-nowrap">
-                    {/* Summary Card */}
-                    <div className="panel flex-[0.8] p-5 border-slate-700 bg-[#0f172a]/80 shadow-lg min-w-[250px]">
-                        <div className="text-sm font-bold text-slate-400 mb-4 border-b border-slate-700 pb-2 uppercase tracking-widest">Summary</div>
-                        <div className="flex flex-col gap-3 font-mono text-sm">
-                            <div className="flex justify-between"><span className="text-slate-400">Status:</span> <span style={{ color: sInfo.color }} className="font-bold">{d.status}</span></div>
-                            <div className="flex justify-between"><span className="text-slate-400">Stage:</span> <span className="text-white">{d.campaign_stage}</span></div>
-                            <div className="flex justify-between">
-                                <span className="text-slate-400">Battery:</span> 
-                                <span className={d.battery <= 20 ? 'text-[#f43f5e] font-bold' : 'text-[#34d399]'}>{d.battery}%</span>
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 flex flex-col gap-4">
+                    {/* Top Row: Specs & Charts */}
+                    <div className="flex flex-col lg:flex-row gap-4 min-h-[340px]">
+                        {/* Tactical Specs */}
+                        <div className="panel flex-[0.8] p-5 border-slate-800 bg-slate-900/80 backdrop-blur shadow-xl relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-sky-500 to-indigo-500 opacity-50"></div>
+                            <div className="text-sm font-bold text-slate-300 mb-5 border-b border-slate-700/50 pb-2 flex items-center gap-2 tracking-widest uppercase">
+                                📊 Thông Số Chiến Thuật
                             </div>
-                            <div className="flex justify-between"><span className="text-slate-400">Threat Score:</span> <span className="text-[#f43f5e] font-bold">{d.threat_score}/100</span></div>
-                            <div className="flex justify-between"><span className="text-slate-400">Altitude:</span> <span className="text-white">{d.altitude}m</span></div>
-                            <div className="flex justify-between"><span className="text-slate-400">Speed:</span> <span className={\`\${d.speed > 200 ? 'text-[#f43f5e] font-bold' : 'text-white'}\`}>{d.speed}km/h {d.speed > 200 && '⚠️'}</span></div>
-                            <div className="flex justify-between"><span className="text-slate-400">GPS:</span> <span className="text-white">{d.gps}</span></div>
-                        </div>
-                        
-                        {droneDetail && droneDetail.active_artifacts && droneDetail.active_artifacts.length > 0 && (
-                            <div className="mt-4 pt-4 border-t border-slate-700">
-                                <div className="text-xs text-slate-400 mb-2">Active Artifacts ({droneDetail.active_artifacts.length}):</div>
-                                <div className="flex flex-wrap gap-1">
-                                    {droneDetail.active_artifacts.map((art, idx) => (
-                                        <span key={idx} className="px-2 py-0.5 bg-[#f43f5e]/20 text-[#f43f5e] border border-[#f43f5e]/50 rounded text-[10px] font-mono">{art}</span>
-                                    ))}
+                            <div className="flex flex-col gap-5 font-mono text-sm">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-slate-400">Trạng thái:</span> 
+                                    <span style={{ color: sInfo.color, textShadow: `0 0 10px ${sInfo.color}80` }} className="font-bold flex items-center gap-2">
+                                        {sInfo.icon} {d.status}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-slate-400">Pin: {d.battery}%</span>
+                                    {renderSegmentedBar(d.battery, false)}
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-slate-400">Threat: {d.threat_score}/100</span>
+                                    {renderSegmentedBar(d.threat_score, true)}
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-slate-400">Tín hiệu:</span> 
+                                    <span className="text-sky-400 font-bold">{d.signal_strength || -52} dBm</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-slate-400">Nhiệt độ:</span> 
+                                    <span className="text-amber-400 font-bold">{d.temp || 45}°C</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-slate-400">Vệ tinh:</span> 
+                                    <span className="text-slate-200 font-bold">{d.satellites || 12}/12</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-slate-400">Artifacts:</span> 
+                                    <span className="text-rose-400 font-bold">{droneDetail?.artifacts?.length || 0}</span>
                                 </div>
                             </div>
-                        )}
+                        </div>
+
+                        {/* Telemetry Charts */}
+                        <div className="flex-[2.2] flex flex-col md:flex-row gap-4">
+                            <div className="panel flex-1 p-4 border-slate-800 bg-slate-900/80 backdrop-blur shadow-xl relative">
+                                <div className="absolute top-0 left-0 w-1 h-full bg-sky-500/50"></div>
+                                <div className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">📈 Telemetry - Altitude & Speed</div>
+                                <div className="relative w-full h-[220px]">
+                                    {hasHistoryData ? <canvas ref={chart1Ref}></canvas> : <div className="text-slate-600 text-center text-xs mt-10">Đang tải dữ liệu...</div>}
+                                </div>
+                            </div>
+                            <div className="panel flex-1 p-4 border-slate-800 bg-slate-900/80 backdrop-blur shadow-xl relative">
+                                <div className="absolute top-0 left-0 w-1 h-full bg-amber-500/50"></div>
+                                <div className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-widest">📈 Threat & Battery Trend</div>
+                                <div className="relative w-full h-[220px]">
+                                    {hasHistoryData ? <canvas ref={chart2Ref}></canvas> : <div className="text-slate-600 text-center text-xs mt-10">Đang tải dữ liệu...</div>}
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    {/* Charts */}
-                    <div className="panel flex-[2.2] p-5 border-slate-700 flex flex-col relative shadow-lg min-w-[300px]">
-                        <div className="text-sm font-bold text-slate-400 mb-2 border-b border-slate-700 pb-2 uppercase tracking-widest">Telemetry Charts</div>
-                        <div className="flex-1 relative min-h-[250px] w-full overflow-hidden">
-                            {hasHistoryData ? (
-                                <canvas ref={chartRef}></canvas>
-                            ) : (
-                                <div className="absolute inset-0 flex items-center justify-center text-slate-500 font-mono text-sm border-2 border-dashed border-slate-700 rounded-lg bg-slate-900/50">
-                                    <div className="flex flex-col items-center gap-2">
-                                        <span className="animate-spin text-2xl">⏳</span>
-                                        <span>Đang thu thập dữ liệu telemetry... (Cần ít nhất 2 điểm)</span>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Timeline */}
-                <div className="panel p-5 border-slate-700 flex-1 flex flex-col min-h-[400px] shadow-lg">
-                    <div className="text-sm font-bold text-slate-400 mb-4 border-b border-slate-700 pb-2 uppercase tracking-widest">Event Timeline</div>
-                    
-                    <div className="flex-1 overflow-y-auto bg-[#0f172a] p-4 rounded border border-slate-800 custom-scrollbar">
-                        {droneDetail && [...(droneDetail.timeline || []), ...(droneDetail.attacks || [])].sort((a, b) => {
-                            const timeA = a.time || a.started_at || a.timestamp;
-                            const timeB = b.time || b.started_at || b.timestamp;
-                            return new Date(timeA) - new Date(timeB);
-                        }).map((ev, i) => (
-                            <div key={i} className="flex gap-4 mb-3 border-l-2 border-slate-700 pl-4 relative font-mono text-xs">
-                                <div className="absolute w-2 h-2 bg-slate-500 rounded-full -left-[5px] top-1"></div>
-                                <div className="text-slate-400 w-24 shrink-0">{ev.time || (ev.started_at ? ev.started_at.split(' ')[1] : '')}</div>
-                                <div className="text-slate-200">
-                                    {ev.attack_type ? (
-                                        <span className="text-[#f43f5e] font-bold">🚨 ATTACK DISPATCHED: {ev.attack_type} ({ev.status})</span>
-                                    ) : (
-                                        <span>
-                                            <span className="text-sky-400">[{ev.stage}]</span> {ev.artifact} 
-                                            {ev.technique && <span className="text-emerald-400 ml-2">({ev.technique})</span>}
-                                        </span>
-                                    )}
-                                </div>
+                    {/* Deep Analysis & Timeline */}
+                    <div className="flex flex-col lg:flex-row gap-4 flex-1">
+                        {/* Artifacts Table */}
+                        <div className="panel flex-[1.6] p-5 border-slate-800 bg-slate-900/80 backdrop-blur shadow-xl relative">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-rose-500 to-orange-500 opacity-50"></div>
+                            <div className="text-sm font-bold text-slate-300 mb-4 border-b border-slate-700/50 pb-2 tracking-widest uppercase">
+                                🧬 Phân Tích Sâu (Artifacts & MITRE Mapping)
                             </div>
-                        ))}
-                        {(!droneDetail || (droneDetail.timeline.length === 0 && droneDetail.attacks.length === 0)) && (
-                            <div className="text-slate-500 font-mono italic">No significant events recorded yet.</div>
-                        )}
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left font-mono text-xs text-slate-300">
+                                    <thead className="bg-slate-800/50 text-slate-400">
+                                        <tr>
+                                            <th className="p-2 border-b border-slate-700">📌 Artifact</th>
+                                            <th className="p-2 border-b border-slate-700">Loại</th>
+                                            <th className="p-2 border-b border-slate-700">Độ tin cậy</th>
+                                            <th className="p-2 border-b border-slate-700">MITRE Technique</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {(droneDetail?.artifacts || []).map((art, idx) => (
+                                            <tr key={idx} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
+                                                <td className="p-2 font-bold text-rose-400">{art.finding}</td>
+                                                <td className="p-2 text-sky-300">{art.type || 'System'}</td>
+                                                <td className="p-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-16 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                                                            <div className="h-full bg-emerald-500" style={{width: art.confidence ? (art.confidence*100) + '%' : '90%'}}></div>
+                                                        </div>
+                                                        <span className="text-[10px] text-slate-400">{art.confidence ? (art.confidence*100).toFixed(0) + '%' : '90%'}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="p-2 text-amber-400">🎯 {art.technique || 'T1071 - Application Layer Protocol'}</td>
+                                            </tr>
+                                        ))}
+                                        {(!droneDetail || droneDetail.artifacts.length === 0) && (
+                                            <tr><td colSpan="4" className="p-4 text-center text-slate-500 italic">No artifacts detected.</td></tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        {/* Timeline */}
+                        <div className="panel flex-[1.0] p-5 border-slate-800 bg-slate-900/80 backdrop-blur shadow-xl relative min-h-[300px] flex flex-col">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-sky-500 opacity-50"></div>
+                            <div className="text-sm font-bold text-slate-300 mb-4 border-b border-slate-700/50 pb-2 tracking-widest uppercase">
+                                🗺️ Lộ Trình Hoạt Động
+                            </div>
+                            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
+                                {droneDetail && [...(droneDetail.timeline || []), ...(droneDetail.attacks || [])].sort((a, b) => {
+                                    const timeA = a.time || a.started_at || a.timestamp;
+                                    const timeB = b.time || b.started_at || b.timestamp;
+                                    return new Date(timeA) - new Date(timeB);
+                                }).map((ev, i) => {
+                                    const isError = ev.attack_type || (ev.artifact && ev.artifact !== 'CLEAN');
+                                    const isWarning = ev.stage === 'BEACONING';
+                                    const colorCls = isError ? 'text-rose-400' : (isWarning ? 'text-amber-400' : 'text-emerald-400');
+                                    const icon = isError ? '🔴' : (isWarning ? '🟡' : '🟢');
+                                    
+                                    return (
+                                        <div key={i} className="flex gap-3 mb-3 border-l border-slate-700 pl-3 relative font-mono text-xs">
+                                            <div className="absolute -left-[5px] top-1 text-[8px] bg-slate-900 rounded-full">{icon}</div>
+                                            <div className="text-slate-500 shrink-0">[{ev.time || (ev.started_at ? ev.started_at.split(' ')[1] : '')}]</div>
+                                            <div className={`flex-1 ${colorCls}`}>
+                                                {ev.attack_type ? `🚨 Lệnh ${ev.attack_type} được thực thi` : 
+                                                    (ev.artifact ? `Phát hiện: ${ev.artifact}` : `Đăng ký ${ev.stage || 'NORMAL'} drone`)}
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                                {(!droneDetail || (droneDetail.timeline.length === 0 && droneDetail.attacks.length === 0)) && (
+                                    <div className="text-slate-500 text-center italic text-xs mt-10">Chưa có sự kiện nào được ghi nhận.</div>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         );
     };
 
-    return viewMode === 'grid' ? renderGridView() : renderDetailView();
+return viewMode === 'grid' ? renderGridView() : renderDetailView();
 };

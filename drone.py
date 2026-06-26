@@ -2292,7 +2292,7 @@ EXAMPLES:
                 elif endpoint == "re_findings":
                     drone_id_param = query_params.get("drone_id", [None])[0]
                     if drone_id_param:
-                        cursor.execute("SELECT artifact_address as offset, finding as artifact, artifact_type, source as re_source, validation_level, behavior, mapping_reason as reason, enterprise_tech_id as selected_technique, rejected_candidates, confidence, confidence_breakdown, campaign_stage FROM re_findings WHERE drone_id=? ORDER BY id DESC LIMIT 50", (drone_id_param,))
+                        cursor.execute("SELECT artifact_address as offset, finding as artifact, artifact_type, source as re_source, validation_level, behavior, mapping_reason as reason, enterprise_tech_id as selected_technique, rejected_candidates, confidence, confidence_breakdown, campaign_stage FROM re_findings WHERE drone_id=? OR drone_id='GLOBAL' OR drone_id='ALL_DRONES' ORDER BY id DESC LIMIT 50", (drone_id_param,))
                     else:
                         cursor.execute("SELECT artifact_address as offset, finding as artifact, artifact_type, source as re_source, validation_level, behavior, mapping_reason as reason, enterprise_tech_id as selected_technique, rejected_candidates, confidence, confidence_breakdown, campaign_stage FROM re_findings WHERE drone_id != 'GLOBAL' ORDER BY id DESC LIMIT 50")
                     findings = []
@@ -2364,7 +2364,7 @@ EXAMPLES:
                     
                     drone_id_param = query_params.get("drone_id", [None])[0]
                     if drone_id_param:
-                        cursor.execute("SELECT drone_id, name, technique_id, ics_tech_id FROM attack_mapping WHERE drone_id=? ORDER BY id DESC LIMIT 10", (drone_id_param,))
+                        cursor.execute("SELECT drone_id, name, technique_id, ics_tech_id FROM attack_mapping WHERE drone_id=? OR drone_id='ALL_DRONES' OR drone_id='GLOBAL' ORDER BY id DESC LIMIT 10", (drone_id_param,))
                     else:
                         cursor.execute("SELECT drone_id, name, technique_id, ics_tech_id FROM attack_mapping ORDER BY id DESC LIMIT 10")
                     mappings = cursor.fetchall()
@@ -2404,7 +2404,7 @@ EXAMPLES:
                 elif endpoint == "evidence_chain":
                     drone_id_param = query_params.get("drone_id", [None])[0]
                     if drone_id_param:
-                        cursor.execute("SELECT id, finding as artifact, behavior, mapping_reason as rule, enterprise_tech_id as technique, confidence, ics_tech_id as ics_translation, source as operational_effect FROM re_findings WHERE drone_id=? ORDER BY id DESC LIMIT 20", (drone_id_param,))
+                        cursor.execute("SELECT id, finding as artifact, behavior, mapping_reason as rule, enterprise_tech_id as technique, confidence, ics_tech_id as ics_translation, source as operational_effect FROM re_findings WHERE drone_id=? OR drone_id='GLOBAL' OR drone_id='ALL_DRONES' ORDER BY id DESC LIMIT 20", (drone_id_param,))
                     else:
                         cursor.execute("SELECT id, finding as artifact, behavior, mapping_reason as rule, enterprise_tech_id as technique, confidence, ics_tech_id as ics_translation, source as operational_effect FROM re_findings ORDER BY id DESC LIMIT 20")
                     rows = cursor.fetchall()
@@ -2744,8 +2744,8 @@ EXAMPLES:
                     cursor.execute("SELECT attack_type, status, started_at FROM active_attacks WHERE drone_id=? ORDER BY started_at ASC", (d_id,))
                     attacks = [dict(row) for row in cursor.fetchall()]
                     
-                    # Fix #4: active_artifacts
-                    cursor.execute("SELECT finding, timestamp FROM re_findings WHERE drone_id=? ORDER BY id ASC", (d_id,))
+                    # Fix #4: active_artifacts with rich data for Deep Analysis
+                    cursor.execute("SELECT finding, artifact_type as type, confidence, enterprise_tech_id as technique, timestamp FROM re_findings WHERE drone_id=? OR drone_id='GLOBAL' ORDER BY id ASC", (d_id,))
                     artifacts = [dict(row) for row in cursor.fetchall()]
                     active_artifacts = list(set([a["finding"] for a in artifacts]))
                     
