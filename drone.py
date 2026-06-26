@@ -2820,7 +2820,7 @@ EXAMPLES:
                     if not d_id:
                         self._send_json({"error": "Missing drone_id"}, 400)
                         return
-                    cursor.execute("SELECT enterprise_tech_id, confidence, name, reason FROM attack_mapping WHERE (drone_id=? OR drone_id='GLOBAL') AND enterprise_tech_id IS NOT NULL ORDER BY id DESC", (d_id,))
+                    cursor.execute("SELECT enterprise_tech_id, confidence, name, reason FROM attack_mapping WHERE drone_id=? AND enterprise_tech_id IS NOT NULL ORDER BY id DESC", (d_id,))
                     
                     techniques_dict = {}
                     for row in cursor.fetchall():
