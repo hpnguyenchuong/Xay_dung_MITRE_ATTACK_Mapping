@@ -2,6 +2,7 @@ window.PortScanDashboardPanel = () => {
     const { useState, useEffect } = React;
     const [ports, setPorts] = useState([]);
     const [activeDronesList, setActiveDronesList] = useState([]);
+    const [showHistory, setShowHistory] = useState(false);
     
     useEffect(() => {
         const fetchPorts = () => {
@@ -89,19 +90,19 @@ window.PortScanDashboardPanel = () => {
                 </div>
             </div>
             
-            <div className="flex-1 panel overflow-hidden flex flex-col">
-                <div className="panel-header border-b border-slate-700/50 pb-2">
-                    <h2>LIVE PORT SCAN RESULTS</h2>
-                </div>
-                <div className="overflow-y-auto custom-scrollbar p-4 flex flex-col gap-4 max-h-[50%] border-b border-slate-700/50">
-                    {renderTable(activeDronesMap)}
+            <div className="flex-1 panel overflow-hidden flex flex-col relative">
+                <div className="panel-header border-b border-slate-700/50 pb-2 flex justify-between items-center pr-4">
+                    <h2>{showHistory ? "HISTORICAL SCANS (DISCONNECTED DRONES)" : "LIVE PORT SCAN RESULTS"}</h2>
+                    <button 
+                        onClick={() => setShowHistory(!showHistory)}
+                        className={`px-3 py-1 text-xs font-bold rounded border transition-colors ${showHistory ? 'bg-slate-700 text-white border-slate-500 hover:bg-slate-600' : 'bg-transparent text-slate-400 border-slate-700 hover:bg-slate-800'}`}
+                    >
+                        {showHistory ? "VIEW LIVE SCANS" : "VIEW HISTORY"}
+                    </button>
                 </div>
                 
-                <div className="panel-header pt-2 pb-2">
-                    <h2>HISTORICAL SCANS (DISCONNECTED DRONES)</h2>
-                </div>
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 flex flex-col gap-4 bg-slate-900/30">
-                    {renderTable(historicalDronesMap)}
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 flex flex-col gap-4">
+                    {showHistory ? renderTable(historicalDronesMap) : renderTable(activeDronesMap)}
                 </div>
             </div>
         </div>
