@@ -2357,7 +2357,7 @@ EXAMPLES:
                 elif endpoint == "re_findings":
                     drone_id_param = query_params.get("drone_id", [None])[0]
                     if drone_id_param:
-                        cursor.execute("SELECT artifact_address as offset, finding as artifact, artifact_type, source as re_source, validation_level, behavior, mapping_reason as reason, enterprise_tech_id as selected_technique, rejected_candidates, confidence, confidence_breakdown, campaign_stage FROM re_findings WHERE drone_id=? OR drone_id='GLOBAL' OR drone_id='ALL_DRONES' ORDER BY id DESC LIMIT 50", (drone_id_param,))
+                        cursor.execute("SELECT artifact_address as offset, finding as artifact, artifact_type, source as re_source, validation_level, behavior, mapping_reason as reason, enterprise_tech_id as selected_technique, rejected_candidates, confidence, confidence_breakdown, campaign_stage FROM re_findings WHERE drone_id=? ORDER BY id DESC LIMIT 50", (drone_id_param,))
                     else:
                         cursor.execute("SELECT artifact_address as offset, finding as artifact, artifact_type, source as re_source, validation_level, behavior, mapping_reason as reason, enterprise_tech_id as selected_technique, rejected_candidates, confidence, confidence_breakdown, campaign_stage FROM re_findings ORDER BY id DESC LIMIT 50")
                     findings = []
@@ -2426,12 +2426,15 @@ EXAMPLES:
                 elif endpoint == "attack_graph":
                     graph_nodes = []
                     graph_edges = []
+                    with clients_lock:
+                        active_drone_ids = list(clients.keys())
                     
-                    drone_id_param = query_params.get("drone_id", [None])[0]
-                    if drone_id_param:
-                        cursor.execute("SELECT drone_id, name, technique_id, ics_tech_id FROM attack_mapping WHERE drone_id=? OR drone_id='ALL_DRONES' OR drone_id='GLOBAL' ORDER BY id DESC LIMIT 10", (drone_id_param,))
+                    if active_drone_ids:
+                        placeholders = ','.join(['?'] * len(active_drone_ids))
+                        # Only show global attack graph for CURRENTLY active drones to prevent ghost drones from previous sessions
+                        cursor.execute(f"SELECT drone_id, name, technique_id, ics_tech_id FROM attack_mapping WHERE drone_id IN ({placeholders}) ORDER BY id DESC LIMIT 50", active_drone_ids)
                     else:
-                        cursor.execute("SELECT drone_id, name, technique_id, ics_tech_id FROM attack_mapping ORDER BY id DESC LIMIT 10")
+                        cursor.execute("SELECT drone_id, name, technique_id, ics_tech_id FROM attack_mapping WHERE 1=0")
                     mappings = cursor.fetchall()
                     
                     for i, row in enumerate(mappings):
@@ -2469,7 +2472,7 @@ EXAMPLES:
                 elif endpoint == "evidence_chain":
                     drone_id_param = query_params.get("drone_id", [None])[0]
                     if drone_id_param:
-                        cursor.execute("SELECT id, finding as artifact, behavior, mapping_reason as rule, enterprise_tech_id as technique, confidence, ics_tech_id as ics_translation, source as operational_effect FROM re_findings WHERE drone_id=? OR drone_id='GLOBAL' OR drone_id='ALL_DRONES' ORDER BY id DESC LIMIT 20", (drone_id_param,))
+                        cursor.execute("SELECT id, finding as artifact, behavior, mapping_reason as rule, enterprise_tech_id as technique, confidence, ics_tech_id as ics_translation, source as operational_effect FROM re_findings WHERE drone_id=? ORDER BY id DESC LIMIT 20", (drone_id_param,))
                     else:
                         cursor.execute("SELECT id, finding as artifact, behavior, mapping_reason as rule, enterprise_tech_id as technique, confidence, ics_tech_id as ics_translation, source as operational_effect FROM re_findings ORDER BY id DESC LIMIT 20")
                     rows = cursor.fetchall()
