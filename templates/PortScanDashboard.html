@@ -90,8 +90,8 @@ window.PortScanDashboardPanel = () => {
                 </div>
             </div>
             
-            <div className="flex-1 panel overflow-hidden flex flex-col relative">
-                <div className="panel-header border-b border-slate-700/50 pb-2 flex justify-between items-center pr-4">
+            <div className="flex-1 min-h-0 panel overflow-hidden flex flex-col relative">
+                <div className="panel-header shrink-0 border-b border-slate-700/50 pb-2 flex justify-between items-center pr-4">
                     <h2>{showHistory ? "HISTORICAL SCANS (DISCONNECTED DRONES)" : "LIVE PORT SCAN RESULTS"}</h2>
                     <button 
                         onClick={() => setShowHistory(!showHistory)}
