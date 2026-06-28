@@ -2358,10 +2358,13 @@ EXAMPLES:
                     drone_id_param = query_params.get("drone_id", [None])[0]
                     if drone_id_param:
                         cursor.execute("SELECT artifact_address as offset, finding as artifact, artifact_type, source as re_source, validation_level, behavior, mapping_reason as reason, enterprise_tech_id as selected_technique, rejected_candidates, confidence, confidence_breakdown, campaign_stage FROM re_findings WHERE drone_id=? ORDER BY id DESC LIMIT 50", (drone_id_param,))
+                        rows = cursor.fetchall()
+                        if not rows: # Fallback to GLOBAL if no specific findings
+                            cursor.execute("SELECT artifact_address as offset, finding as artifact, artifact_type, source as re_source, validation_level, behavior, mapping_reason as reason, enterprise_tech_id as selected_technique, rejected_candidates, confidence, confidence_breakdown, campaign_stage FROM re_findings WHERE drone_id='GLOBAL' ORDER BY id DESC LIMIT 50")
+                            rows = cursor.fetchall()
                     else:
                         cursor.execute("SELECT artifact_address as offset, finding as artifact, artifact_type, source as re_source, validation_level, behavior, mapping_reason as reason, enterprise_tech_id as selected_technique, rejected_candidates, confidence, confidence_breakdown, campaign_stage FROM re_findings ORDER BY id DESC LIMIT 50")
-                    
-                    rows = cursor.fetchall()
+                        rows = cursor.fetchall()
                     rows.reverse() # Reverse to show oldest to newest from top to bottom
                     
                     findings = []
@@ -2478,9 +2481,14 @@ EXAMPLES:
                     drone_id_param = query_params.get("drone_id", [None])[0]
                     if drone_id_param:
                         cursor.execute("SELECT id, finding as artifact, behavior, mapping_reason as rule, enterprise_tech_id as technique, confidence, ics_tech_id as ics_translation, source as operational_effect FROM re_findings WHERE drone_id=? ORDER BY id DESC LIMIT 20", (drone_id_param,))
+                        rows = cursor.fetchall()
+                        if not rows: # Fallback to GLOBAL if no specific findings
+                            cursor.execute("SELECT id, finding as artifact, behavior, mapping_reason as rule, enterprise_tech_id as technique, confidence, ics_tech_id as ics_translation, source as operational_effect FROM re_findings WHERE drone_id='GLOBAL' ORDER BY id DESC LIMIT 20")
+                            rows = cursor.fetchall()
                     else:
                         cursor.execute("SELECT id, finding as artifact, behavior, mapping_reason as rule, enterprise_tech_id as technique, confidence, ics_tech_id as ics_translation, source as operational_effect FROM re_findings ORDER BY id DESC LIMIT 20")
-                    rows = cursor.fetchall()
+                        rows = cursor.fetchall()
+                    
                     rows.reverse()
                     chain = []
                     for r in rows:
@@ -2567,9 +2575,13 @@ EXAMPLES:
                     drone_id_param = query_params.get("drone_id", [None])[0]
                     if drone_id_param:
                         cursor.execute("SELECT finding as artifact, evidence, mapping_reason as reason, ics_tech_id as technique, confidence, source, behavior FROM re_findings WHERE evidence IS NOT NULL AND confidence > 0 AND drone_id=? ORDER BY confidence DESC LIMIT 50", (drone_id_param,))
+                        correlations = [dict(row) for row in cursor.fetchall()]
+                        if not correlations: # Fallback to GLOBAL if no specific findings
+                            cursor.execute("SELECT finding as artifact, evidence, mapping_reason as reason, ics_tech_id as technique, confidence, source, behavior FROM re_findings WHERE evidence IS NOT NULL AND confidence > 0 AND drone_id='GLOBAL' ORDER BY confidence DESC LIMIT 50")
+                            correlations = [dict(row) for row in cursor.fetchall()]
                     else:
                         cursor.execute("SELECT finding as artifact, evidence, mapping_reason as reason, ics_tech_id as technique, confidence, source, behavior FROM re_findings WHERE evidence IS NOT NULL AND confidence > 0 ORDER BY confidence DESC LIMIT 50")
-                    correlations = [dict(row) for row in cursor.fetchall()]
+                        correlations = [dict(row) for row in cursor.fetchall()]
                     self._send_json({"correlations": correlations})
                     
                 elif endpoint == "export_navigator":
