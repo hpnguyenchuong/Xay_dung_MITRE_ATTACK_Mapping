@@ -1,33 +1,24 @@
-# Python
+# Byte-compiled / optimized / DLL files
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+*$py.class
 
-# Database
-*.db
-*.sqlite
+# Data and logs generated during runtime
 logs/
-
-# Reports & Exports
 reports/
 navigator_exports/
-*.csv
-*.json
-*.html
+*.db
+*.sqlite3
 
-# Scratch scripts (local only)
-scratch/
+# Environment
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
 
-# OS
-.DS_Store
-Thumbs.db
-
-# IDE
+# User-specific
 .vscode/
 .idea/
-
-# Logs
-*.log
-client_log.txt
-
-!datasets/re_findings.json

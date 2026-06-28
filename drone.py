@@ -2477,7 +2477,7 @@ EXAMPLES:
                     for r in rows:
                         chain.append({
                             "raw_packet": f"Packet #{r['id']}",
-                            "decoded_json": f'{{"cmd": "{r["artifact"]}"}}' if "DF_" not in r["artifact"] else f'{{"mutex": "{r["artifact"]}"}}',
+                            "decoded_json": f'{{"cmd": "{r["artifact"]}"}}' if "DF_" not in str(r["artifact"] or "") else f'{{"mutex": "{r["artifact"]}"}}',
                             "artifact": r["artifact"],
                             "rule_trigger": r["rule"],
                             "technique": r["technique"],

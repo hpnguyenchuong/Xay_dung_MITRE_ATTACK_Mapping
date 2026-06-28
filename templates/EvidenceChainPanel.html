@@ -14,7 +14,7 @@ window.EvidenceChainPanel = ({ selectedDrone }) => {
  console.error(err);
  setLoading(false);
  });
- }, []);
+ }, [selectedDrone]);
 
  if (loading) {
  return <div className="panel p-4 animate-pulse"><div className="h-4 bg-slate-700 rounded-sm w-1/4 mb-4"></div><div className="h-32 bg-slate-800 rounded-sm"></div></div>;
