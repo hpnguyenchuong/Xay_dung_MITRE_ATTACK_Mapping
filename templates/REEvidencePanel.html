@@ -2,19 +2,29 @@ window.REEvidencePanel = ({ selectedDrone }) => {
  const [artifacts, setArtifacts] = useState([]);
  const [selectedArtifact, setSelectedArtifact] = useState(null);
  const [isLoading, setIsLoading] = useState(true);
+ const [debugInfo, setDebugInfo] = useState('');
 
  useEffect(() => {
  setIsLoading(true);
+ setDebugInfo('Starting fetch...');
  const droneQuery = selectedDrone ? `?drone_id=${selectedDrone.drone_id}` : '';
- fetch(`/api/re_findings${droneQuery}${droneQuery ? '&' : '?'}t=${new Date().getTime()}`)
- .then(res => res.json())
+ const url = `/api/re_findings${droneQuery}${droneQuery ? '&' : '?'}t=${new Date().getTime()}`;
+ setDebugInfo(`Fetching ${url}...`);
+ 
+ fetch(url)
+ .then(res => {
+ setDebugInfo(prev => prev + ` | Status: ${res.status}`);
+ return res.json();
+ })
  .then(data => {
+ setDebugInfo(prev => prev + ` | Parsed data: ${JSON.stringify(data).substring(0, 50)}... | Array: ${Array.isArray(data?.findings)} | Len: ${data?.findings?.length}`);
  if (data.findings) setArtifacts(data.findings);
  else setArtifacts([]);
  setIsLoading(false);
  })
  .catch(e => {
  console.error("Error fetching RE findings:", e);
+ setDebugInfo(prev => prev + ` | Error: ${e.message}`);
  setIsLoading(false);
  });
  }, [selectedDrone]);
@@ -31,9 +41,12 @@ window.REEvidencePanel = ({ selectedDrone }) => {
  <div className="panel flex-[1.5] min-w-0 min-h-0 flex flex-col relative group">
  <div className="absolute inset-0 bg-slate-800 -z-10 group-hover:scale-[1.01] transition-transform duration-700"></div>
  
- <div className="panel-header border-b border-slate-700 bg-slate-800 /10 to-transparent">
+ <div className="panel-header border-b border-slate-700 bg-slate-800 /10 to-transparent flex justify-between">
+ <div>
  <span className="material-symbols-outlined text-[16px] text-slate-400">folder_special</span>
  <span className="panel-title text-slate-400">RE EVIDENCE REPOSITORY</span>
+ </div>
+ <div className="text-[10px] text-pink-500 font-mono truncate max-w-[400px]">{debugInfo}</div>
  </div>
  
  <div className="flex-1 p-2 overflow-y-auto custom-scrollbar relative">
