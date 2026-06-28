@@ -3549,7 +3549,9 @@ EXAMPLES:
                 elif endpoint == "get_ports":
                     cursor.execute("SELECT * FROM open_ports ORDER BY timestamp DESC")
                     ports = [dict(row) for row in cursor.fetchall()]
-                    self._send_json({"ports": ports})
+                    with clients_lock:
+                        active_drone_ids = list(clients.keys())
+                    self._send_json({"ports": ports, "active_drones": active_drone_ids})
                     
                 elif endpoint == "cleanup_logs":
                     cursor.execute("DELETE FROM telemetry WHERE timestamp < datetime('now', '-7 days')")
