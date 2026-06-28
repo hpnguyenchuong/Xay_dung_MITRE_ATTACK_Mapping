@@ -6,7 +6,7 @@ window.REEvidencePanel = ({ selectedDrone }) => {
  useEffect(() => {
  setIsLoading(true);
  const droneQuery = selectedDrone ? `?drone_id=${selectedDrone.drone_id}` : '';
- fetch(`/api/re_findings${droneQuery}`)
+ fetch(`/api/re_findings${droneQuery}${droneQuery ? '&' : '?'}t=${new Date().getTime()}`)
  .then(res => res.json())
  .then(data => {
  if (data.findings) setArtifacts(data.findings);

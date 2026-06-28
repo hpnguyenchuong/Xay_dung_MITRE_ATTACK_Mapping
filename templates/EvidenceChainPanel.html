@@ -4,9 +4,10 @@ window.EvidenceChainPanel = ({ selectedDrone }) => {
 
  useEffect(() => {
  const droneQuery = selectedDrone ? `?drone_id=${selectedDrone.drone_id}` : '';
- fetch(`/api/evidence_chain${droneQuery}`)
+ fetch(`/api/evidence_chain${droneQuery}${droneQuery ? '&' : '?'}t=${new Date().getTime()}`)
  .then(res => res.json())
  .then(data => {
+ console.log("Evidence Chain Data:", data);
  setChainData(data.evidence_chain || []);
  setLoading(false);
  })
