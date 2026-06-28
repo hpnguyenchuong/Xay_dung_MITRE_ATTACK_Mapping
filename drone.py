@@ -2360,8 +2360,12 @@ EXAMPLES:
                         cursor.execute("SELECT artifact_address as offset, finding as artifact, artifact_type, source as re_source, validation_level, behavior, mapping_reason as reason, enterprise_tech_id as selected_technique, rejected_candidates, confidence, confidence_breakdown, campaign_stage FROM re_findings WHERE drone_id=? ORDER BY id DESC LIMIT 50", (drone_id_param,))
                     else:
                         cursor.execute("SELECT artifact_address as offset, finding as artifact, artifact_type, source as re_source, validation_level, behavior, mapping_reason as reason, enterprise_tech_id as selected_technique, rejected_candidates, confidence, confidence_breakdown, campaign_stage FROM re_findings ORDER BY id DESC LIMIT 50")
+                    
+                    rows = cursor.fetchall()
+                    rows.reverse() # Reverse to show oldest to newest from top to bottom
+                    
                     findings = []
-                    for row in cursor.fetchall():
+                    for row in rows:
                         r = dict(row)
                         
                         try:
@@ -2436,6 +2440,7 @@ EXAMPLES:
                     else:
                         cursor.execute("SELECT drone_id, name, technique_id, ics_tech_id FROM attack_mapping WHERE 1=0")
                     mappings = cursor.fetchall()
+                    mappings.reverse() # Reverse to show chronological order (oldest to newest) from top to bottom
                     
                     for i, row in enumerate(mappings):
                         d_id = row["drone_id"]
@@ -2476,6 +2481,7 @@ EXAMPLES:
                     else:
                         cursor.execute("SELECT id, finding as artifact, behavior, mapping_reason as rule, enterprise_tech_id as technique, confidence, ics_tech_id as ics_translation, source as operational_effect FROM re_findings ORDER BY id DESC LIMIT 20")
                     rows = cursor.fetchall()
+                    rows.reverse()
                     chain = []
                     for r in rows:
                         chain.append({
