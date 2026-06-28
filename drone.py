@@ -339,6 +339,24 @@ def init_forensic_db():
                     id INTEGER PRIMARY KEY AUTOINCREMENT, drone_id TEXT, event_type TEXT, message TEXT, timestamp TEXT
                 )
             """)
+            cursor.execute("PRAGMA table_info(timeline)")
+            timeline_cols = [info[1] for info in cursor.fetchall()]
+            if "severity" not in timeline_cols:
+                cursor.execute("ALTER TABLE timeline ADD COLUMN severity TEXT DEFAULT 'INFO'")
+
+            # Open Ports for Port Scan Dashboard
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS open_ports (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT, drone_id TEXT, port INTEGER, service TEXT, risk TEXT, timestamp TEXT
+                )
+            """)
+
+            # Threat Hunts for Threat Hunting Workbench
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS threat_hunts (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT, hunt_name TEXT, hypothesis TEXT, artifact TEXT, expected_technique TEXT, drone_ids TEXT, timestamp TEXT, status TEXT
+                )
+            """)
             
             # Module 11: Threat Score & Risk
             cursor.execute("""
@@ -639,7 +657,7 @@ class MITREMappingEngine:
                     cursor.execute("SELECT id FROM attack_mapping WHERE drone_id=? AND technique_id=?", (drone_id, "T1071.001"))
                     if not cursor.fetchone():
                         cursor.execute("INSERT INTO attack_mapping (drone_id, tactic, tactic_name, technique_id, enterprise_tech_id, ics_tech_id, name, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (drone_id, "TA0111", "Command and Control", "T1071.001", "T1071.001", "T0855", "Standard Application Layer Protocol: Web Traffic", t_str))
-                        cursor.execute("INSERT INTO timeline (drone_id, event_type, message, timestamp) VALUES (?, ?, ?, ?)", (drone_id, "TECHNIQUE_MAPPED", "T1071.001 (Persistent C2 Channel) mapped via RE Artifact Correlation", t_str))
+                        cursor.execute("INSERT INTO timeline (drone_id, event_type, message, timestamp, severity) VALUES (?, ?, ?, ?, ?)", (drone_id, "TECHNIQUE_MAPPED", "T1071.001 (Persistent C2 Channel) mapped via RE Artifact Correlation", t_str, "CRITICAL"))
 
     def evaluate_candidates(self, cursor, finding: str, source: str, validation_level: str = "L1", artifact_quality: int = 10, fleet_role: str = "member"):
         # 1. Deduce Behavior
@@ -734,6 +752,33 @@ class MITREMappingEngine:
         try:
             db_write_lock.acquire()
             cursor = db_conn.cursor()
+            # Port Scanning Logic
+            if "open_ports" in packet:
+                for port in packet["open_ports"]:
+                    cursor.execute("SELECT id FROM open_ports WHERE drone_id=? AND port=?", (drone_id, port))
+                    if not cursor.fetchone():
+                        risk = "LOW"
+                        service = "Unknown"
+                        if port == 5555:
+                            risk = "CRITICAL"
+                            service = "Custom C2"
+                            cursor.execute("SELECT id FROM attack_mapping WHERE drone_id=? AND technique_id=?", (drone_id, "T1071"))
+                            if not cursor.fetchone():
+                                cursor.execute("INSERT INTO attack_mapping (drone_id, tactic, tactic_name, technique_id, name, timestamp) VALUES (?, ?, ?, ?, ?, ?)", (drone_id, "TA0111", "Command and Control", "T1071", "Application Layer Protocol (Port 5555)", t_str))
+                                cursor.execute("INSERT INTO timeline (drone_id, event_type, message, timestamp, severity) VALUES (?, ?, ?, ?, ?)", (drone_id, "TECHNIQUE_MAPPED", "Port 5555 opened -> mapped to T1071", t_str, "CRITICAL"))
+                        elif port == 31337:
+                            risk = "CRITICAL"
+                            service = "Backdoor"
+                            cursor.execute("SELECT id FROM attack_mapping WHERE drone_id=? AND technique_id=?", (drone_id, "T1571"))
+                            if not cursor.fetchone():
+                                cursor.execute("INSERT INTO attack_mapping (drone_id, tactic, tactic_name, technique_id, name, timestamp) VALUES (?, ?, ?, ?, ?, ?)", (drone_id, "TA0111", "Command and Control", "T1571", "Non-Standard Port (Port 31337)", t_str))
+                                cursor.execute("INSERT INTO timeline (drone_id, event_type, message, timestamp, severity) VALUES (?, ?, ?, ?, ?)", (drone_id, "TECHNIQUE_MAPPED", "Port 31337 opened -> mapped to T1571", t_str, "CRITICAL"))
+                        elif port == 14550:
+                            service = "MAVLink"
+                            
+                        cursor.execute("INSERT INTO open_ports (drone_id, port, service, risk, timestamp) VALUES (?, ?, ?, ?, ?)", (drone_id, port, service, risk, t_str))
+
+
             self.analyze_network_behavior(drone_id, packet, now, cursor, t_str)
             # 1. Map IOCs
             cursor.execute("SELECT id FROM iocs WHERE value=?", (client_ip,))
@@ -821,7 +866,7 @@ class MITREMappingEngine:
                             
                             map_str = f"{tactic} -> {tech}" if tech else "No ATT&CK Map"
                             timeline_msg = f"Artifact Extracted\n\n{artifact_address}\n{string}\n\n↓\n\n{finding_desc}\n\n↓\n\n{map_str}\n{tech_name}\n\n↓\n\n+{score_add} Risk\n\n↓\n\nTotal Score = {projected_score}"
-                            cursor.execute("INSERT INTO timeline (drone_id, event_type, message, timestamp) VALUES (?, ?, ?, ?)", (drone_id, "TECHNIQUE_MAPPED", timeline_msg, t_str))
+                            cursor.execute("INSERT INTO timeline (drone_id, event_type, message, timestamp, severity) VALUES (?, ?, ?, ?, ?)", (drone_id, "TECHNIQUE_MAPPED", timeline_msg, t_str, "HIGH"))
                             
                             # Print to terminal
                             print(f"\n{C_RED}{C_BOLD}")
@@ -847,7 +892,7 @@ class MITREMappingEngine:
                         INSERT INTO malware_profiles (drone_id, family, version, campaign, c2_protocol, obfuscation, capabilities, first_seen, last_seen)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, (drone_id, prof.get("family"), prof.get("version"), prof.get("campaign"), prof.get("c2_protocol"), prof.get("obfuscation"), json.dumps(prof.get("capabilities", [])), t_str, t_str))
-                    cursor.execute("INSERT INTO timeline (drone_id, event_type, message, timestamp) VALUES (?, ?, ?, ?)", (drone_id, "CONNECTION", f"Drone Connected: {prof.get('family')} detected", t_str))
+                    cursor.execute("INSERT INTO timeline (drone_id, event_type, message, timestamp, severity) VALUES (?, ?, ?, ?, ?)", (drone_id, "CONNECTION", f"Drone Connected: {prof.get('family')} detected", t_str, "INFO"))
                 else:
                     cursor.execute("UPDATE malware_profiles SET last_seen=? WHERE drone_id=?", (t_str, drone_id))
 
@@ -954,8 +999,8 @@ class MITREMappingEngine:
                             try:
                                 client_sock.sendall(obfuscated)
                                 cursor.execute(
-                                    "INSERT INTO timeline (drone_id, event_type, message, timestamp) VALUES (?, ?, ?, ?)",
-                                    (drone_id, "CONTAINMENT", "[SOAR ENGINE] Active Defense Playbook executed successfully: Host network containment applied.", t_str)
+                                    "INSERT INTO timeline (drone_id, event_type, message, timestamp, severity) VALUES (?, ?, ?, ?, ?)",
+                                    (drone_id, "CONTAINMENT", "[SOAR ENGINE] Active Defense Playbook executed successfully: Host network containment applied.", t_str, "CRITICAL")
                                 )
                                 cursor.execute(
                                     "UPDATE cases SET status='ISOLATED_BY_SOAR', resolution_notes='Automated containment triggered due to traffic flood' WHERE drone_id=? AND status='OPEN'",
@@ -1050,7 +1095,7 @@ class MITREMappingEngine:
                                 cursor.execute("SELECT id FROM attack_mapping WHERE drone_id=? AND technique_id=?", (drone_id, "T0831"))
                                 if not cursor.fetchone():
                                     cursor.execute("INSERT INTO attack_mapping (drone_id, tactic, tactic_name, technique_id, enterprise_tech_id, ics_tech_id, name, confidence, reason, evidence, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", (drone_id, "TA0106", "Impair Process Control", "T0831", "T1005", "T0831", "Manipulation of Control (GPS Anomaly)", 95, "Unrealistic speed and distance calculation", f"Speed: {speed_kmh:.0f} km/h", t_str))
-                                    cursor.execute("INSERT INTO timeline (drone_id, event_type, message, timestamp) VALUES (?, ?, ?, ?)", (drone_id, "TECHNIQUE_MAPPED", "T0831 (GPS Anomaly) observed", t_str))
+                                    cursor.execute("INSERT INTO timeline (drone_id, event_type, message, timestamp, severity) VALUES (?, ?, ?, ?, ?)", (drone_id, "TECHNIQUE_MAPPED", "T0831 (GPS Anomaly) observed", t_str, "HIGH"))
                     
                     with self.packet_lock:
                         self.last_gps_data[drone_id] = (lat, lon, now)
@@ -1116,7 +1161,7 @@ class MITREMappingEngine:
                 cursor.execute("SELECT id FROM ioc_attack_mapping WHERE drone_id=? AND campaign=?", (drone_id, "DroneFlood"))
                 if not cursor.fetchone():
                     cursor.execute("INSERT INTO ioc_attack_mapping (drone_id, ioc_value, technique_id, description, timestamp, confidence, campaign) VALUES (?, ?, ?, ?, ?, ?, ?)", (drone_id, "DF_MUTEX + C2 Domain", "T0885 + Persistence Evidence", "Correlated DroneFlood Campaign (Multiple High-Fidelity IOCs)", t_str, 95, "DroneFlood"))
-                    cursor.execute("INSERT INTO timeline (drone_id, event_type, message, timestamp) VALUES (?, ?, ?, ?)", (drone_id, "CORRELATION", "IOCs Correlated to DroneFlood Campaign (95% Confidence)", t_str))
+                    cursor.execute("INSERT INTO timeline (drone_id, event_type, message, timestamp, severity) VALUES (?, ?, ?, ?, ?)", (drone_id, "CORRELATION", "IOCs Correlated to DroneFlood Campaign (95% Confidence)", t_str, "HIGH"))
             
             if server_processed_packets > 0 and server_processed_packets % 100 == 0:
                 cursor.execute("DELETE FROM timeline WHERE id NOT IN (SELECT id FROM timeline ORDER BY id DESC LIMIT 5000)")
@@ -3469,6 +3514,104 @@ EXAMPLES:
                     self._send_json({"status": "success", "file": f"reports/export_re_findings_{report_ts}.csv"})
 
                 
+                elif endpoint == "get_logs":
+                    severity = query_params.get("severity", [None])[0]
+                    drone_filter = query_params.get("drone_id", [None])[0]
+                    
+                    query = "SELECT * FROM timeline WHERE 1=1"
+                    params = []
+                    if severity:
+                        query += " AND severity=?"
+                        params.append(severity)
+                    if drone_filter:
+                        query += " AND drone_id=?"
+                        params.append(drone_filter)
+                        
+                    query += " ORDER BY id DESC LIMIT 200"
+                    cursor.execute(query, params)
+                    logs = [dict(row) for row in cursor.fetchall()]
+                    
+                    # Also get counts
+                    cursor.execute("SELECT severity, COUNT(*) as c FROM timeline GROUP BY severity")
+                    counts = {r['severity']: r['c'] for r in cursor.fetchall()}
+                    
+                    self._send_json({"logs": logs, "counts": counts})
+                    
+                elif endpoint == "get_ports":
+                    cursor.execute("SELECT * FROM open_ports ORDER BY timestamp DESC")
+                    ports = [dict(row) for row in cursor.fetchall()]
+                    self._send_json({"ports": ports})
+                    
+                elif endpoint == "cleanup_logs":
+                    cursor.execute("DELETE FROM telemetry WHERE timestamp < datetime('now', '-7 days')")
+                    cursor.execute("DELETE FROM timeline WHERE timestamp < datetime('now', '-30 days')")
+                    db_conn.commit()
+                    self._send_json({"status": "success", "message": "Log retention cleanup executed."})
+                    
+                elif endpoint == "export_logs":
+                    fmt = query_params.get("format", ["json"])[0]
+                    cursor.execute("SELECT * FROM timeline ORDER BY id DESC")
+                    logs = [dict(row) for row in cursor.fetchall()]
+                    
+                    if fmt == "csv":
+                        import csv
+                        from io import StringIO
+                        output = StringIO()
+                        writer = csv.writer(output)
+                        writer.writerow(["ID", "Drone ID", "Event Type", "Severity", "Message", "Timestamp"])
+                        for l in logs:
+                            writer.writerow([l['id'], l['drone_id'], l['event_type'], l['severity'], l['message'], l['timestamp']])
+                        
+                        self.send_response(200)
+                        self.send_header("Content-type", "text/csv")
+                        self.send_header("Content-Disposition", 'attachment; filename="logs_export.csv"')
+                        self.end_headers()
+                        self.wfile.write(output.getvalue().encode('utf-8'))
+                        return
+                    else:
+                        self.send_response(200)
+                        self.send_header("Content-type", "application/json")
+                        self.send_header("Content-Disposition", 'attachment; filename="logs_export.json"')
+                        self.end_headers()
+                        self.wfile.write(json.dumps(logs, indent=2).encode('utf-8'))
+                        return
+                        
+                elif endpoint == "threat_hunt":
+                    artifact = query_params.get("artifact", [""])[0]
+                    tech = query_params.get("technique", [""])[0]
+                    hunt_name = query_params.get("name", [f"Hunt {artifact}"])[0]
+                    
+                    # Build dynamic query based on hypothesis
+                    # Example Hypothesis: find drones with this artifact but without C2
+                    if artifact == "DF_MUTEX_01" and tech == "T1547.001":
+                        hypothesis = "Has Persistence Artifact but No C2 Beacon"
+                        cursor.execute("""
+                            SELECT drone_id FROM re_findings 
+                            WHERE finding = ? 
+                            AND drone_id NOT IN (
+                                SELECT drone_id FROM re_findings WHERE finding LIKE '%c2%'
+                            )
+                        """, (artifact,))
+                        matches = [r['drone_id'] for r in cursor.fetchall()]
+                    else:
+                        hypothesis = f"Search for {artifact} ({tech})"
+                        cursor.execute("SELECT DISTINCT drone_id FROM re_findings WHERE finding=? OR technique_id=?", (artifact, tech))
+                        matches = [r['drone_id'] for r in cursor.fetchall()]
+                        
+                    t_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    cursor.execute("INSERT INTO threat_hunts (hunt_name, hypothesis, artifact, expected_technique, drone_ids, timestamp, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                                  (hunt_name, hypothesis, artifact, tech, json.dumps(matches), t_str, "COMPLETED"))
+                    db_conn.commit()
+                    
+                    self._send_json({"hypothesis": hypothesis, "matches": matches})
+                    
+                elif endpoint == "get_threat_hunts":
+                    cursor.execute("SELECT * FROM threat_hunts ORDER BY id DESC")
+                    hunts = [dict(row) for row in cursor.fetchall()]
+                    for h in hunts:
+                        h['drone_ids'] = json.loads(h['drone_ids']) if h['drone_ids'] else []
+                    self._send_json({"hunts": hunts})
+
                 elif endpoint == "reset":
                     cursor.execute("DELETE FROM attack_mapping")
                     cursor.execute("DELETE FROM re_findings WHERE drone_id != 'GLOBAL'")

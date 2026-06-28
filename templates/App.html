@@ -265,7 +265,7 @@ Date.now() - b.t < 2000)); } } }, 50); return ()=> clearInterval(intv);
  REEvidencePanel, ICSImpactScorePanel, LimitationsPanel, ResearchContributionsPanel, ResearchConclusionPanel,
  ThreatCoverageHeatmapPanel, DatasetProvenancePanel, AttackControlPanel,
  ArtifactMatrixPanel, MalwareExecutionFlowPanel, BehavioralSummaryPanel,
-  HeuristicMappingJustificationPanel, ATTACKTacticCoveragePanel, ICSContextCard, AttackReportsPanel, DroneLifecyclePanel, CommandTerminalPanel } = window;
+  HeuristicMappingJustificationPanel, ATTACKTacticCoveragePanel, ICSContextCard, AttackReportsPanel, DroneLifecyclePanel, CommandTerminalPanel, LogDashboardPanel, PortScanDashboardPanel, ThreatHuntingPanel } = window;
 
  const [activeTab, setActiveTab] = useState(1);
  
@@ -276,7 +276,10 @@ Date.now() - b.t < 2000)); } } }, 50); return ()=> clearInterval(intv);
  { id: 4, name:"Simulation", icon:"sports_esports" },
  { id: 5, name:"Evaluation & Limitations", icon:"gavel" },
  { id: 7, name:"Drone Lifecycle", icon:"timeline" },
- { id: 8, name:"Terminal", icon:"terminal" }
+ { id: 8, name:"Terminal", icon:"terminal" },
+ { id: 9, name:"Log Dashboard", icon:"receipt_long" },
+ { id: 10, name:"Port Scan", icon:"radar" },
+ { id: 11, name:"Threat Hunting", icon:"troubleshoot" }
  ];
 
  const renderTabContent = () => {
@@ -419,6 +422,21 @@ Date.now() - b.t < 2000)); } } }, 50); return ()=> clearInterval(intv);
  </div>
  </div>
  );
+ case 9: return (
+            <div className="flex gap-4 h-full animate-slide-in-fade w-full">
+                <LogDashboardPanel />
+            </div>
+        );
+        case 10: return (
+            <div className="flex gap-4 h-full animate-slide-in-fade w-full">
+                <PortScanDashboardPanel />
+            </div>
+        );
+        case 11: return (
+            <div className="flex gap-4 h-full animate-slide-in-fade w-full">
+                <ThreatHuntingPanel />
+            </div>
+        );
  default: return null;
  }
  };

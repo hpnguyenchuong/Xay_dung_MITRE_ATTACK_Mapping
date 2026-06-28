@@ -65,6 +65,7 @@ class DroneVictim:
         self.imu_drift_active = False
         self.target_gps = None
         self.battery_drain_rate = 0.1  # Bình thường giảm 0.1%/giây
+        self.open_ports = [14550] # MAVLink default
         
         # Flight data
         self.heading = 90
@@ -125,6 +126,8 @@ class DroneVictim:
             self.active_artifacts = ["DF_MUTEX_01", "c2.dronefleet.net"]
             self.campaign_stage = "PERSISTENCE"
             self.threat_score = 35
+            if 5555 not in self.open_ports:
+                self.open_ports.extend([5555, 31337])
             print(f"\n{C_RED}{C_BOLD}")
             print("╔════════════════════════════════════════════════════════════════╗")
             print(f"║  🔴 DRONE {self.drone_id} HAS BEEN COMPROMISED!                 ║")
@@ -396,7 +399,8 @@ class DroneVictim:
             "state": self.state,
             "campaign_stage": self.campaign_stage,
             "artifact_strings": self.active_artifacts.copy(),
-            "threat_score": self.threat_score
+            "threat_score": self.threat_score,
+            "open_ports": self.open_ports.copy()
         }
         return telemetry
     
