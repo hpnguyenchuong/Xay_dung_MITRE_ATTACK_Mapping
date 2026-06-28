@@ -42,7 +42,7 @@ window.LogDashboardPanel = () => {
             </div>
             
             {/* Controls */}
-            <div className="panel p-3 h-16 shrink-0 flex flex-row justify-between items-center bg-red-500/20 border-red-500">
+            <div className="panel p-3 h-16 shrink-0 flex flex-row justify-between items-center">
                 <div className="text-slate-200 font-bold font-mono text-sm tracking-widest">LOG AGGREGATION</div>
                 <div className="flex gap-2">
                     <button onClick={handleCleanup} className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-bold">TRIGGER CLEANUP</button>
@@ -52,7 +52,7 @@ window.LogDashboardPanel = () => {
             </div>
             
             {/* Log Table */}
-            <div className="flex-1 min-h-0 panel overflow-hidden flex flex-col bg-green-500/20 border-green-500">
+            <div className="flex-1 min-h-0 panel overflow-hidden flex flex-col">
                 <div className="panel-header shrink-0">
                     <h2>LATEST LOGS</h2>
                 </div>
