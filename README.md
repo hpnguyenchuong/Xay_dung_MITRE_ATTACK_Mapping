@@ -62,31 +62,62 @@ Hệ thống được thiết kế theo hướng Micro-architecture nhẹ nhàng
 
 ---
 
-## 🚀 Hướng dẫn Chạy Code & Triển khai (Execution Guide)
+## 🚀 Hướng dẫn Triển khai & Chạy Code Kỹ thuật (Advanced Execution Guide)
 
-Hệ thống sử dụng các thư viện chuẩn của Python, không yêu cầu cài đặt dependency nặng nề. Môi trường yêu cầu: **Python 3.10+**.
+### 1. Chuẩn bị Môi trường (Environment Setup)
 
-### Bước 1: Khởi động Mapping Engine & Dashboard Server
-Mở terminal/command prompt và chạy lệnh sau tại thư mục gốc của dự án:
+Hệ thống được thiết kế với tiêu chí **Zero-dependency** (Không phụ thuộc thư viện ngoài), chỉ sử dụng thư viện chuẩn của Python. Môi trường yêu cầu duy nhất là **Python 3.10+**. 
+
+Để mô phỏng môi trường tấn công thực tế (Network Simulation), bạn nên chuẩn bị kiến trúc máy ảo (VM) như sau:
+*   **Máy ảo 1 (SOC / Defender - VD: Ubuntu hoặc Windows):** Đóng vai trò là Trung tâm điều hành. Nơi này sẽ chạy `drone.py` để hứng dữ liệu, phân tích mã độc và cung cấp Dashboard hiển thị.
+*   **Máy ảo 2 (Attacker / Compromised Fleet - VD: Kali Linux):** Đóng vai trò là bầy drone bị nhiễm mã độc. Nơi này sẽ chạy `droneflood_simulator.py` hoặc `drone_client.py` để bắn các gói tin tấn công và C2 Heartbeat về Máy ảo 1.
+*   **Cấu hình mạng:** Thiết lập mạng dạng **Bridged** hoặc **NAT Network** để 2 máy ảo có thể ping và giao tiếp qua lại với nhau (Đảm bảo máy Defender mở port TCP `5555` và `9000`).
+
+### 2. Các bước đầu tiên (First Steps)
+
+1.  Clone toàn bộ mã nguồn về cả 2 máy ảo (hoặc tải ZIP):
+    ```bash
+    git clone https://github.com/hpnguyenchuong/Xay_dung_MITRE_ATTACK_Mapping.git
+    cd Xay_dung_MITRE_ATTACK_Mapping
+    ```
+2.  Kiểm tra phiên bản Python trên máy: `python --version` (đảm bảo >= 3.10).
+3.  Không cần chạy `pip install` vì mã nguồn đã được tối ưu hoàn toàn độc lập (Zero-dependency).
+
+### 3. Khởi động Máy chủ Phân tích (Mapping Engine)
+
+Trên **Máy ảo 1 (SOC/Defender)**, hãy khởi động lõi phân tích bằng lệnh:
 ```bash
 python drone.py
 ```
-*(Nếu trên Linux/Mac, hãy dùng `python3 drone.py`)*
+*(Hệ thống sẽ tự động tạo CSDL `soc_artifacts.db`, mở TCP Server ở port `5555` để nhận tín hiệu drone, và mở Web Dashboard ở port `9000`).*
 
-Lệnh này sẽ khởi tạo (hoặc kết nối) với CSDL `soc_artifacts.db`, tải tập tin RE Findings, khởi động TCP Server để lắng nghe Drone và mở một Web Server trên port `9000`. Trên màn hình Terminal của bạn cũng sẽ hiện ra một giao diện console trực tiếp giám sát các drone đang kết nối.
+### 4. Các kịch bản chạy Mô phỏng (Simulator & Bot Agent)
 
-### Bước 2: Khởi động Chiến dịch tấn công (DroneFlood Simulator)
-Để quan sát hệ thống hoạt động, bạn cần tạo ra dữ liệu tấn công. Mở một **Terminal mới** (giữ Terminal ở Bước 1 đang chạy) và gõ lệnh:
+Trên **Máy ảo 2 (Attacker)**, bạn có nhiều cách để khởi tạo tín hiệu mã độc. (Giả sử IP của Máy 1 là `192.168.1.100`):
+
+**Cách 4.1 - Khởi chạy một chiến dịch bầy đàn (DroneFlood Campaign)**
+Chạy script giả lập bầy drone bị nhiễm:
 ```bash
-python droneflood_simulator.py --repeat 5
+python droneflood_simulator.py 192.168.1.100 5555
 ```
-*(Tham số `--repeat 5` sẽ lặp lại quá trình mô phỏng sinh ra nhiều đợt Drone bị nhiễm mã độc).*
+*(Nếu chạy tất cả trên cùng một máy, hãy thay IP thành `127.0.0.1`)*
 
-Bạn cũng có thể chạy một drone đơn lẻ bằng lệnh: `python drone_client.py`
+**Cách 4.2 - Mô phỏng tấn công bền bỉ (Persistent Threat)**
+Nếu bạn muốn giả lập nhiều làn sóng tấn công liên tục (để test khả năng chịu tải của Rule Engine), hãy dùng vòng lặp bash:
+```bash
+# Dành cho Linux/Mac
+for i in {1..5}; do python droneflood_simulator.py 192.168.1.100 5555; sleep 2; done
+```
 
-### Bước 3: Truy cập Dashboard
-Mở trình duyệt web của bạn và truy cập vào địa chỉ:
-> 🌐 **http://localhost:9000**
+**Cách 4.3 - Chạy một Node riêng lẻ (Single Bot Agent)**
+Nếu bạn muốn theo dõi vòng đời tấn công của một con Drone đơn duy nhất khi bị C2 chiếm quyền, hãy dùng `drone_client.py`:
+```bash
+python drone_client.py 192.168.1.100 5555 --drone-id DRONE-ALPHA-01
+```
+
+### 5. Truy cập Dashboard Phân tích
+Trở lại **Máy ảo 1 (SOC/Defender)** (hoặc bất kỳ máy nào cùng mạng), mở trình duyệt web và truy cập vào địa chỉ:
+> 🌐 **http://192.168.1.100:9000** (Hoặc `http://localhost:9000` nếu chạy cục bộ)
 
 ---
 
