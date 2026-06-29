@@ -1,0 +1,1 @@
+alert tcp any any -> $C2_SERVER 5555 (msg:"DroneFlood C2 Detected"; sid:1000001; rev:1;)

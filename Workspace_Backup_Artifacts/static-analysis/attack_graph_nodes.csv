@@ -1,0 +1,31 @@
+id,drone_id,tactic,tactic_name,technique_id,enterprise_tech_id,ics_tech_id,name,confidence,reason,evidence,timestamp
+1,GLOBAL,TA0106,Simulated Tactic,T1547.001,T1547.001,T0866,Persistence,,Mutex object in kernel space,Unknown,2026-06-26 21:36:00
+2,GLOBAL,TA0106,Simulated Tactic,T1547.001,T1547.001,T0866,Persistence,,HKLM\Run registry write,Unknown,2026-06-26 21:36:00
+3,GLOBAL,TA0106,Simulated Tactic,T0831,T0831,T0831,Gps Spoof,,GPS coordinate injection,Unknown,2026-06-26 21:36:00
+4,GLOBAL,TA0106,Simulated Tactic,T1498,T1498,T0879,Battery Drain,,Battery sensor alteration,Unknown,2026-06-26 21:36:00
+5,GLOBAL,TA0106,Simulated Tactic,T0832,T0832,T0832,Imu Drift,,Gyroscope data corruption,Unknown,2026-06-26 21:36:00
+6,GLOBAL,TA0106,Simulated Tactic,T0831,T0831,T0831,Lidar Jamming,,LiDAR signal manipulation,Unknown,2026-06-26 21:36:00
+7,GLOBAL,TA0106,Simulated Tactic,T0831,T0831,T0831,Collision,,Waypoint override,Unknown,2026-06-26 21:36:00
+8,GLOBAL,TA0106,Simulated Tactic,T1489,T1489,T0869,Swarm Takeover,,Broadcast sync header,Unknown,2026-06-26 21:36:00
+9,GLOBAL,TA0106,Simulated Tactic,T1059,T1059,T0885,Swarm Takeover,,P2P command relay,Unknown,2026-06-26 21:36:00
+10,GLOBAL,TA0106,Simulated Tactic,T0831,T0831,T0831,Emergency Land,,Emergency landing command,Unknown,2026-06-26 21:36:00
+11,DRONE-007,TA0106,Simulated Tactic,T1547.001,T1547.001,T0866,Persistence,,Mutex object in kernel space,Unknown,2026-06-26 21:37:25
+12,DRONE-007,TA0106,Simulated Tactic,T1547.001,T1547.001,T0866,Persistence,,HKLM\Run registry write,Unknown,2026-06-26 21:37:25
+13,DRONE-007,TA0106,Simulated Tactic,T0831,T0831,T0831,Gps Spoof,,GPS coordinate injection,Unknown,2026-06-26 21:37:25
+14,DRONE-007,TA0106,Simulated Tactic,T1498,T1498,T0879,Battery Drain,,Battery sensor alteration,Unknown,2026-06-26 21:37:25
+15,DRONE-007,TA0106,Simulated Tactic,T0832,T0832,T0832,Imu Drift,,Gyroscope data corruption,Unknown,2026-06-26 21:37:25
+16,DRONE-007,TA0106,Simulated Tactic,T0831,T0831,T0831,Lidar Jamming,,LiDAR signal manipulation,Unknown,2026-06-26 21:37:25
+17,DRONE-007,TA0106,Simulated Tactic,T0831,T0831,T0831,Collision,,Waypoint override,Unknown,2026-06-26 21:37:25
+18,DRONE-007,TA0106,Simulated Tactic,T1489,T1489,T0869,Swarm Takeover,,Broadcast sync header,Unknown,2026-06-26 21:37:25
+19,DRONE-007,TA0106,Simulated Tactic,T1059,T1059,T0885,Swarm Takeover,,P2P command relay,Unknown,2026-06-26 21:37:25
+20,DRONE-007,TA0106,Simulated Tactic,T0831,T0831,T0831,Emergency Land,,Emergency landing command,Unknown,2026-06-26 21:37:25
+21,DRONE-001,TA0106,Simulated Tactic,T1547.001,T1547.001,T0866,Persistence,,Mutex object in kernel space,Unknown,2026-06-26 21:37:25
+22,DRONE-001,TA0106,Simulated Tactic,T1547.001,T1547.001,T0866,Persistence,,HKLM\Run registry write,Unknown,2026-06-26 21:37:25
+23,DRONE-001,TA0106,Simulated Tactic,T0831,T0831,T0831,Gps Spoof,,GPS coordinate injection,Unknown,2026-06-26 21:37:25
+24,DRONE-001,TA0106,Simulated Tactic,T1498,T1498,T0879,Battery Drain,,Battery sensor alteration,Unknown,2026-06-26 21:37:25
+25,DRONE-001,TA0106,Simulated Tactic,T0832,T0832,T0832,Imu Drift,,Gyroscope data corruption,Unknown,2026-06-26 21:37:25
+26,DRONE-001,TA0106,Simulated Tactic,T0831,T0831,T0831,Lidar Jamming,,LiDAR signal manipulation,Unknown,2026-06-26 21:37:25
+27,DRONE-001,TA0106,Simulated Tactic,T0831,T0831,T0831,Collision,,Waypoint override,Unknown,2026-06-26 21:37:25
+28,DRONE-001,TA0106,Simulated Tactic,T1489,T1489,T0869,Swarm Takeover,,Broadcast sync header,Unknown,2026-06-26 21:37:25
+29,DRONE-001,TA0106,Simulated Tactic,T1059,T1059,T0885,Swarm Takeover,,P2P command relay,Unknown,2026-06-26 21:37:25
+30,DRONE-001,TA0106,Simulated Tactic,T0831,T0831,T0831,Emergency Land,,Emergency landing command,Unknown,2026-06-26 21:37:25

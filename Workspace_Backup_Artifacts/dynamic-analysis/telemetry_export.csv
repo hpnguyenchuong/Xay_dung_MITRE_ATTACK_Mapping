@@ -1,0 +1,2 @@
+timestamp,drone_id,event_type,details
+2023-10-01T12:00:00Z,DRONE-ALPHA-01,CONNECTION,Connection established

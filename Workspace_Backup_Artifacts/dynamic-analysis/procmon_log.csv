@@ -1,0 +1,4 @@
+Time of Day,Process Name,PID,Operation,Path,Result,Detail
+10:00:01,drone_client.exe,1234,RegSetValue,HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run\DronePayload,SUCCESS,"Type: REG_SZ, Length: 50, Data: C:\Windows\Temp\drone_client.exe"
+10:00:02,drone_client.exe,1234,CreateFile,C:\Windows\Temp\drone_log.txt,SUCCESS,Desired Access: Generic Write
+10:00:03,drone_client.exe,1234,TCP Connect,192.168.1.100:5555,SUCCESS,

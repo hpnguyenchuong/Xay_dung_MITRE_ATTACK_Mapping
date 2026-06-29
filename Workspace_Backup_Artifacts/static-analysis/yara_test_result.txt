@@ -1,0 +1,1 @@
+YARA test passed: DroneFlood_Mutex rule matched against drone_client.exe

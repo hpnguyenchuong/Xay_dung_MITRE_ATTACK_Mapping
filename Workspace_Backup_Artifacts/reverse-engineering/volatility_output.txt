@@ -1,0 +1,9 @@
+Volatility Foundation Volatility Framework 2.6.1
+Offset(V)  Name                    PID   PPID   Thds     Hnds   Sess  Wow64 Start                          Exit                          
+---------- -------------------- ------ ------ ------ -------- ------ ------ ------------------------------ ------------------------------
+0x8201a030 System                    4      0     90      416   ----      0                                                              
+0x82a578b0 smss.exe                268      4      2       29   ----      0 2026-06-25 10:10:10 UTC+0000                                 
+0x83e20030 drone_client.exe       1234    890      5      120      1      0 2026-06-25 10:12:00 UTC+0000                                 
+
+[*] Found suspicious Mutex in drone_client.exe: DF_MUTEX_01
+[*] Found active network connection: 192.168.1.100:5555

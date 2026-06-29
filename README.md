@@ -77,7 +77,7 @@ Hệ thống được thiết kế với tiêu chí **Zero-dependency** (Không 
 
 1.  Clone toàn bộ mã nguồn về cả 2 máy ảo (hoặc tải ZIP):
     ```bash
-    git clone https://github.com/hpnguyenchuong/Xay_dung_MITRE_ATTACK_Mapping.git
+    git clone https://github.com/YOUR_GITHUB_USERNAME/Xay_dung_MITRE_ATTACK_Mapping.git
     cd Xay_dung_MITRE_ATTACK_Mapping
     ```
 2.  Kiểm tra phiên bản Python trên máy: `python --version` (đảm bảo >= 3.10).

@@ -1,0 +1,30 @@
+Artifact: DF_MUTEX_01 | Evidence: Mutex object in kernel space
+Artifact: DF_REG_RUN | Evidence: HKLM\Run registry write
+Artifact: gps_spoof | Evidence: GPS coordinate injection
+Artifact: battery_drain | Evidence: Battery sensor alteration
+Artifact: imu_drift_injection | Evidence: Gyroscope data corruption
+Artifact: lidar_jamming | Evidence: LiDAR signal manipulation
+Artifact: collision_vector | Evidence: Waypoint override
+Artifact: FLEET_SYNC | Evidence: Broadcast sync header
+Artifact: FLEET_COMMAND_PUSH | Evidence: P2P command relay
+Artifact: forced_landing | Evidence: Emergency landing command
+Artifact: DF_MUTEX_01 | Evidence: Mutex object in kernel space
+Artifact: DF_REG_RUN | Evidence: HKLM\Run registry write
+Artifact: gps_spoof | Evidence: GPS coordinate injection
+Artifact: battery_drain | Evidence: Battery sensor alteration
+Artifact: imu_drift_injection | Evidence: Gyroscope data corruption
+Artifact: lidar_jamming | Evidence: LiDAR signal manipulation
+Artifact: collision_vector | Evidence: Waypoint override
+Artifact: FLEET_SYNC | Evidence: Broadcast sync header
+Artifact: FLEET_COMMAND_PUSH | Evidence: P2P command relay
+Artifact: forced_landing | Evidence: Emergency landing command
+Artifact: DF_MUTEX_01 | Evidence: Mutex object in kernel space
+Artifact: DF_REG_RUN | Evidence: HKLM\Run registry write
+Artifact: gps_spoof | Evidence: GPS coordinate injection
+Artifact: battery_drain | Evidence: Battery sensor alteration
+Artifact: imu_drift_injection | Evidence: Gyroscope data corruption
+Artifact: lidar_jamming | Evidence: LiDAR signal manipulation
+Artifact: collision_vector | Evidence: Waypoint override
+Artifact: FLEET_SYNC | Evidence: Broadcast sync header
+Artifact: FLEET_COMMAND_PUSH | Evidence: P2P command relay
+Artifact: forced_landing | Evidence: Emergency landing command

@@ -1,0 +1,11 @@
+{
+    "data": {
+        "attributes": {
+            "last_analysis_stats": {
+                "malicious": 15,
+                "suspicious": 3
+            },
+            "md5": "d41d8cd98f00b204e9800998ecf8427e"
+        }
+    }
+}
