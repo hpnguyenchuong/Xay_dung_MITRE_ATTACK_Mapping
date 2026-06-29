@@ -1,0 +1,1 @@
+alert tcp any any -> any 5555 (msg:"Drone C2"; sid:100001;)

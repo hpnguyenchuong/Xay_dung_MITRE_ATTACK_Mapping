@@ -1,0 +1,2 @@
+Time,Process,Operation,Path,Result
+10:00,drone_client.exe,CreateFile,C:\Windows\Temp,SUCCESS

@@ -1,0 +1,11 @@
+finding,evidence,artifact_type
+DF_MUTEX_01,Mutex object in kernel space,Mutex
+DF_REG_RUN,HKLM\Run registry write,Registry
+gps_spoof,GPS coordinate injection,Function
+battery_drain,Battery sensor alteration,Function
+imu_drift_injection,Gyroscope data corruption,Function
+lidar_jamming,LiDAR signal manipulation,Function
+collision_vector,Waypoint override,Command
+FLEET_SYNC,Broadcast sync header,String
+FLEET_COMMAND_PUSH,P2P command relay,Function
+forced_landing,Emergency landing command,Command

@@ -1,0 +1,135 @@
+window.GroundTruthPanel = () => {
+ const [gt, setGt] = React.useState({ metrics: {}, results: [] });
+
+ React.useEffect(() => {
+ const fetchGT = () => {
+ fetch('/api/ground_truth')
+ .then(res => res.json())
+ .then(data => setGt(data))
+ .catch(err => console.error(err));
+ };
+ fetchGT();
+ const interval = setInterval(fetchGT, 3000);
+ return () => clearInterval(interval);
+ }, []);
+
+ return (
+ <div className="panel h-full flex flex-col">
+ <div className="panel-header shrink-0 shrink-0">
+ <span className="material-symbols-outlined text-[16px]">fact_check</span>
+ <span>GROUND TRUTH EVALUATION</span>
+ </div>
+ <div className="p-2 flex flex-col h-full min-h-0">
+ <div className="flex gap-2 mb-3 shrink-0">
+ {/* Confusion Matrix Panel */}
+ <div className="flex-[0.5] bg-slate-800 /50 p-3 rounded-sm-sm border border-slate-700 flex flex-col justify-between shadow-none">
+ <div className="text-[14px] tracking-wider text-slate-400 uppercase font-bold mb-2 border-b border-slate-700 pb-1.5 flex justify-between items-center">
+ <span>Confusion Matrix</span>
+ <span className="material-symbols-outlined text-[16px]">grid_on</span>
+ </div>
+ <div className="grid grid-cols-[auto_1fr_1fr] gap-2 text-[14px] text-center mt-1 font-mono items-center h-full">
+ <div></div>
+ <div className="text-slate-400 uppercase text-[11px] font-bold tracking-widest">Pred Pos</div>
+ <div className="text-slate-400 uppercase text-[11px] font-bold tracking-widest">Pred Neg</div>
+ 
+ <div className="text-slate-400 text-right pr-2 uppercase text-[11px] font-bold tracking-widest">Act Pos</div>
+ <div className="bg-[#10b981]/20 border border-[#10b981]/50 text-[#10b981] rounded-sm-md py-2 font-bold text-[18px] shadow-none">TP={gt.details?.TP || 0}</div>
+ <div className="bg-transparent border border-[#f43f5e]/50 text-[#f43f5e] rounded-sm-md py-2 font-bold text-[18px] shadow-none">FN={gt.details?.FN || 0}</div>
+ 
+ <div className="text-slate-400 text-right pr-2 uppercase text-[11px] font-bold tracking-widest">Act Neg</div>
+ <div className="bg-transparent border border-[#f43f5e]/50 text-[#f43f5e] rounded-sm-md py-2 font-bold text-[18px] shadow-none">FP={gt.details?.FP || 0}</div>
+ <div className="bg-[#10b981]/20 border border-[#10b981]/50 text-[#10b981] rounded-sm-md py-2 font-bold text-[18px] shadow-none">TN={0}</div>
+ </div>
+ </div>
+ 
+ {/* Metrics Grid */}
+ <div className="flex-[0.5] grid grid-cols-2 gap-3">
+ <div className="bg-slate-900/80 p-2 rounded-sm-sm text-center border border-[#10b981]/30 flex flex-col justify-center relative overflow-hidden group hover:border-[#10b981] transition-colors shadow-none">
+ <div className="absolute -right-4 -top-4 w-16 h-16 bg-[#10b981]/10 rounded-sm-full blur-xl group-hover:bg-[#10b981]/20 transition-all"></div>
+ <div className="text-[12px] text-slate-400 tracking-widest uppercase mb-1 z-10 font-bold">Accuracy</div>
+ <div className="text-[#10b981] font-mono font-bold text-[24px] z-10">{gt.metrics.Accuracy || '0%'}</div>
+ </div>
+ <div className="bg-slate-900/80 p-2 rounded-sm-sm text-center border border-slate-700 flex flex-col justify-center relative overflow-hidden group hover:border-slate-700 transition-colors shadow-none">
+ <div className="absolute -right-4 -top-4 w-16 h-16 bg-transparent rounded-sm-full blur-xl group-hover:bg-transparent transition-all"></div>
+ <div className="text-[12px] text-slate-400 tracking-widest uppercase mb-1 z-10 font-bold">Precision</div>
+ <div className="text-slate-400 font-mono font-bold text-[24px] z-10">{gt.metrics.Precision || '0%'}</div>
+ </div>
+ <div className="bg-slate-900/80 p-2 rounded-sm-sm text-center border border-slate-700 flex flex-col justify-center relative overflow-hidden group hover:border-slate-700 transition-colors shadow-none">
+ <div className="absolute -right-4 -top-4 w-16 h-16 bg-transparent rounded-sm-full blur-xl group-hover:bg-transparent transition-all"></div>
+ <div className="text-[12px] text-slate-400 tracking-widest uppercase mb-1 z-10 font-bold">Recall</div>
+ <div className="text-slate-400 font-mono font-bold text-[24px] z-10">{gt.metrics.Recall || '0%'}</div>
+ </div>
+ <div className="bg-slate-900/80 p-2 rounded-sm-sm text-center border border-[#f43f5e]/30 flex flex-col justify-center relative overflow-hidden group hover:border-[#f43f5e] transition-colors shadow-none">
+ <div className="absolute -right-4 -top-4 w-16 h-16 bg-transparent rounded-sm-full blur-xl group-hover:bg-transparent transition-all"></div>
+ <div className="text-[12px] text-slate-400 tracking-widest uppercase mb-1 z-10 font-bold">F1 Score</div>
+ <div className="text-[#f43f5e] font-mono font-bold text-[24px] z-10">{gt.metrics.F1 || '0%'}</div>
+ </div>
+ </div>
+ </div>
+ 
+ <div style={{ height: '280px', maxHeight: '280px', overflowY: 'auto', overflowX: 'hidden' }} className="custom-scrollbar border border-[#1e293b] rounded-sm-sm mb-3 shrink-0 flex flex-col bg-slate-900/50 shadow-none">
+ <div className="bg-slate-800 text-[#89ceff] grid items-center border-b border-slate-700 shadow-none" style={{ gridTemplateColumns: 'minmax(150px, 2fr) minmax(80px, 1fr) minmax(90px, 1fr) minmax(80px, 1fr)', columnGap: '12px', position: 'sticky', top: 0, zIndex: 10 }}>
+ <div className="p-2 font-bold uppercase text-[12px] tracking-widest min-w-0 pl-4">Artifact</div>
+ <div className="p-2 font-bold uppercase text-[12px] tracking-widest text-center min-w-0">Expected</div>
+ <div className="p-2 font-bold uppercase text-[12px] tracking-widest text-center min-w-0">Predicted</div>
+ <div className="p-2 font-bold uppercase text-[12px] tracking-widest text-center min-w-0 pr-4">Result</div>
+ </div>
+ <div className="text-[#f8fafc] flex flex-col">
+ {gt.results.map((row, idx) => {
+ let resultIcon = '';
+ let resultClass = '';
+ 
+ if (row.result === 'Correct') {
+ resultIcon = 'check_circle';
+ resultClass = 'text-slate-400 bg-transparent border-slate-700';
+ } else if (row.result === 'Incorrect') {
+ resultIcon = 'cancel';
+ resultClass = 'text-rose-400 bg-transparent border-rose-400/30';
+ } else if (row.result === 'Missed') {
+ resultIcon = 'warning';
+ resultClass = 'text-amber-400 bg-transparent border-amber-400/30';
+ }
+ 
+ return (
+ <div key={idx} className="grid border-b border-[#1e293b] hover:bg-slate-700/5040 items-center transition-colors" style={{ gridTemplateColumns: 'minmax(150px, 2fr) minmax(80px, 1fr) minmax(90px, 1fr) minmax(80px, 1fr)', columnGap: '12px' }}>
+ <div className="p-3 text-[#c084fc] font-mono text-[14px] min-w-0 pl-4 flex items-center gap-2" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={row.artifact}>
+ <span className="material-symbols-outlined text-[16px] text-slate-400">data_object</span>
+ {row.artifact}
+ </div>
+ <div className="p-3 font-mono text-center min-w-0 text-slate-200">{row.expected}</div>
+ <div className="p-3 font-mono text-center min-w-0 text-slate-200">{row.predicted || <span className="text-slate-400 italic">None</span>}</div>
+ <div className="p-2 text-center flex flex-col justify-center items-center min-w-0 pr-4">
+ <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-sm border ${resultClass}`}>
+ <span className="material-symbols-outlined text-[15px]">{resultIcon}</span>
+ <span className="text-[13px] font-bold">{row.result}</span>
+ </div>
+ </div>
+ </div>
+ );
+ })}
+ </div>
+ </div>
+
+ {/* Ground Truth Sources */}
+ <div className="shrink-0 bg-slate-900 border border-slate-700 p-2 rounded-sm text-[13px] flex flex-col gap-1 mt-1">
+ <div className="text-slate-400 font-bold uppercase tracking-widest text-[12px] mb-1">Ground Truth Construction Sources</div>
+ {gt.sources && gt.sources.map((src, i) => (
+ <div key={i} className="flex justify-between items-center text-slate-300 border-b border-[#1e293b] pb-1 last:border-0 last:pb-0">
+ <span className="font-mono">{src.Source}</span>
+ <span className="text-slate-400 italic text-[11px]">{src.Purpose}</span>
+ </div>
+ ))}
+ </div>
+
+ {/* Academic Conclusion */}
+ <div className="shrink-0 bg-transparent border border-slate-700 p-2 rounded-sm text-[14px] flex gap-2 items-start mt-1">
+ <span className="material-symbols-outlined text-[17px] text-slate-400">verified</span>
+ <div>
+ <span className="text-slate-400 font-bold">Conclusion: </span>
+ <span className="text-[#cbd5e1] italic">High level of agreement with multi-source ground truth demonstrates accuracy.</span>
+ </div>
+ </div>
+ </div>
+ </div>
+ );
+};

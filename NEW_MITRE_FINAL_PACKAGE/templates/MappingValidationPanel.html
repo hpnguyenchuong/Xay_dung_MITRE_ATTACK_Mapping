@@ -1,0 +1,322 @@
+
+
+window.MappingValidationPanel = ({ onArtifactClick }) => {
+ const [metrics, setMetrics] = useState({ accuracy: 0, precision: 0, recall: 0, f1: 0, details: [] });
+ const [selectedItemIndex, setSelectedItemIndex] = useState(0);
+
+ // Mock reasoning data for demo scenarios
+ const reasoningDatabase = [
+ {
+ artifact:"DF_MUTEX_01",
+ expected_ent:"T1547.001", expected_ics:"T0866", predicted_ent:"T1547.001", predicted_ics:"T0866",
+ status:"MATCH", rule_matched:"DF_MUTEX_.*", behavior:"Persistence Mechanism", evidence_source:"Memory Dump / .data section",
+ confidence:"95%", candidate_desc:"Registry Run Keys / Startup Folder",
+ technique_name:"Boot or Logon Autostart Execution", tactic:"Persistence",
+ rejected_1: { ent:"T1053", conf:"15%", reason:"No scheduled task evidence" },
+ rejected_2: { ent:"T1543", conf:"30%", reason:"No service creation API calls" },
+ confidence_breakdown: { source_score: 60, validation_score: 25, artifact_quality: 10 }
+ },
+ {
+ artifact:"c2.dronefleet.net",
+ expected_ent:"T1071", expected_ics:"T0885", predicted_ent:"T1071", predicted_ics:"T0885",
+ status:"MATCH", rule_matched:".*\\.dronefleet\\.net", behavior:"Command & Control", evidence_source:".rdata Section (Hardcoded)",
+ confidence:"98%", candidate_desc:"Application Layer Protocol",
+ technique_name:"Commonly Used Port", tactic:"Command and Control",
+ rejected_1: { ent:"T1090", conf:"10%", reason:"No proxy configuration found" },
+ rejected_2: { ent:"T1573", conf:"20%", reason:"Traffic is not uniquely encrypted (standard XOR)" },
+ confidence_breakdown: { source_score: 60, validation_score: 25, artifact_quality: 13 }
+ },
+ {
+ artifact:"XOR_KEY_B64",
+ expected_ent:"T1027", expected_ics:"T0832", predicted_ent:"T1027", predicted_ics:"T0832",
+ status:"MATCH", rule_matched:"XOR_KEY_.*", behavior:"Obfuscated Command Channel", evidence_source:"Config Block",
+ confidence:"85%", candidate_desc:"Obfuscated Files or Information",
+ technique_name:"Manipulation of Control", tactic:"Defense Evasion",
+ rejected_1: { ent:"T1140", conf:"40%", reason:"Deobfuscation is standard base64/XOR" },
+ rejected_2: { ent:"T1001", conf:"25%", reason:"No data junking observed" },
+ confidence_breakdown: { source_score: 55, validation_score: 15, artifact_quality: 15 }
+ }
+ ];
+
+ const gtDemo = reasoningDatabase[selectedItemIndex];
+ const [showConfidenceBreakdown, setShowConfidenceBreakdown] = useState(false);
+ const [showMitreCompare, setShowMitreCompare] = useState(false);
+ const [mitreData, setMitreData] = useState(null);
+ const [isFetchingMitre, setIsFetchingMitre] = useState(false);
+
+ const fetchMitreData = async (tech_id) => {
+     setIsFetchingMitre(true);
+     setShowMitreCompare(true);
+     try {
+         const res = await fetch(`/api/fetch_mitre_official?technique_id=${tech_id}`);
+         const data = await res.json();
+         if (data.status === "success") {
+             setMitreData(data.data);
+         } else {
+             setMitreData({ error: data.message });
+         }
+     } catch (e) {
+         setMitreData({ error: "Failed to connect to backend." });
+     }
+     setIsFetchingMitre(false);
+ };
+
+ return (
+ <div className="panel flex-1 min-w-0 min-h-0 flex flex-col border-[#89ceff]/50 shadow-none">
+ <div className="panel-header shrink-0 text-[#89ceff] flex justify-between bg-[#1a2647] shrink-0">
+ <div className="flex items-center gap-1.5">
+ <span className="material-symbols-outlined text-[17px]">account_tree</span>
+ <span className="text-[16px] font-bold shrink-0">EXPLAINABLE REASONING TREE</span>
+ </div>
+ <div className="flex gap-2">
+ {reasoningDatabase.map((item, idx) => (
+ <button key={idx} onClick={() => { setSelectedItemIndex(idx); setShowConfidenceBreakdown(false); }} className={`text-[15px] px-2 py-0.5 rounded-sm font-mono ${idx === selectedItemIndex ? 'bg-[#89ceff] text-[#090d16] font-bold' : 'bg-slate-800 text-slate-400 hover:bg-slate-700/50'}`}>
+ {item.artifact}
+ </button>
+ ))}
+ </div>
+ </div>
+ 
+ <div className="flex-1 grid grid-cols-[1.2fr_1fr] min-w-0 min-h-0 p-2 gap-2 relative">
+ 
+ {/* Confidence Breakdown Overlay */}
+ {showConfidenceBreakdown && (
+ <div className="absolute inset-0 bg-slate-900/95 z-50 flex items-center justify-center backdrop-blur-sm" onClick={() => setShowConfidenceBreakdown(false)}>
+ <div className="panel p-2 w-[320px] bg-slate-800 border-slate-700 shadow-none cursor-pointer flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
+ <div className="text-[15px] font-bold text-slate-400 flex justify-between items-center border-b border-slate-700 pb-2">
+ <span>CONFIDENCE BREAKDOWN</span>
+ <span className="material-symbols-outlined text-[16px] cursor-pointer hover:text-slate-200" onClick={() => setShowConfidenceBreakdown(false)}>close</span>
+ </div>
+ 
+ <div className="flex flex-col gap-1.5 font-mono text-[17px]">
+ <div className="flex justify-between text-slate-200"><span>Source Score:</span> <span className="text-slate-400">{gtDemo.confidence_breakdown.source_score}</span></div>
+ <div className="flex justify-between text-slate-200"><span>Validation Score:</span> <span className="text-slate-400">{gtDemo.confidence_breakdown.validation_score}</span></div>
+ <div className="flex justify-between text-slate-200"><span>Artifact Quality:</span> <span className="text-[#fbbf24]">{gtDemo.confidence_breakdown.artifact_quality}</span></div>
+ <div className="w-full h-px bg-[#334155] my-1"></div>
+ <div className="flex justify-between font-bold text-slate-400 text-[15px]"><span>Evidence Strength:</span> <span>{gtDemo.confidence}</span></div>
+ </div>
+
+ <div className="bg-slate-800 border border-slate-700 rounded-sm p-2 flex flex-col gap-1.5">
+ <span className="text-[15px] font-bold text-[#c084fc] tracking-widest uppercase mb-0.5">GROUND TRUTH REFERENCE</span>
+ <div className="flex flex-col gap-1 text-[16px] font-mono">
+ <div className="flex justify-between text-slate-200"><span className="text-slate-400">Validation Level:</span> <span className="font-bold text-[#fbbf24]">L3 - RE Confirmed</span></div>
+ <div className="flex justify-between text-slate-200"><span className="text-slate-400">Reference:</span> <span>Memory Dump #A12</span></div>
+ <div className="flex flex-col text-slate-200 mt-1">
+ <span className="text-slate-400">Analyst Note:</span> 
+ <span className="italic">"{gtDemo.candidate_desc}"</span>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+ )}
+
+ {/* MITRE Compare Overlay */}
+ {showMitreCompare && (
+ <div className="absolute inset-0 bg-slate-900/95 z-50 flex items-center justify-center backdrop-blur-sm" onClick={() => setShowMitreCompare(false)}>
+ <div className="panel p-4 w-[700px] bg-slate-800 border-slate-700 shadow-none cursor-default flex flex-col gap-3" onClick={(e) => e.stopPropagation()}>
+ <div className="text-[16px] font-bold text-slate-200 flex justify-between items-center border-b border-slate-700 pb-2">
+ <div className="flex items-center gap-2">
+    <span className="material-symbols-outlined text-[#38bdf8]">travel_explore</span>
+    <span>COMPARE WITH OFFICIAL MITRE</span>
+ </div>
+ <span className="material-symbols-outlined text-[18px] cursor-pointer hover:text-[#f43f5e]" onClick={() => setShowMitreCompare(false)}>close</span>
+ </div>
+ 
+ <div className="grid grid-cols-2 gap-4 relative">
+    {/* Drone Detection Col */}
+    <div className="flex flex-col gap-2">
+        <span className="text-[13px] font-bold text-[#34d399] tracking-widest uppercase border-b border-[#34d399]/30 pb-1">DRONE DETECTION</span>
+        <div className="flex flex-col gap-1.5 font-mono text-[15px]">
+            <div className="flex justify-between text-slate-200"><span>Technique:</span> <span className="text-[#38bdf8] font-bold">{gtDemo.expected_ent}</span></div>
+            <div className="flex justify-between text-slate-200"><span>Artifact:</span> <span className="text-slate-400">{gtDemo.artifact}</span></div>
+            <div className="flex justify-between text-slate-200"><span>Confidence:</span> <span className="text-[#fbbf24] font-bold">{gtDemo.confidence}</span></div>
+            <div className="flex flex-col text-slate-200 mt-1">
+                <span>Behavior:</span>
+                <span className="text-slate-400 mt-1 bg-slate-900 p-1.5 rounded-sm border border-slate-700">{gtDemo.candidate_desc}</span>
+            </div>
+        </div>
+    </div>
+    
+    {/* VS Divider */}
+    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-800 rounded-full border border-slate-700 p-1 z-10 flex items-center justify-center shadow-lg">
+        <span className="font-bold text-slate-400 text-[12px] px-1">VS</span>
+    </div>
+
+    {/* MITRE Official Col */}
+    <div className="flex flex-col gap-2 relative border-l border-slate-700 pl-4">
+        <span className="text-[13px] font-bold text-[#38bdf8] tracking-widest uppercase border-b border-[#38bdf8]/30 pb-1">OFFICIAL MITRE DEFINITION</span>
+        {isFetchingMitre ? (
+            <div className="flex flex-col items-center justify-center py-8 text-slate-400">
+                <span className="material-symbols-outlined animate-spin text-[24px] mb-2">sync</span>
+                <span className="text-[14px]">Fetching STIX data from MITRE CTI...</span>
+            </div>
+        ) : mitreData?.error ? (
+            <div className="text-[#f43f5e] p-2 bg-[#f43f5e]/10 border border-[#f43f5e]/30 rounded-sm text-[14px]">
+                {mitreData.error}
+            </div>
+        ) : mitreData ? (
+            <div className="flex flex-col gap-1.5 font-mono text-[14px] overflow-y-auto max-h-[300px] custom-scrollbar pr-1">
+                <div className="flex justify-between text-slate-200"><span>ID:</span> <span className="text-[#38bdf8] font-bold">{mitreData.technique_id}</span></div>
+                <div className="flex flex-col text-slate-200">
+                    <span>Name:</span>
+                    <span className="text-slate-300 font-bold">{mitreData.name}</span>
+                </div>
+                <div className="flex justify-between text-slate-200 mt-1"><span>Tactic:</span> <span className="text-[#fbbf24]">{mitreData.tactics}</span></div>
+                <div className="flex flex-col text-slate-200 mt-1">
+                    <span>Platforms:</span>
+                    <span className="text-slate-400 text-[13px] mt-0.5">{mitreData.platforms}</span>
+                </div>
+                <div className="flex flex-col text-slate-200 mt-2">
+                    <span className="border-t border-slate-700 pt-2 text-[#89ceff]">Description:</span>
+                    <span className="text-slate-400 text-[13px] mt-1 text-justify bg-slate-900/50 p-2 rounded-sm border border-slate-800">{mitreData.description.substring(0, 400)}...</span>
+                </div>
+                <div className="mt-3">
+                    <a href={mitreData.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-[#38bdf8] hover:text-white transition-colors cursor-pointer w-max bg-[#38bdf8]/10 px-2 py-1 rounded-sm border border-[#38bdf8]/30">
+                        <span className="material-symbols-outlined text-[16px]">link</span>
+                        View on MITRE ATT&CK
+                    </a>
+                </div>
+            </div>
+        ) : null}
+    </div>
+ </div>
+ </div>
+ </div>
+ )}
+
+ {/* Reasoning Tree Visual */}
+ <div className="flex flex-col min-w-0 h-full overflow-y-auto custom-scrollbar pr-2 pb-2 pt-2">
+ {/* Node 1 */}
+ <div className="flex gap-3">
+ <div className="flex flex-col items-center shrink-0">
+ <div className="w-[40px] h-[40px] rounded-sm-full bg-slate-800 border-2 border-[#89ceff] flex items-center justify-center shadow-none">
+ <span className="material-symbols-outlined text-[#89ceff] text-[18px]">bug_report</span>
+ </div>
+ <div className="w-px bg-slate-800 /50 flex-1 my-1 min-h-[20px]"></div>
+ </div>
+ <div className="flex flex-col justify-start pb-4">
+ <span className="text-[13px] text-slate-400 font-bold tracking-wider uppercase mb-0.5">Artifact Extracted</span>
+ <span className="text-[15px] font-mono font-bold text-[#89ceff] bg-[#89ceff]/10 px-2 py-0.5 rounded-sm border border-[#89ceff]/30 w-max mt-1">{gtDemo.artifact}</span>
+ </div>
+ </div>
+
+ {/* Node 2 */}
+ <div className="flex gap-3">
+ <div className="flex flex-col items-center shrink-0">
+ <div className="w-[40px] h-[40px] rounded-sm-full bg-slate-800 border-2 border-[#fbbf24] flex items-center justify-center shadow-none">
+ <span className="material-symbols-outlined text-[#fbbf24] text-[18px]">search</span>
+ </div>
+ <div className="w-px bg-slate-800 /50 flex-1 my-1 min-h-[20px]"></div>
+ </div>
+ <div className="flex flex-col justify-start pb-4 pt-1">
+ <span className="text-[13px] text-slate-400 font-bold tracking-wider uppercase mb-0.5">Evidence Found</span>
+ <span className="text-[16px] text-slate-200 font-medium">{gtDemo.evidence_source}</span>
+ </div>
+ </div>
+
+ {/* Node 3 */}
+ <div className="flex gap-3">
+ <div className="flex flex-col items-center shrink-0">
+ <div className="w-[40px] h-[40px] rounded-sm-full bg-slate-800 border-2 border-[#c084fc] flex items-center justify-center shadow-none">
+ <span className="material-symbols-outlined text-[#c084fc] text-[18px]">psychology</span>
+ </div>
+ <div className="w-px bg-slate-800 /50 flex-1 my-1 min-h-[20px]"></div>
+ </div>
+ <div className="flex flex-col justify-start pb-4 pt-1">
+ <span className="text-[13px] text-slate-400 font-bold tracking-wider uppercase mb-0.5">Behavior Detected</span>
+ <span className="text-[16px] text-slate-200 font-medium">{gtDemo.behavior}</span>
+ </div>
+ </div>
+
+ {/* Node 4 */}
+ <div className="flex gap-3">
+ <div className="flex flex-col items-center shrink-0">
+ <div className="w-[40px] h-[40px] rounded-sm-full bg-slate-800 border-2 border-slate-700 flex items-center justify-center shadow-none">
+ <span className="material-symbols-outlined text-slate-400 text-[18px]">gavel</span>
+ </div>
+ </div>
+ <div className="flex flex-col justify-start pt-1">
+ <span className="text-[13px] text-slate-400 font-bold tracking-wider uppercase mb-0.5">Decision Matrix</span>
+ <div className="flex items-center gap-2 mt-1 bg-slate-900/80 border border-slate-700 p-2.5 rounded-sm-sm w-fit shadow-none">
+ <div className="flex flex-col items-center">
+ <span className="text-[10px] text-slate-400 uppercase mb-1 tracking-widest font-bold">Enterprise</span>
+ <span className="text-[18px] font-mono font-bold text-slate-400">{gtDemo.expected_ent}</span>
+ </div>
+ <span className="material-symbols-outlined text-[24px] text-slate-400 mx-2">arrow_right_alt</span>
+ <div className="flex flex-col items-center">
+ <span className="text-[10px] text-slate-400 uppercase mb-1 tracking-widest font-bold">Cyber-Physical</span>
+ <span className="text-[18px] font-mono font-bold text-[#f43f5e]">{gtDemo.expected_ics}</span>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+
+ {/* Technique Card */}
+ <div className="bg-[#0b1326] border border-slate-700 rounded-sm flex flex-col overflow-hidden relative group h-fit max-h-full">
+ <div className="bg-slate-800 px-3 py-2 border-b border-slate-700 flex justify-between items-center shrink-0">
+ <span className="font-bold text-[#89ceff] text-[17px] tracking-widest uppercase">TECHNIQUE CARD</span>
+ <div className="flex items-center gap-2">
+    <button onClick={() => fetchMitreData(gtDemo.expected_ent)} className="flex items-center gap-1 bg-[#38bdf8]/20 hover:bg-[#38bdf8]/40 text-[#38bdf8] px-2 py-0.5 rounded-sm transition-colors text-[14px]">
+        <span className="material-symbols-outlined text-[16px]">travel_explore</span>
+        Official MITRE
+    </button>
+    <span className="material-symbols-outlined text-[#89ceff] text-[17px]">id_card</span>
+ </div>
+ </div>
+ 
+ <div className="p-2 flex flex-col gap-2 overflow-y-auto custom-scrollbar min-h-0">
+ <div className="flex flex-col shrink-0">
+ <span className="text-[15px] text-slate-400 uppercase">Technique Name</span>
+ <span className="text-[15px] font-bold text-white">{gtDemo.technique_name}</span>
+ </div>
+ <div className="flex flex-col shrink-0">
+ <span className="text-[15px] text-slate-400 uppercase">Tactic</span>
+ <span className="text-[17px] font-mono text-[#fbbf24] bg-transparent w-max px-1.5 rounded-sm mt-0.5">{gtDemo.tactic}</span>
+ </div>
+ 
+ <div className="h-px w-full bg-[#334155] my-1 shrink-0"></div>
+ 
+ <div className="flex flex-col shrink-0">
+ <span className="text-[15px] text-slate-400 uppercase mb-1">Why Selected?</span>
+ <div className="bg-transparent border border-slate-700 p-1.5 rounded-sm">
+ <div className="flex items-center justify-between">
+ <span className="text-[17px] font-mono font-bold text-slate-400">{gtDemo.expected_ent}</span>
+ <button 
+ onClick={() => setShowConfidenceBreakdown(true)}
+ className="bg-[#34d399] text-[#090d16] text-[15px] font-bold px-1.5 py-0.5 rounded-sm hover:bg-white transition-colors cursor-pointer"
+ >
+ CONF: {gtDemo.confidence}
+ </button>
+ </div>
+ <div className="text-[16px] text-slate-200 mt-1 italic">"{gtDemo.candidate_desc}"</div>
+ </div>
+ </div>
+
+ <div className="flex flex-col mt-1 shrink-0">
+ <span className="text-[15px] text-slate-400 uppercase mb-1">Why Rejected?</span>
+ <div className="flex flex-col gap-1.5">
+ <div className="bg-transparent border border-[#f43f5e]/30 p-1.5 rounded-sm flex flex-col">
+ <div className="flex items-center gap-2">
+ <span className="text-[16px] font-mono font-bold text-[#f43f5e] line-through">{gtDemo.rejected_1.ent}</span>
+ <span className="text-[15px] text-slate-400">({gtDemo.rejected_1.conf})</span>
+ </div>
+ <div className="text-[15px] text-slate-200">{gtDemo.rejected_1.reason}</div>
+ </div>
+ <div className="bg-transparent border border-[#f43f5e]/30 p-1.5 rounded-sm flex flex-col">
+ <div className="flex items-center gap-2">
+ <span className="text-[16px] font-mono font-bold text-[#f43f5e] line-through">{gtDemo.rejected_2.ent}</span>
+ <span className="text-[15px] text-slate-400">({gtDemo.rejected_2.conf})</span>
+ </div>
+ <div className="text-[15px] text-slate-200">{gtDemo.rejected_2.reason}</div>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+ 
+ </div>
+ </div>
+ );
+};

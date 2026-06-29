@@ -1,0 +1,28 @@
+window.Sidebar = () => (
+ <div className="w-16 flex-shrink-0 bg-slate-800 border border-slate-700/50 rounded-sm-sm flex flex-col items-center py-6 gap-6 shadow-none z-20">
+ <div className="w-10 h-10 bg-slate-800 rounded-sm-sm shadow-none flex items-center justify-center mb-4">
+ <span className="material-symbols-outlined text-white text-[20px]">security</span>
+ </div>
+ 
+ <a href="/" className="w-10 h-10 rounded-sm-sm bg-transparent text-slate-400 border border-slate-700 flex items-center justify-center transition-all group relative cursor-pointer shadow-none">
+ <span className="material-symbols-outlined text-[20px]">dashboard</span>
+ <div className="absolute left-14 bg-slate-800 text-white text-[16px] font-bold font-mono px-2 py-1 rounded-sm opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity z-50">Dashboard</div>
+ </a>
+ 
+ <a href="/pages/alerts.html" className="w-10 h-10 rounded-sm-sm text-slate-400 hover:bg-slate-700/50 hover:text-slate-200 flex items-center justify-center transition-all group relative cursor-pointer">
+ <span className="material-symbols-outlined text-[20px]">warning</span>
+ <div className="absolute top-1 right-2 w-2 h-2 bg-[#f43f5e] rounded-sm-full animate-pulse"></div>
+ <div className="absolute left-14 bg-slate-800 text-white text-[16px] font-bold font-mono px-2 py-1 rounded-sm opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity z-50">Alerts Queue</div>
+ </a>
+ 
+ <a href="/pages/cases.html" className="w-10 h-10 rounded-sm-sm text-slate-400 hover:bg-slate-700/50 hover:text-slate-200 flex items-center justify-center transition-all group relative cursor-pointer">
+ <span className="material-symbols-outlined text-[20px]">folder_open</span>
+ <div className="absolute left-14 bg-slate-800 text-white text-[16px] font-bold font-mono px-2 py-1 rounded-sm opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity z-50">Active Cases</div>
+ </a>
+ 
+ <a href="/pages/history.html" className="w-10 h-10 rounded-sm-sm text-slate-400 hover:bg-slate-700/50 hover:text-slate-200 flex items-center justify-center transition-all group relative cursor-pointer">
+ <span className="material-symbols-outlined text-[20px]">history</span>
+ <div className="absolute left-14 bg-slate-800 text-white text-[16px] font-bold font-mono px-2 py-1 rounded-sm opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity z-50">Drone History</div>
+ </a>
+ </div>
+);

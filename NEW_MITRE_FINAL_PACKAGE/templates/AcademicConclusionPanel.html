@@ -1,0 +1,55 @@
+window.AcademicConclusionPanel = () => {
+ return (
+ <div className="panel h-full flex flex-col">
+ <div className="panel-header shrink-0 bg-slate-800 /20 to-transparent border-b border-slate-700">
+ <span className="material-symbols-outlined text-[16px] text-slate-400">school</span>
+ <span className="text-slate-400">ACADEMIC CONCLUSIONS</span>
+ </div>
+ <div className="p-2 flex-1 flex flex-col gap-2 min-h-0 overflow-y-auto custom-scrollbar">
+ 
+ {/* Research Contributions */}
+ <div className="flex flex-col gap-1.5">
+ <div className="text-[16px] font-bold text-slate-400 uppercase flex items-center gap-1 border-b border-slate-700 pb-1">
+ <span className="material-symbols-outlined text-[17px]">military_tech</span>
+ Research Contributions
+ </div>
+ <ul className="text-[16px] text-slate-200 space-y-1.5 pl-1">
+ <li className="flex items-start gap-1"><span className="text-[#10b981]">✓</span> Explainable Mapping Engine</li>
+ <li className="flex items-start gap-1"><span className="text-[#10b981]">✓</span> Enterprise → ICS Translation</li>
+ <li className="flex items-start gap-1"><span className="text-[#10b981]">✓</span> Ground Truth Evaluation</li>
+ <li className="flex items-start gap-1"><span className="text-[#10b981]">✓</span> ATT&CK Navigator Export</li>
+ </ul>
+ </div>
+
+ {/* Limitations */}
+ <div className="flex flex-col gap-1.5">
+ <div className="text-[16px] font-bold text-[#f97316] uppercase flex items-center gap-1 border-b border-slate-700 pb-1">
+ <span className="material-symbols-outlined text-[17px]">warning</span>
+ Limitations
+ </div>
+ <ul className="text-[16px] text-slate-400 space-y-1.5 pl-1">
+ <li className="flex items-start gap-1"><span className="text-[#f43f5e]">-</span> Uses Synthetic RE Findings</li>
+ <li className="flex items-start gap-1"><span className="text-[#f43f5e]">-</span> Limited Malware Families</li>
+ <li className="flex items-start gap-1"><span className="text-[#f43f5e]">-</span> Simulated ICS Effects</li>
+ <li className="flex items-start gap-1"><span className="text-[#f43f5e]">-</span> Requires Ground Truth Dataset</li>
+ </ul>
+ </div>
+
+ {/* Future Work */}
+ <div className="flex flex-col gap-1.5 mt-auto">
+ <div className="text-[16px] font-bold text-slate-400 uppercase flex items-center gap-1 border-b border-slate-700 pb-1">
+ <span className="material-symbols-outlined text-[17px]">rocket_launch</span>
+ Future Work
+ </div>
+ <ul className="text-[16px] text-slate-400 space-y-1.5 pl-1">
+ <li className="flex items-start gap-1"><span className="text-slate-400">→</span> Real malware samples</li>
+ <li className="flex items-start gap-1"><span className="text-slate-400">→</span> Automated RE extraction</li>
+ <li className="flex items-start gap-1"><span className="text-slate-400">→</span> Live PCAP analysis</li>
+ <li className="flex items-start gap-1"><span className="text-slate-400">→</span> Additional ICS platforms</li>
+ </ul>
+ </div>
+
+ </div>
+ </div>
+ );
+};

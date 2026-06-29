@@ -1,0 +1,8 @@
+title: Drone C2 Detection
+logsource:
+  product: windows
+detection:
+  selection:
+    EventID: 3
+    DestinationPort: 5555
+  condition: selection

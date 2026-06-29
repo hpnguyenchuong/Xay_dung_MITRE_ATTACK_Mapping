@@ -1,0 +1,4 @@
+Payload Analysis:
+- Executable compressed with PyInstaller.
+- Imports Python310.dll, MSVCRT.dll.
+- Suspicious strings: C2_HEARTBEAT, DF_MUTEX_01.

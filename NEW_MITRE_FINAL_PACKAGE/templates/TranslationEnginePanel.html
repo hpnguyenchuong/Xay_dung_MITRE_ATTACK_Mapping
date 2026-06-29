@@ -1,0 +1,68 @@
+window.TranslationEnginePanel = () => {
+ const translationLayer = [
+ { ent:"T1071", effect:"Receive Malicious Command", ics:"T0885", icsName:"Commonly Used Port" },
+ { ent:"T1547.001", effect:"Autostart on Reboot", ics:"T0866", icsName:"Unauthorized Service" },
+ { ent:"T1005", effect:"Extract Telemetry Data", ics:"T0842", icsName:"Data Illumination" },
+ { ent:"T1498", effect:"Flood C2 Link", ics:"T0879", icsName:"Damage to Property" },
+ { ent:"T1059", effect:"Execute Flight Command", ics:"T0831", icsName:"Manipulation of Control" },
+ { ent:"T1041", effect:"Exfiltrate Telemetry", ics:"T0869", icsName:"Loss of View" }
+ ];
+
+ return (
+ <div className="panel flex-1 min-w-0 min-h-0 flex flex-col">
+ <div className="panel-header shrink-0 text-[#f43f5e]">
+ <span className="material-symbols-outlined text-[17px]">transform</span>
+ ENTERPRISE → ICS TRANSLATION ENGINE
+ </div>
+ 
+ <div className="flex-1 overflow-y-auto custom-scrollbar p-2 flex flex-col gap-2 bg-slate-900">
+ 
+ <div className="grid grid-cols-[1fr_auto_2fr_auto_2fr] items-center text-slate-400 text-[12px] uppercase font-bold tracking-widest border-b border-slate-700 pb-2 px-2 mt-2">
+ <div className="text-center">Enterprise</div>
+ <div className="w-6"></div>
+ <div className="text-center">Cyber-Physical Effect</div>
+ <div className="w-6"></div>
+ <div className="text-center">ICS Impact</div>
+ </div>
+
+ <div className="flex flex-col gap-2 mt-1">
+ {translationLayer.map((item, i) => (
+ <div key={i} className="grid grid-cols-[1fr_auto_2fr_auto_2fr] items-center gap-2">
+ 
+ {/* Column 1: Enterprise */}
+ <div className="bg-slate-800 border border-slate-700 p-2 rounded-sm flex justify-center shadow-none">
+ <span className="text-slate-400 font-mono text-[14px] font-bold">{item.ent}</span>
+ </div>
+
+ <span className="material-symbols-outlined text-[20px] text-[#475569]">east</span>
+
+ {/* Column 2: Drone Effect */}
+ <div className="bg-transparent border border-[#fbbf24]/40 p-2 rounded-sm flex justify-center shadow-none">
+ <span className="text-[#fbbf24] font-sans text-[13px] font-bold text-center">{item.effect}</span>
+ </div>
+
+ <span className="material-symbols-outlined text-[20px] text-[#475569]">east</span>
+
+ {/* Column 3: ICS Impact */}
+ <div className="bg-transparent border border-[#f43f5e]/40 p-2 rounded-sm flex flex-col items-center justify-center shadow-none">
+ <span className="text-[#f43f5e] font-mono text-[12px] font-bold">{item.ics}</span>
+ <span className="text-slate-300 font-sans text-[12px] text-center">{item.icsName}</span>
+ </div>
+
+ </div>
+ ))}
+ </div>
+
+ <div className="mt-4 p-3 border border-slate-700 bg-transparent rounded-sm">
+ <div className="text-slate-400 text-[13px] font-bold uppercase tracking-widest mb-1 flex items-center gap-1">
+ <span className="material-symbols-outlined text-[16px]">info</span> Translation Logic
+ </div>
+ <div className="text-slate-400 text-[13px]">
+ The engine maps traditional IT behaviors (Enterprise) to cyber-physical consequences (ICS). An IT network flood translates to a Loss of View for the operator, while a script execution translates to Manipulation of Control on the Drone.
+ </div>
+ </div>
+
+ </div>
+ </div>
+ );
+};

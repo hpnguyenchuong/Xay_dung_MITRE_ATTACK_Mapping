@@ -1,0 +1,49 @@
+window.DatasetStatisticsPanel = () => {
+    const [stats, setStats] = React.useState({
+        enterprise_coverage: 0,
+        ics_coverage: 0,
+        mapped_samples: 0,
+        average_score: 0
+    });
+
+    React.useEffect(() => {
+        const fetchStats = () => {
+            fetch('/api/attack_coverage')
+                .then(res => res.json())
+                .then(data => setStats(data))
+                .catch(err => console.error(err));
+        };
+        fetchStats();
+        const interval = setInterval(fetchStats, 5000);
+        return () => clearInterval(interval);
+    }, []);
+
+    return (
+    <div className="panel flex-1 min-w-0 min-h-0 flex flex-col">
+        <div className="panel-header shrink-0 shrink-0">
+            <span className="material-symbols-outlined text-[16px]">analytics</span>
+            <span>ATT&CK COVERAGE</span>
+        </div>
+        <div className="flex-1 p-2 overflow-y-auto custom-scrollbar">
+            <div className="metric-grid">
+                <div className="metric-card flex flex-col gap-1">
+                    <span className="metric-label flex items-center gap-1"><span className="material-symbols-outlined text-[17px]">public</span>Enterprise Cov</span>
+                    <span className="metric-value text-slate-400">{stats.enterprise_coverage}%</span>
+                </div>
+                <div className="metric-card flex flex-col gap-1">
+                    <span className="metric-label flex items-center gap-1"><span className="material-symbols-outlined text-[17px]">factory</span>ICS Cov</span>
+                    <span className="metric-value text-[#f43f5e]">{stats.ics_coverage}%</span>
+                </div>
+                <div className="metric-card flex flex-col gap-1">
+                    <span className="metric-label flex items-center gap-1"><span className="material-symbols-outlined text-[17px]">data_object</span>Mapped Samples</span>
+                    <span className="metric-value text-slate-400">{stats.mapped_samples}</span>
+                </div>
+                <div className="metric-card flex flex-col gap-1">
+                    <span className="metric-label flex items-center gap-1"><span className="material-symbols-outlined text-[17px]">military_tech</span>Avg Score</span>
+                    <span className="metric-value text-[#fbbf24]">{stats.average_score}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    );
+};

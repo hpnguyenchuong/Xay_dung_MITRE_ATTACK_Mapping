@@ -1,0 +1,26 @@
+[
+    {
+        "time_offset": 0,
+        "telemetry_mode": "NORMAL",
+        "battery_drop": 1,
+        "alt_change": 0,
+        "speed": 40,
+        "artifacts": []
+    },
+    {
+        "time_offset": 5,
+        "telemetry_mode": "NORMAL",
+        "battery_drop": 1,
+        "alt_change": 2,
+        "speed": 42,
+        "artifacts": []
+    },
+    {
+        "time_offset": 10,
+        "telemetry_mode": "NORMAL",
+        "battery_drop": 1,
+        "alt_change": -1,
+        "speed": 39,
+        "artifacts": []
+    }
+]
