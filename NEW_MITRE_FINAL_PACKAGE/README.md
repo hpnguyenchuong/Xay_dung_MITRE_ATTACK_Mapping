@@ -69,8 +69,8 @@ Hệ thống được thiết kế theo hướng Micro-architecture nhẹ nhàng
 Hệ thống được thiết kế với tiêu chí **Zero-dependency** (Không phụ thuộc thư viện ngoài), chỉ sử dụng thư viện chuẩn của Python. Môi trường yêu cầu duy nhất là **Python 3.10+**. 
 
 Để mô phỏng môi trường tấn công thực tế (Network Simulation), bạn nên chuẩn bị kiến trúc máy ảo (VM) như sau:
-*   **Máy ảo 1 (SOC / Defender - VD: Ubuntu hoặc Windows):** Đóng vai trò là Trung tâm điều hành. Nơi này sẽ chạy `drone.py` để hứng dữ liệu, phân tích mã độc và cung cấp Dashboard hiển thị.
-*   **Máy ảo 2 (Attacker / Compromised Fleet - VD: Kali Linux):** Đóng vai trò là bầy drone bị nhiễm mã độc. Nơi này sẽ chạy `droneflood_simulator.py` hoặc `drone_client.py` để bắn các gói tin tấn công và C2 Heartbeat về Máy ảo 1.
+*   **Máy ảo 1 (C2 Server & Attacker - Kali Linux):** Đóng vai trò là Trung tâm điều khiển (C2). Nơi này sẽ chạy `drone.py` để làm C2 Server/Dashboard và chạy `droneflood_simulator.py` để phát động tấn công.
+*   **Máy ảo 2 (Victim Drone - Ubuntu):** Đóng vai trò là Drone bị nhiễm mã độc. Nơi này sẽ chạy `drone_client.py` để mô phỏng một thiết bị bị chiếm quyền và kết nối về C2 Server trên Kali.
 *   **Cấu hình mạng:** Thiết lập mạng dạng **Bridged** hoặc **NAT Network** để 2 máy ảo có thể ping và giao tiếp qua lại với nhau (Đảm bảo máy Defender mở port TCP `5555` và `9000`).
 
 ### 2. Các bước đầu tiên (First Steps)
@@ -85,7 +85,7 @@ Hệ thống được thiết kế với tiêu chí **Zero-dependency** (Không 
 
 ### 3. Khởi động Máy chủ Phân tích (Mapping Engine)
 
-Trên **Máy ảo 1 (SOC/Defender)**, hãy khởi động lõi phân tích bằng lệnh:
+Trên **Máy ảo 1 (Kali - C2 Server)**, hãy khởi động lõi phân tích bằng lệnh:
 ```bash
 python drone.py
 ```
@@ -93,12 +93,13 @@ python drone.py
 
 ### 4. Các kịch bản chạy Mô phỏng (Simulator & Bot Agent)
 
-Trên **Máy ảo 2 (Attacker)**, bạn có nhiều cách để khởi tạo tín hiệu mã độc. (Giả sử IP của Máy 1 là `192.168.136.141`):
+**Chạy Kịch bản Tấn công (từ Kali):**
+(Với IP của Kali C2 là `192.168.136.151`):
 
 **Cách 4.1 - Khởi chạy một chiến dịch bầy đàn (DroneFlood Campaign)**
 Chạy script giả lập bầy drone bị nhiễm:
 ```bash
-python droneflood_simulator.py 192.168.136.141 5555
+python droneflood_simulator.py 192.168.136.151 5555
 ```
 *(Nếu chạy tất cả trên cùng một máy, hãy thay IP thành `127.0.0.1`)*
 
@@ -106,18 +107,18 @@ python droneflood_simulator.py 192.168.136.141 5555
 Nếu bạn muốn giả lập nhiều làn sóng tấn công liên tục (để test khả năng chịu tải của Rule Engine), hãy dùng vòng lặp bash:
 ```bash
 # Dành cho Linux/Mac
-for i in {1..5}; do python droneflood_simulator.py 192.168.136.141 5555; sleep 2; done
+for i in {1..5}; do python droneflood_simulator.py 192.168.136.151 5555; sleep 2; done
 ```
 
 **Cách 4.3 - Chạy một Node riêng lẻ (Single Bot Agent)**
 Nếu bạn muốn theo dõi vòng đời tấn công của một con Drone đơn duy nhất khi bị C2 chiếm quyền, hãy dùng `drone_client.py`:
 ```bash
-python drone_client.py 192.168.136.141 5555 --drone-id DRONE-ALPHA-01
+python drone_client.py 192.168.136.151 5555 --drone-id DRONE-ALPHA-01
 ```
 
 ### 5. Truy cập Dashboard Phân tích
-Trở lại **Máy ảo 1 (SOC/Defender)** (hoặc bất kỳ máy nào cùng mạng), mở trình duyệt web và truy cập vào địa chỉ:
-> 🌐 **http://192.168.136.141:9000** (Hoặc `http://localhost:9000` nếu chạy cục bộ)
+Trên Kali hoặc bất kỳ máy nào cùng mạng, mở trình duyệt web và truy cập vào địa chỉ C2:
+> 🌐 **http://192.168.136.151:9000** (Hoặc `http://localhost:9000` nếu chạy cục bộ)
 
 ---
 
