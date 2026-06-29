@@ -358,6 +358,20 @@ def init_forensic_db():
                 )
             """)
             
+            # Module 12: MITRE Reference
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS mitre_reference (
+                    technique_id TEXT PRIMARY KEY,
+                    name TEXT,
+                    description TEXT,
+                    url TEXT,
+                    tactics TEXT,
+                    platforms TEXT,
+                    created TIMESTAMP,
+                    modified TIMESTAMP
+                )
+            """)
+            
             # Module 11: Threat Score & Risk
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS drone_risk (
@@ -2153,7 +2167,63 @@ EXAMPLES:
             cursor = conn.cursor()
             
             try:
-                if endpoint == "attacks":
+                if endpoint == "fetch_mitre_official":
+                    # Check if already populated
+                    cursor.execute("SELECT COUNT(*) as c FROM mitre_reference")
+                    count = cursor.fetchone()["c"]
+                    
+                    tech_id = query_params.get("technique_id", [None])[0]
+                    
+                    if count == 0 and not query_params.get("skip_fetch"):
+                        import urllib.request
+                        url = "https://raw.githubusercontent.com/mitre/cti/master/enterprise-attack/enterprise-attack.json"
+                        try:
+                            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+                            with urllib.request.urlopen(req, timeout=30) as response:
+                                data = json.loads(response.read().decode('utf-8'))
+                                
+                            objects = data.get("objects", [])
+                            # parse attack-pattern
+                            for obj in objects:
+                                if obj.get("type") == "attack-pattern":
+                                    ext_refs = obj.get("external_references", [])
+                                    t_id = None
+                                    t_url = None
+                                    for ref in ext_refs:
+                                        if ref.get("source_name") == "mitre-attack":
+                                            t_id = ref.get("external_id")
+                                            t_url = ref.get("url")
+                                            break
+                                    if t_id:
+                                        name = obj.get("name", "")
+                                        desc = obj.get("description", "")
+                                        tactics = []
+                                        for kcp in obj.get("kill_chain_phases", []):
+                                            if kcp.get("kill_chain_name") == "mitre-attack":
+                                                tactics.append(kcp.get("phase_name"))
+                                        tactics_str = ", ".join(tactics)
+                                        platforms = ", ".join(obj.get("x_mitre_platforms", []))
+                                        
+                                        cursor.execute("INSERT OR REPLACE INTO mitre_reference (technique_id, name, description, url, tactics, platforms) VALUES (?, ?, ?, ?, ?, ?)",
+                                            (t_id, name, desc, t_url, tactics_str, platforms))
+                            conn.commit()
+                        except Exception as e:
+                            self._send_json({"status": "error", "message": f"Failed to fetch from MITRE: {e}"})
+                            return
+
+                    if tech_id:
+                        cursor.execute("SELECT * FROM mitre_reference WHERE technique_id = ?", (tech_id,))
+                        row = cursor.fetchone()
+                        if row:
+                            self._send_json({"status": "success", "data": dict(row)})
+                        else:
+                            self._send_json({"status": "error", "message": "Technique not found in official MITRE database."})
+                    else:
+                        cursor.execute("SELECT technique_id, name FROM mitre_reference")
+                        rows = [dict(r) for r in cursor.fetchall()]
+                        self._send_json({"status": "success", "count": len(rows), "data": rows})
+
+                elif endpoint == "attacks":
                     cursor.execute("SELECT * FROM active_attacks ORDER BY started_at DESC")
                     attacks = [dict(row) for row in cursor.fetchall()]
                     self._send_json({"attacks": attacks})
@@ -2359,6 +2429,9 @@ EXAMPLES:
                     if drone_id_param:
                         cursor.execute("SELECT artifact_address as offset, finding as artifact, artifact_type, source as re_source, validation_level, behavior, mapping_reason as reason, enterprise_tech_id as selected_technique, rejected_candidates, confidence, confidence_breakdown, campaign_stage FROM re_findings WHERE drone_id=? ORDER BY id DESC LIMIT 50", (drone_id_param,))
                         rows = cursor.fetchall()
+                        if not rows: # Fallback to attack_mapping
+                            cursor.execute("SELECT '' as offset, name as artifact, 'Telemetry/Network' as artifact_type, 'Network PCAP' as re_source, 'L1' as validation_level, tactic_name as behavior, reason, technique_id as selected_technique, '' as rejected_candidates, confidence, '' as confidence_breakdown, tactic as campaign_stage FROM attack_mapping WHERE drone_id=? ORDER BY id DESC LIMIT 50", (drone_id_param,))
+                            rows = cursor.fetchall()
                         if not rows: # Fallback to GLOBAL if no specific findings
                             cursor.execute("SELECT artifact_address as offset, finding as artifact, artifact_type, source as re_source, validation_level, behavior, mapping_reason as reason, enterprise_tech_id as selected_technique, rejected_candidates, confidence, confidence_breakdown, campaign_stage FROM re_findings WHERE drone_id='GLOBAL' ORDER BY id DESC LIMIT 50")
                             rows = cursor.fetchall()
@@ -2482,6 +2555,9 @@ EXAMPLES:
                     if drone_id_param:
                         cursor.execute("SELECT id, finding as artifact, behavior, mapping_reason as rule, enterprise_tech_id as technique, confidence, ics_tech_id as ics_translation, source as operational_effect FROM re_findings WHERE drone_id=? ORDER BY id DESC LIMIT 20", (drone_id_param,))
                         rows = cursor.fetchall()
+                        if not rows: # Fallback to attack_mapping
+                            cursor.execute("SELECT id, name as artifact, tactic_name as behavior, reason as rule, technique_id as technique, confidence, ics_tech_id as ics_translation, evidence as operational_effect FROM attack_mapping WHERE drone_id=? ORDER BY id DESC LIMIT 20", (drone_id_param,))
+                            rows = cursor.fetchall()
                         if not rows: # Fallback to GLOBAL if no specific findings
                             cursor.execute("SELECT id, finding as artifact, behavior, mapping_reason as rule, enterprise_tech_id as technique, confidence, ics_tech_id as ics_translation, source as operational_effect FROM re_findings WHERE drone_id='GLOBAL' ORDER BY id DESC LIMIT 20")
                             rows = cursor.fetchall()
@@ -2833,6 +2909,10 @@ EXAMPLES:
                     # Fix #4: active_artifacts with rich data for Deep Analysis
                     cursor.execute("SELECT finding, artifact_type as type, confidence, enterprise_tech_id as technique, timestamp FROM re_findings WHERE drone_id=? OR drone_id='GLOBAL' ORDER BY id ASC", (d_id,))
                     artifacts = [dict(row) for row in cursor.fetchall()]
+                    if not artifacts:
+                        # Fallback to attack_mapping for artifacts if re_findings is empty
+                        cursor.execute("SELECT name as finding, 'Telemetry' as type, confidence, technique_id as technique, timestamp FROM attack_mapping WHERE drone_id=? ORDER BY id ASC", (d_id,))
+                        artifacts = [dict(row) for row in cursor.fetchall()]
                     active_artifacts = list(set([a["finding"] for a in artifacts]))
                     
                     # Tactical Intelligence Additions
