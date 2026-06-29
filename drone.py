@@ -8,6 +8,7 @@ import hashlib
 import sqlite3
 import math
 import re
+import random
 from datetime import datetime
 from typing import Dict
 import queue
@@ -684,7 +685,6 @@ class MITREMappingEngine:
         rules = cursor.fetchall()
         candidates = []
         for r in rules:
-            import re
             if re.match(r["artifact_regex"], finding) or (r["behavior"] == behavior and behavior != "Unknown Behavior"):
                 candidates.append({
                     "technique_id": r["ics_technique"], "enterprise_tech_id": r["enterprise_technique"], "ics_tech_id": r["ics_technique"],
