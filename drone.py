@@ -841,9 +841,9 @@ class MITREMappingEngine:
                             ics_tech = matched_rule["ics_technique"]
                             tech = ics_tech
                             tech_name = matched_rule["behavior"]
-                            confidence = matched_rule["confidence_weight"]
+                            confidence = matched_rule["confidence_weight"] if matched_rule["confidence_weight"] else 85
                             score_add = 20
-                            reason = "Matched by Dynamic Rule Engine."
+                            reason = matched_rule["reference"] if matched_rule["reference"] else "Heuristic match"
                             
                             ioc_type = "STRING"
                             artifact_type = matched_rule["artifact_type"]
@@ -1859,44 +1859,39 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
         elif self.path.startswith("/api/threat_hunt"):
             content_length = int(self.headers.get('Content-Length', 0))
-            if content_length > 0:
-                try:
-                    post_data = json.loads(self.rfile.read(content_length))
-                    artifact = post_data.get("artifact", "")
-                    technique = post_data.get("technique", "")
-                except Exception:
-                    artifact = ""
-                    technique = ""
-            else:
-                artifact = ""
-                technique = ""
-
+            post_data = json.loads(self.rfile.read(content_length)) if content_length > 0 else {}
+            artifact = post_data.get("artifact")
+            technique = post_data.get("technique")
+            
+            if not artifact or not technique:
+                self._send_json({"error": "Missing artifact or technique"}, 400)
+                return
+            
             conn = sqlite3.connect(DB_FILE_PATH, timeout=30)
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-
-            cursor.execute("SELECT DISTINCT drone_id FROM re_findings WHERE finding LIKE ?", (f"%{artifact}%",))
-            all_drones = [r["drone_id"] for r in cursor.fetchall()]
-
-            if technique:
-                cursor.execute("SELECT DISTINCT drone_id FROM attack_mapping WHERE technique_id = ?", (technique,))
-                mapped_drones = [r["drone_id"] for r in cursor.fetchall()]
-                matching_drones = [d for d in all_drones if d not in mapped_drones]
-            else:
-                matching_drones = all_drones
-
-            t_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            status = "COMPLETED"
-            hypothesis = f"Hunt: {artifact} -> {technique}"
-
-            cursor.execute(
-                "INSERT INTO threat_hunts (hunt_name, hypothesis, artifact, expected_technique, drone_ids, timestamp, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                ("Manual Hunt", hypothesis, artifact, technique, json.dumps(matching_drones), t_str, status)
-            )
-            conn.commit()
+            
+            cursor.execute("""
+                SELECT DISTINCT drone_id 
+                FROM re_findings 
+                WHERE finding LIKE ? 
+                AND drone_id NOT IN (
+                    SELECT drone_id FROM attack_mapping WHERE technique_id = ?
+                )
+            """, (f"%{artifact}%", technique))
+            
+            results = [dict(row) for row in cursor.fetchall()]
+            
+            if results:
+                drone_ids = ",".join([r["drone_id"] for r in results])
+                cursor.execute("""
+                    INSERT INTO threat_hunts (hunt_name, hypothesis, artifact, expected_technique, drone_ids, timestamp, status)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (f"Hunt_{artifact}", f"Hunt: {artifact} -> {technique}", artifact, technique, json.dumps([r["drone_id"] for r in results]), datetime.now().isoformat(), "COMPLETED"))
+                conn.commit()
+            
             conn.close()
-
-            self._send_json({"success": True, "matching_drones": matching_drones})
+            self._send_json({"drone_ids": [r["drone_id"] for r in results], "count": len(results)})
             return
 
         elif self.path == "/api/cli":
@@ -2553,13 +2548,7 @@ EXAMPLES:
                     if drone_id_param:
                         cursor.execute("SELECT drone_id, name, technique_id, ics_tech_id FROM attack_mapping WHERE drone_id=? ORDER BY id DESC LIMIT 50", (drone_id_param,))
                     else:
-                        with clients_lock:
-                            active_drone_ids = list(clients.keys())
-                        if active_drone_ids:
-                            placeholders = ','.join(['?'] * len(active_drone_ids))
-                            cursor.execute(f"SELECT drone_id, name, technique_id, ics_tech_id FROM attack_mapping WHERE drone_id IN ({placeholders}) ORDER BY id DESC LIMIT 50", active_drone_ids)
-                        else:
-                            cursor.execute("SELECT drone_id, name, technique_id, ics_tech_id FROM attack_mapping WHERE 1=0")
+                        cursor.execute("SELECT drone_id, name, technique_id, ics_tech_id FROM attack_mapping ORDER BY id DESC LIMIT 50")
                             
                     mappings = cursor.fetchall()
                     mappings.reverse() # Reverse to show chronological order (oldest to newest) from top to bottom
@@ -2608,13 +2597,18 @@ EXAMPLES:
                             cursor.execute("SELECT id, finding as artifact, behavior, mapping_reason as rule, enterprise_tech_id as technique, confidence, ics_tech_id as ics_translation, source as operational_effect FROM re_findings WHERE drone_id='GLOBAL' ORDER BY id DESC LIMIT 20")
                             rows = cursor.fetchall()
                     else:
-                        cursor.execute("SELECT id, finding as artifact, behavior, mapping_reason as rule, enterprise_tech_id as technique, confidence, ics_tech_id as ics_translation, source as operational_effect FROM re_findings ORDER BY id DESC LIMIT 20")
+                        cursor.execute("SELECT id, drone_id, finding as artifact, behavior, mapping_reason as rule, enterprise_tech_id as technique, confidence, ics_tech_id as ics_translation, source as operational_effect FROM re_findings ORDER BY id DESC LIMIT 20")
                         rows = cursor.fetchall()
+                        if not rows:
+                            cursor.execute("SELECT id, drone_id, name as artifact, tactic_name as behavior, reason as rule, technique_id as technique, confidence, ics_tech_id as ics_translation, evidence as operational_effect FROM attack_mapping ORDER BY id DESC LIMIT 20")
+                            rows = cursor.fetchall()
                     
                     rows.reverse()
                     chain = []
                     for r in rows:
+                        d_id = r["drone_id"] if "drone_id" in r.keys() else "UNKNOWN"
                         chain.append({
+                            "drone_id": d_id,
                             "raw_packet": f"Packet #{r['id']}",
                             "decoded_json": f'{{"cmd": "{r["artifact"]}"}}' if "DF_" not in str(r["artifact"] or "") else f'{{"mutex": "{r["artifact"]}"}}',
                             "artifact": r["artifact"],

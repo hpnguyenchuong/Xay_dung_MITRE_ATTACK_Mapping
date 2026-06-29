@@ -3,9 +3,8 @@ window.AttackGraphPanel = ({ selectedDrone }) => {
  const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!selectedDrone?.drone_id) return;
         setLoading(true);
-        fetch(`/api/attack_graph?drone_id=${selectedDrone.drone_id}`)
+        fetch(`/api/attack_graph`)
             .then(res => res.json())
             .then(data => {
                 setGraphData(data);
@@ -15,7 +14,7 @@ window.AttackGraphPanel = ({ selectedDrone }) => {
                 console.error(err);
                 setLoading(false);
             });
-    }, [selectedDrone?.drone_id]);
+    }, []);
 
  if (loading) {
  return <div className="panel p-4 animate-pulse"><div className="h-4 bg-slate-700 rounded-sm w-1/4 mb-4"></div><div className="h-32 bg-slate-800 rounded-sm"></div></div>;

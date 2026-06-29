@@ -19,7 +19,13 @@ window.ThreatHuntingPanel = () => {
     
     const runHunt = () => {
         setLoading(true);
-        fetch(`/api/threat_hunt?artifact=${encodeURIComponent(artifact)}&technique=${encodeURIComponent(tech)}`)
+        fetch('/api/threat_hunt', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ artifact: artifact, technique: tech })
+        })
             .then(r => r.json())
             .then(data => {
                 setLoading(false);
