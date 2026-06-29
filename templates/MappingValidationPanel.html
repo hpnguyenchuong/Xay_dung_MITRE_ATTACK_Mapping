@@ -40,6 +40,26 @@ window.MappingValidationPanel = ({ onArtifactClick }) => {
 
  const gtDemo = reasoningDatabase[selectedItemIndex];
  const [showConfidenceBreakdown, setShowConfidenceBreakdown] = useState(false);
+ const [showMitreCompare, setShowMitreCompare] = useState(false);
+ const [mitreData, setMitreData] = useState(null);
+ const [isFetchingMitre, setIsFetchingMitre] = useState(false);
+
+ const fetchMitreData = async (tech_id) => {
+     setIsFetchingMitre(true);
+     setShowMitreCompare(true);
+     try {
+         const res = await fetch(`/api/fetch_mitre_official?technique_id=${tech_id}`);
+         const data = await res.json();
+         if (data.status === "success") {
+             setMitreData(data.data);
+         } else {
+             setMitreData({ error: data.message });
+         }
+     } catch (e) {
+         setMitreData({ error: "Failed to connect to backend." });
+     }
+     setIsFetchingMitre(false);
+ };
 
  return (
  <div className="panel flex-1 min-w-0 min-h-0 flex flex-col border-[#89ceff]/50 shadow-none">
@@ -86,6 +106,80 @@ window.MappingValidationPanel = ({ onArtifactClick }) => {
  <span className="italic">"{gtDemo.candidate_desc}"</span>
  </div>
  </div>
+ </div>
+ </div>
+ </div>
+ )}
+
+ {/* MITRE Compare Overlay */}
+ {showMitreCompare && (
+ <div className="absolute inset-0 bg-slate-900/95 z-50 flex items-center justify-center backdrop-blur-sm" onClick={() => setShowMitreCompare(false)}>
+ <div className="panel p-4 w-[700px] bg-slate-800 border-slate-700 shadow-none cursor-default flex flex-col gap-3" onClick={(e) => e.stopPropagation()}>
+ <div className="text-[16px] font-bold text-slate-200 flex justify-between items-center border-b border-slate-700 pb-2">
+ <div className="flex items-center gap-2">
+    <span className="material-symbols-outlined text-[#38bdf8]">travel_explore</span>
+    <span>COMPARE WITH OFFICIAL MITRE</span>
+ </div>
+ <span className="material-symbols-outlined text-[18px] cursor-pointer hover:text-[#f43f5e]" onClick={() => setShowMitreCompare(false)}>close</span>
+ </div>
+ 
+ <div className="grid grid-cols-2 gap-4 relative">
+    {/* Drone Detection Col */}
+    <div className="flex flex-col gap-2">
+        <span className="text-[13px] font-bold text-[#34d399] tracking-widest uppercase border-b border-[#34d399]/30 pb-1">DRONE DETECTION</span>
+        <div className="flex flex-col gap-1.5 font-mono text-[15px]">
+            <div className="flex justify-between text-slate-200"><span>Technique:</span> <span className="text-[#38bdf8] font-bold">{gtDemo.expected_ent}</span></div>
+            <div className="flex justify-between text-slate-200"><span>Artifact:</span> <span className="text-slate-400">{gtDemo.artifact}</span></div>
+            <div className="flex justify-between text-slate-200"><span>Confidence:</span> <span className="text-[#fbbf24] font-bold">{gtDemo.confidence}</span></div>
+            <div className="flex flex-col text-slate-200 mt-1">
+                <span>Behavior:</span>
+                <span className="text-slate-400 mt-1 bg-slate-900 p-1.5 rounded-sm border border-slate-700">{gtDemo.candidate_desc}</span>
+            </div>
+        </div>
+    </div>
+    
+    {/* VS Divider */}
+    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-800 rounded-full border border-slate-700 p-1 z-10 flex items-center justify-center shadow-lg">
+        <span className="font-bold text-slate-400 text-[12px] px-1">VS</span>
+    </div>
+
+    {/* MITRE Official Col */}
+    <div className="flex flex-col gap-2 relative border-l border-slate-700 pl-4">
+        <span className="text-[13px] font-bold text-[#38bdf8] tracking-widest uppercase border-b border-[#38bdf8]/30 pb-1">OFFICIAL MITRE DEFINITION</span>
+        {isFetchingMitre ? (
+            <div className="flex flex-col items-center justify-center py-8 text-slate-400">
+                <span className="material-symbols-outlined animate-spin text-[24px] mb-2">sync</span>
+                <span className="text-[14px]">Fetching STIX data from MITRE CTI...</span>
+            </div>
+        ) : mitreData?.error ? (
+            <div className="text-[#f43f5e] p-2 bg-[#f43f5e]/10 border border-[#f43f5e]/30 rounded-sm text-[14px]">
+                {mitreData.error}
+            </div>
+        ) : mitreData ? (
+            <div className="flex flex-col gap-1.5 font-mono text-[14px] overflow-y-auto max-h-[300px] custom-scrollbar pr-1">
+                <div className="flex justify-between text-slate-200"><span>ID:</span> <span className="text-[#38bdf8] font-bold">{mitreData.technique_id}</span></div>
+                <div className="flex flex-col text-slate-200">
+                    <span>Name:</span>
+                    <span className="text-slate-300 font-bold">{mitreData.name}</span>
+                </div>
+                <div className="flex justify-between text-slate-200 mt-1"><span>Tactic:</span> <span className="text-[#fbbf24]">{mitreData.tactics}</span></div>
+                <div className="flex flex-col text-slate-200 mt-1">
+                    <span>Platforms:</span>
+                    <span className="text-slate-400 text-[13px] mt-0.5">{mitreData.platforms}</span>
+                </div>
+                <div className="flex flex-col text-slate-200 mt-2">
+                    <span className="border-t border-slate-700 pt-2 text-[#89ceff]">Description:</span>
+                    <span className="text-slate-400 text-[13px] mt-1 text-justify bg-slate-900/50 p-2 rounded-sm border border-slate-800">{mitreData.description.substring(0, 400)}...</span>
+                </div>
+                <div className="mt-3">
+                    <a href={mitreData.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-[#38bdf8] hover:text-white transition-colors cursor-pointer w-max bg-[#38bdf8]/10 px-2 py-1 rounded-sm border border-[#38bdf8]/30">
+                        <span className="material-symbols-outlined text-[16px]">link</span>
+                        View on MITRE ATT&CK
+                    </a>
+                </div>
+            </div>
+        ) : null}
+    </div>
  </div>
  </div>
  </div>
@@ -163,7 +257,13 @@ window.MappingValidationPanel = ({ onArtifactClick }) => {
  <div className="bg-[#0b1326] border border-slate-700 rounded-sm flex flex-col overflow-hidden relative group h-fit max-h-full">
  <div className="bg-slate-800 px-3 py-2 border-b border-slate-700 flex justify-between items-center shrink-0">
  <span className="font-bold text-[#89ceff] text-[17px] tracking-widest uppercase">TECHNIQUE CARD</span>
- <span className="material-symbols-outlined text-[#89ceff] text-[17px]">id_card</span>
+ <div className="flex items-center gap-2">
+    <button onClick={() => fetchMitreData(gtDemo.expected_ent)} className="flex items-center gap-1 bg-[#38bdf8]/20 hover:bg-[#38bdf8]/40 text-[#38bdf8] px-2 py-0.5 rounded-sm transition-colors text-[14px]">
+        <span className="material-symbols-outlined text-[16px]">travel_explore</span>
+        Official MITRE
+    </button>
+    <span className="material-symbols-outlined text-[#89ceff] text-[17px]">id_card</span>
+ </div>
  </div>
  
  <div className="p-2 flex flex-col gap-2 overflow-y-auto custom-scrollbar min-h-0">
