@@ -93,12 +93,12 @@ python drone.py
 
 ### 4. Các kịch bản chạy Mô phỏng (Simulator & Bot Agent)
 
-Trên **Máy ảo 2 (Attacker)**, bạn có nhiều cách để khởi tạo tín hiệu mã độc. (Giả sử IP của Máy 1 là `192.168.1.100`):
+Trên **Máy ảo 2 (Attacker)**, bạn có nhiều cách để khởi tạo tín hiệu mã độc. (Giả sử IP của Máy 1 là `192.168.136.141`):
 
 **Cách 4.1 - Khởi chạy một chiến dịch bầy đàn (DroneFlood Campaign)**
 Chạy script giả lập bầy drone bị nhiễm:
 ```bash
-python droneflood_simulator.py 192.168.1.100 5555
+python droneflood_simulator.py 192.168.136.141 5555
 ```
 *(Nếu chạy tất cả trên cùng một máy, hãy thay IP thành `127.0.0.1`)*
 
@@ -106,18 +106,18 @@ python droneflood_simulator.py 192.168.1.100 5555
 Nếu bạn muốn giả lập nhiều làn sóng tấn công liên tục (để test khả năng chịu tải của Rule Engine), hãy dùng vòng lặp bash:
 ```bash
 # Dành cho Linux/Mac
-for i in {1..5}; do python droneflood_simulator.py 192.168.1.100 5555; sleep 2; done
+for i in {1..5}; do python droneflood_simulator.py 192.168.136.141 5555; sleep 2; done
 ```
 
 **Cách 4.3 - Chạy một Node riêng lẻ (Single Bot Agent)**
 Nếu bạn muốn theo dõi vòng đời tấn công của một con Drone đơn duy nhất khi bị C2 chiếm quyền, hãy dùng `drone_client.py`:
 ```bash
-python drone_client.py 192.168.1.100 5555 --drone-id DRONE-ALPHA-01
+python drone_client.py 192.168.136.141 5555 --drone-id DRONE-ALPHA-01
 ```
 
 ### 5. Truy cập Dashboard Phân tích
 Trở lại **Máy ảo 1 (SOC/Defender)** (hoặc bất kỳ máy nào cùng mạng), mở trình duyệt web và truy cập vào địa chỉ:
-> 🌐 **http://192.168.1.100:9000** (Hoặc `http://localhost:9000` nếu chạy cục bộ)
+> 🌐 **http://192.168.136.141:9000** (Hoặc `http://localhost:9000` nếu chạy cục bộ)
 
 ---
 
