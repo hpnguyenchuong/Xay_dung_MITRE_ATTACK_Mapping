@@ -1,162 +1,136 @@
-<div align="center">
-  <img src="https://img.icons8.com/color/96/000000/drone.png" alt="Drone Icon" width="120"/>
-  
-  # 🚁 Drone Fleet Malware Mapping Engine
-  
-  ### 🛡️ Nền tảng Phân tích & Ánh xạ Threat Intelligence mức Tier-5 (ICS/IoT)
-  
-  [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg?style=for-the-badge&logo=python)](https://www.python.org/)
-  [![MITRE ATT&CK](https://img.shields.io/badge/MITRE_ATT%26CK-v14.0-ff6666.svg?style=for-the-badge&logo=mitre)](https://attack.mitre.org/)
-  [![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+# 🚁 Drone Fleet Malware Mapping Engine (Tier-5 SOC)
 
-  <p align="center">
-    <em>Nền tảng nghiên cứu chuyên sâu giúp phân tích các bằng chứng dịch ngược (RE Artifacts) từ mã độc tấn công bầy drone (DroneFlood) và ánh xạ tự động vào ma trận MITRE ATT&CK Enterprise & ICS. Đáp ứng chuẩn đầu ra CLO5, CLO6, CLO7.</em>
-  </p>
-</div>
+> **Dự án Nghiên cứu Học thuật (RBL) - FPT University Ho Chi Minh City**
+> **Môn học:** IAM302T — Malware Analysis and Reverse Engineering
+> **Học kỳ:** Summer 2026
+> **Research Theme:** Drone Fleet Malware (Phân tích & Đảo ngược Mã độc hệ thống UAV)
 
 ---
 
-## 📌 Tổng quan dự án (Project Overview)
+## 📖 1. Giới thiệu Tổng quan
 
-Dự án này là một **Explainable Mapping Engine (Công cụ ánh xạ có khả năng giải thích)** được thiết kế chuyên biệt cho hệ thống IoT và Hệ thống điều khiển công nghiệp (ICS). Dự án giải quyết bài toán phức tạp trong an toàn thông tin: *Làm thế nào để liên kết các bằng chứng kỹ thuật số ở mức thấp (network packets, memory offsets, mutices) thu thập được từ phân tích mã độc (Reverse Engineering - RE) với các tác động vận hành vật lý ở mức cao đối với một bầy drone (Drone Fleet).*
+**Drone Fleet Malware Mapping Engine** là một hệ thống phân tích vòng đời mã độc và cảnh báo mối đe dọa tiên tiến. Thay vì chỉ dừng lại ở việc phát hiện mã độc (Black-box AI), dự án này tập trung vào việc **"Giải thích" (Explainability)**.
 
-Khác với các hệ thống phân loại AI "hộp đen" (Black-box), hệ thống này sử dụng một **Candidate Competition Rule Engine** mang tính xác định (deterministic). Mọi quyết định ánh xạ từ bằng chứng số sang kỹ thuật tấn công (Technique) đều được chấm điểm (Confidence Score), đưa ra lý do (Justification) và tạo thành chuỗi bằng chứng rõ ràng.
+Hệ thống kết nối trực tiếp các bằng chứng kỹ thuật mức thấp (như Mutex, String trong Memory, Network Beacon) với những hậu quả vật lý mức cao trong mạng lưới công nghiệp (ICS/IoT) thông qua **Kiến trúc Dịch thuật 3 Cột (3-Column ICS Translation Engine)** dựa trên ma trận **MITRE ATT&CK**.
 
-### 🎯 Trọng tâm Học thuật (Course Learning Outcomes)
-
-Dự án này được thiết kế và xây dựng để đáp ứng các chuẩn đầu ra (CLO) cực kỳ khắt khe của môn học/nghiên cứu:
-
-- **📍 CLO5 - Tương quan bằng chứng RE (RE Artifact Correlation):** Thiết lập chuỗi suy luận 8 bước (8-Step Forensic Chain) từ dữ liệu thô (Raw packet) cho đến Hậu quả ICS (ICS Impact), giúp xóa bỏ khoảng trống ngữ nghĩa (Semantic gap) giữa mã độc và vận hành vật lý.
-- **📍 CLO6 - Máy tạo luật tự động (Automated Rule Generation Engine):** Khả năng tự động sinh ra các rules phát hiện mối đe dọa dựa trên RE findings (Snort Rules cho Network và YARA Rules cho Host/Mutex).
-- **📍 CLO7 - Đánh giá độ chính xác (Ground Truth Evaluation Metrics):** Tích hợp công cụ đánh giá bằng toán học, tính toán trực tiếp các chỉ số **Precision, Recall, F1-Score** bằng cách đối chiếu kết quả Mapping của Engine với tập dữ liệu gốc (Ground Truth).
+**🎯 Chuẩn đầu ra (CLO) được chứng minh trong hệ thống:**
+*   **CLO5:** Liên kết tĩnh/động các dấu hiệu (Artifacts) vào MITRE ATT&CK (Enterprise & ICS) thông qua "8-Step Forensic Chain".
+*   **CLO6:** Tự động hóa sinh tập luật phòng vệ (YARA, Snort, Sigma) - Đóng kín vòng lặp SOC.
+*   **CLO7:** Đánh giá hiệu năng Engine bằng Ground Truth (Precision, Recall, F1-Score).
 
 ---
 
-## ✨ Tính năng chi tiết & Động cơ (Core Capabilities)
+## 🏗️ 2. Kiến trúc Hệ thống (Architecture)
 
-### 1. 8-Step Forensic Chain (Chuỗi điều tra số 8 bước)
-Đảm bảo tính "Explainable" (có thể giải thích được) tuyệt đối. Khi hệ thống phát hiện 1 bất thường, nó không chỉ cảnh báo mà còn vạch ra toàn bộ lộ trình:
-`Raw Packet ➜ Decoded JSON ➜ Artifact (Dấu vết) ➜ Rule Trigger ➜ MITRE Technique ➜ Confidence (Độ tin cậy) ➜ ICS Translation (Biên dịch sang ICS) ➜ ICS Impact (Tác động vật lý)`.
+Hệ thống được mô phỏng theo mô hình 2-VMs (Client - Server) không phụ thuộc thư viện ngoài (Zero-dependency ngoài thư viện chuẩn của Python).
 
-### 2. 3-Column ICS Translation Engine (Động cơ biên dịch ICS 3 cột)
-Các chiến thuật IT thông thường (như *C2 Beaconing - T1071*) sẽ được Engine tự động dịch sang:
-- **Cyber-Physical Drone Effects:** Tác động trực tiếp lên drone (VD: Chiếm kênh điều khiển từ xa).
-- **ICS Consequences:** Hậu quả đối với hệ thống công nghiệp (VD: *Loss of Control, Loss of View, Navigation Deviation*).
-
-### 3. Dynamic Attack Graphing (Đồ thị tấn công động)
-Bảng điều khiển (Dashboard) sử dụng SVG/Flexbox thuần để vẽ trực tiếp đường đi của các cuộc tấn công theo thời gian thực dựa trên lịch sử Mapping, giúp dễ dàng hình dung Campaign của mã độc.
-
-### 4. Hệ thống tính điểm rủi ro bầy (Segmented Threat Scoring)
-Mỗi Drone sẽ được gán một mức độ rủi ro (Threat Score) từ 0-100 dựa trên các cuộc tấn công đang phải hứng chịu. Rủi ro được phân rã thành: Rủi ro mất điều khiển, Suy giảm nhiệm vụ, Thiệt hại tài sản.
+1.  **`drone.py` (C2 Server & Backend Engine):** Trái tim của hệ thống. Đóng vai trò máy chủ Command & Control độc hại, thu thập Telemetry từ Drone. Đồng thời nó chứa **Mapping Engine** để phân tích rủi ro và một máy chủ **HTTP Server** phát giao diện Dashboard. Sử dụng cơ sở dữ liệu `SQLite WAL-mode` để chịu tải cực cao.
+2.  **`drone_client.py` (Victim Agent):** Mô phỏng một chiếc Drone đang chạy phần mềm điều khiển bị nhiễm mã độc. Nhiệm vụ của nó là liên tục gửi gói tin Telemetry (nhịp tim, GPS, pin) về C2.
+3.  **`droneflood_simulator.py` (Attack Simulator):** Công cụ Stress-test. Giả lập một bầy đàn (Swarm) hàng chục/hàng trăm Drone cùng bị nhiễm mã độc và gửi dữ liệu về C2 cùng một lúc, gây bão mạng.
+4.  **`templates/` (Frontend React SPA):** Giao diện Web động được viết bằng HTML/React/Babel, chia làm 42 components để render mượt mà biểu đồ Radar, Node Map và Bảng Pháp y.
 
 ---
 
-## 🏗️ Kiến trúc hệ thống (System Architecture)
+## ⚡ 3. Tính năng Cốt lõi
 
-Hệ thống được thiết kế theo hướng Micro-architecture nhẹ nhàng và mô-đun hóa:
+### A. Chuỗi Phân tích Pháp y 8-Bước (8-Step Forensic Chain)
+Hệ thống không kết luận bừa. Mọi quyết định cảnh báo đều đi qua luồng:
+1️⃣ `Raw Packet` ➔ 2️⃣ `Decoded JSON` ➔ 3️⃣ `Forensic Artifact` ➔ 4️⃣ `Rule Trigger` ➔ 5️⃣ `Enterprise MITRE` (e.g. T1565) ➔ 6️⃣ `Confidence Score` (Tính toán linh động) ➔ 7️⃣ `ICS Translation` (e.g. T0831) ➔ 8️⃣ `ICS Impact`.
 
-1. **`drone.py` (Core Analysis Engine & API Gateway):** Trái tim của hệ thống. File này tiếp nhận dữ liệu từ xa (Telemetry), xử lý RE findings qua Rule Engine nhiều bước (Multi-stage), lưu trữ vào cơ sở dữ liệu SQLite (`soc_artifacts.db`) và chạy một Web Server (Cung cấp REST APIs và Dashboard).
-2. **`drone_client.py` (Bot Agent):** Giả lập một Drone độc lập đã bị xâm nhập. Kịch bản của Bot bao gồm việc gửi các gói tin C2 Heartbeat giả mạo và thay đổi các trạng thái vật lý (GPS drift, Altitude drop) theo lệnh C2.
-3. **`droneflood_simulator.py` (Threat Simulator):** Chương trình giả lập toàn bộ một chiến dịch tấn công (Campaign) nhắm vào một "Bầy drone" (Fleet). Nó điều phối vòng đời xâm nhập từ *Persistence* ➜ *Custom C2* ➜ *Fleet Takeover*.
-4. **`templates/` (Tier-5 SOC Dashboard):** Giao diện Single Page Application (SPA) viết bằng HTML/JS/TailwindCSS (Nhúng Babel/React) được cung cấp thông qua Web Server của `drone.py`.
+### B. Tự Động Sinh Luật (Automated Rule Generation)
+Khi mã độc thực hiện hành vi, hệ thống trích xuất IOCs và điền vào các bộ luật chuẩn công nghiệp trong thư mục `detection/`:
+*   **YARA (`yara_rules.yar`):** Quét bộ nhớ tĩnh (Strings, API Calls, XOR payload).
+*   **Snort (`snort_rules.rules`):** Bắt chính xác payload mạng (FLEET_SYNC).
+*   **Sigma (`sigma_rules.yml`):** Phát hiện qua Sysmon (Tạo Mutex, Mở Network Connection).
 
 ---
 
-## 🚀 Hướng dẫn Triển khai & Chạy Code Kỹ thuật (Advanced Execution Guide)
+## ⚙️ 4. Hướng dẫn Cài đặt & Triển khai (Setup Guide)
 
-### 1. Chuẩn bị Môi trường (Environment Setup)
+### 📌 Yêu cầu hệ thống:
+*   Python 3.8 trở lên.
+*   Trình duyệt Web hiện đại (Chrome/Edge/Firefox).
+*   Không cần `pip install` bất kỳ thư viện ngoài nào!
 
-Hệ thống được thiết kế với tiêu chí **Zero-dependency** (Không phụ thuộc thư viện ngoài), chỉ sử dụng thư viện chuẩn của Python. Môi trường yêu cầu duy nhất là **Python 3.10+**. 
+### 📌 Triển khai cục bộ (Chạy thẳng trên Windows/Mac):
+1. Giải nén thư mục dự án `NEW_MITRE_FINAL_PACKAGE`.
+2. Mở Terminal / Command Prompt tại thư mục dự án.
+3. Đảm bảo port `5555` (C2) và `8080` (Web Dashboard) không bị chiếm dụng.
 
-Để mô phỏng môi trường tấn công thực tế (Network Simulation), bạn nên chuẩn bị kiến trúc máy ảo (VM) như sau:
-*   **Máy ảo 1 (C2 Server & Attacker - Kali Linux):** Đóng vai trò là Trung tâm điều khiển (C2). Nơi này sẽ chạy `drone.py` để làm C2 Server/Dashboard và chạy `droneflood_simulator.py` để phát động tấn công.
-*   **Máy ảo 2 (Victim Drone - Ubuntu):** Đóng vai trò là Drone bị nhiễm mã độc. Nơi này sẽ chạy `drone_client.py` để mô phỏng một thiết bị bị chiếm quyền và kết nối về C2 Server trên Kali.
-*   **Cấu hình mạng:** Thiết lập mạng dạng **Bridged** hoặc **NAT Network** để 2 máy ảo có thể ping và giao tiếp qua lại với nhau (Đảm bảo máy Defender mở port TCP `5555` và `9000`).
+*(Nếu muốn chạy trên 2 máy ảo VM khác nhau, hãy sửa chuỗi `"localhost"` thành IP của máy ảo chứa file `drone.py` trong `drone_client.py` và `droneflood_simulator.py`)*
 
-### 2. Các bước đầu tiên (First Steps)
+---
 
-1.  Clone toàn bộ mã nguồn về cả 2 máy ảo (hoặc tải ZIP):
+## 🚀 5. Hướng dẫn Demo Chạy Thực Tế (Kịch bản Bảo vệ Đồ án)
+
+Đây là các bước chuẩn xác nhất để bạn có thể báo cáo và trình diễn (Live Demo) mượt mà trước Hội đồng Giám khảo:
+
+### BƯỚC 1: Khởi động Trái tim Hệ thống (C2 Server)
+*   Khuyên dùng: Xóa file `soc_artifacts.db` (nếu có) trước khi demo để có cơ sở dữ liệu sạch sẽ hoàn toàn.
+*   Trên Terminal 1, chạy lệnh:
     ```bash
-    git clone https://github.com/YOUR_GITHUB_USERNAME/Xay_dung_MITRE_ATTACK_Mapping.git
-    cd Xay_dung_MITRE_ATTACK_Mapping
+    python drone.py
     ```
-2.  Kiểm tra phiên bản Python trên máy: `python --version` (đảm bảo >= 3.10).
-3.  Không cần chạy `pip install` vì mã nguồn đã được tối ưu hoàn toàn độc lập (Zero-dependency).
+*   *Kết quả mong đợi:* Terminal in ra "SOC Engine & C2 Server running on 0.0.0.0:5555" và "Dashboard GUI available at http://localhost:8080".
 
-### 3. Khởi động Máy chủ Phân tích (Mapping Engine)
+### BƯỚC 2: Mở Giao diện Giám sát SOC (Web Dashboard)
+*   Mở trình duyệt, truy cập: `http://localhost:8080`
+*   Bạn sẽ thấy giao diện React load lên cực nhanh. Hiện tại bảng dữ liệu sẽ trống.
 
-Trên **Máy ảo 1 (Kali - C2 Server)**, hãy khởi động lõi phân tích bằng lệnh:
-```bash
-python drone.py
-```
-*(Hệ thống sẽ tự động tạo CSDL `soc_artifacts.db`, mở TCP Server ở port `5555` để nhận tín hiệu drone, và mở Web Dashboard ở port `9000`).*
+### BƯỚC 3: Mô phỏng Nạn nhân thứ 1 (Single Drone Attack)
+*   Trên Terminal 2, chạy một Client đơn lẻ:
+    ```bash
+    python drone_client.py
+    ```
+*   *Hành động trên Dashboard:* 
+    * Chuyển sang Tab **"Evidence Board"** hoặc **"Drone Lifecycle"**.
+    * Bạn sẽ thấy chiếc Drone đầu tiên xuất hiện. Mã độc sẽ tự động thực hiện các hành vi như sinh Mutex, gọi C2. Các khung MITRE Tactic sẽ dần hiện lên (Persistence, C2, v.v.).
 
-### 4. Các kịch bản chạy Mô phỏng (Simulator & Bot Agent)
+### BƯỚC 4: Kích hoạt Chiến dịch Tấn công Bầy đàn (The DroneFlood Simulation)
+*   Để trình diễn khả năng chịu tải của SQLite WAL Mode và Thread-locks, tắt Terminal 2 (Ctrl+C).
+*   Trên Terminal 3, khởi động cuộc tấn công quy mô lớn:
+    ```bash
+    python droneflood_simulator.py
+    ```
+*   *Hành động trên Dashboard:*
+    * Chuyển sang Tab **"Attack Map"**: Bạn sẽ thấy bản đồ mạng (Node Map) bùng nổ với hàng chục drone nối về máy chủ C2 (Node đỏ trung tâm).
+    * Biểu đồ Radar sẽ mở rộng mạnh về hướng "Impact" và "C2".
+    * Click biểu tượng "Kính lúp" (Justification) trên bất kỳ cảnh báo nào trong bảng Mapping log để hiển thị chi tiết **Chuỗi 8-bước giải thích**. (Minh chứng CLO5).
 
-**Chạy Kịch bản Tấn công (từ Kali):**
-(Với IP của Kali C2 là `192.168.136.151`):
-
-**Cách 4.1 - Khởi chạy một chiến dịch bầy đàn (DroneFlood Campaign)**
-Chạy script giả lập bầy drone bị nhiễm:
-```bash
-python droneflood_simulator.py 192.168.136.151 5555
-```
-*(Nếu chạy tất cả trên cùng một máy, hãy thay IP thành `127.0.0.1`)*
-
-**Cách 4.2 - Mô phỏng tấn công bền bỉ (Persistent Threat)**
-Nếu bạn muốn giả lập nhiều làn sóng tấn công liên tục (để test khả năng chịu tải của Rule Engine), hãy dùng vòng lặp bash:
-```bash
-# Dành cho Linux/Mac
-for i in {1..5}; do python droneflood_simulator.py 192.168.136.151 5555; sleep 2; done
-```
-
-**Cách 4.3 - Chạy một Node riêng lẻ (Single Bot Agent)**
-Nếu bạn muốn theo dõi vòng đời tấn công của một con Drone đơn duy nhất khi bị C2 chiếm quyền, hãy dùng `drone_client.py`:
-```bash
-python drone_client.py 192.168.136.151 5555 --drone-id DRONE-ALPHA-01
-```
-
-### 5. Truy cập Dashboard Phân tích
-Trên Kali hoặc bất kỳ máy nào cùng mạng, mở trình duyệt web và truy cập vào địa chỉ C2:
-> 🌐 **http://192.168.136.151:9000** (Hoặc `http://localhost:9000` nếu chạy cục bộ)
+### BƯỚC 5: Chứng minh Khả năng Đánh giá & Tự phòng thủ
+*   Chuyển sang Tab **"Mapping Validation"** trên Dashboard.
+*   Hiển thị chỉ số F1-Score (CLO7). (Nhờ cấu hình chuẩn Ground Truth, điểm F1 sẽ rất cao > 90%).
+*   Mở thư mục `detection/` bằng VS Code. Chiếu cho Giảng viên xem các file `yara_rules.yar` và `snort_rules.rules` để chứng minh hệ thống có thể tạo luật phòng vệ dựa trên IOCs thu được (Minh chứng CLO6).
 
 ---
 
-## 📊 Hướng dẫn Quan sát sự thay đổi trên Dashboard
+## 📁 6. Cấu trúc Thư mục (Directory Structure)
 
-Khi dữ liệu từ Simulator (`droneflood_simulator.py`) bắt đầu đổ về Engine (`drone.py`), bạn hãy truy cập `http://localhost:9000` để trực tiếp quan sát những thay đổi sau theo thời gian thực (Real-time):
-
-### 1. Quan sát Bản đồ Nodes & Đồ thị tấn công (Dynamic Attack Graph)
-- Ngay khi Simulator chạy, bạn sẽ thấy các chấm (Nodes) đại diện cho Drone xuất hiện.
-- Các Node **Màu Xanh lá (Clean)** là các drone bình thường.
-- Khi một Drone bắt đầu chuyển sang **Màu Cam (Suspicious)** hoặc **Đỏ (Compromised/Critical)**, hãy click vào Node đó!
-- **Đồ thị Tấn công (Attack Graph):** Bên dưới Node sẽ vẽ ra một chuỗi đồ thị cho thấy mã độc đã đi qua các bước nào (ví dụ: *Initial Access -> Execution -> C2*).
-
-### 2. Quan sát Chuỗi 8-Step Forensic Chain (Tại RE Evidence Panel)
-- Click vào tab hoặc khu vực hiển thị **"RE Findings / Evidence"**.
-- Khi một gói tin chứa dấu hiệu C2 (Custom C2 heartbeat) gửi lên, bạn sẽ thấy Rule Engine ngay lập tức "bắt" (Trigger) được nó.
-- Hãy bấm vào nút **"Justification" (Lý do)** hoặc biểu tượng kính lúp bên cạnh mỗi Alert. Một bảng điều khiển sẽ trượt ra (Drawer/Panel) hiển thị rõ ràng: 
-  * "Tại sao hệ thống lại cho rằng đây là T1071?" 
-  * "Độ tin cậy (Confidence) được cộng như thế nào (từ Evidence +20, Mapping Reason +15, v.v.)?"
-
-### 3. Quan sát ICS Translation (Tại Incident Report / Dashboard)
-- Khi một kỹ thuật MITRE Enterprise được xác nhận (ví dụ `T1547 - Boot or Logon Autostart Execution`), hãy quan sát cột **ICS Impact** (hoặc bảng dịch ICS).
-- Bạn sẽ thấy hệ thống tự động sinh ra các cảnh báo như: `[ICS] Loss of Control` hoặc `[ICS] Manipulation of Control`. Đây chính là "3-Column ICS Translation Engine" đang hoạt động.
-
-### 4. Quan sát Việc tự động sinh luật - CLO6 (Rule Generation)
-- Trong phần chi tiết của Evidence hoặc trong Logs, khi hệ thống phân tích ra một Mutex lạ (Ví dụ: `DF_MUTEX_01`) hoặc chuỗi Hardcoded IP, hệ thống sẽ đề xuất các đoạn mã (snippets) **Snort Rule** và **YARA Rule**. Điều này minh chứng cho CLO6 (Automated Rule Generation).
-
-### 5. Quan sát Metrics Đánh giá Ground Truth - CLO7 (Evaluation Dashboard)
-- Chuyển sang Tab đánh giá (Mapping Validation / Evaluation).
-- Bạn sẽ thấy các con số **Accuracy, Precision, Recall, F1-Score** thay đổi khi hệ thống Mapping đối chiếu kết quả dự đoán (Predicted Techniques) với dữ liệu thực tế (Expected Techniques) được gán nhãn từ trước (được nạp sẵn từ Ground Truth).
-- Độ chính xác thể hiện mức độ hiệu quả của Candidate Competition Rule Engine so với nhãn gốc (Ground Truth).
-
-### 6. Cảnh báo thời gian thực & Threat Scoring
-- Góc trên cùng của Dashboard luôn cập nhật **Tổng số Drone bị nhiễm (Critical Risk Drones)**.
-- Khi các Drone có Score > 80, biểu đồ Health Trend sẽ kéo thanh màu đỏ lên cao.
-- **Incident Report:** Engine cũng tự động tạo ra báo cáo HTML chi tiết lưu trong thư mục `reports/` cho mỗi Drone bị thỏa hiệp, ghi rõ các bước Incident Response (Phản ứng sự cố) cần làm.
+```text
+NEW_MITRE_FINAL_PACKAGE/
+│
+├── drone.py                    # C2 Server, Rule Engine, Web API & SQLite DB Handler
+├── drone_client.py             # Victim Agent giả lập 1 drone bị nhiễm malware
+├── droneflood_simulator.py     # Tự động hóa spawn nhiều Agent tạo tải tấn công
+├── README.md                   # Tài liệu hướng dẫn sử dụng siêu chi tiết
+│
+├── datasets/
+│   ├── ground_truth.json       # Chân lý để chấm điểm hiệu suất Engine (CLO7)
+│   ├── strings_drone.csv       # Dữ liệu phục vụ trích xuất YARA
+│   └── *_case.json             # Dữ liệu mô phỏng Time-series (Negative/Positive)
+│
+├── detection/                  # Nơi xuất bộ luật tự động sinh ra (CLO6)
+│   ├── iocs.txt                # Danh sách Hashes, IPs, Domains
+│   ├── sigma_rules.yml         # Luật Sysmon (Network & Mutex)
+│   ├── snort_rules.rules       # Luật quét gói tin DPI
+│   └── yara_rules.yar          # Luật quét file nhị phân & bộ nhớ
+│
+└── templates/                  # Bộ UI Dashboard React SPA cực mượt (42 files)
+    ├── index.html              # Trang gốc Root mount
+    ├── App.html                # Main React Component
+    └── ...                     # Các Components hiển thị bảng, biểu đồ Radar
+```
 
 ---
-<div align="center">
-  <b>Phát triển cho Nghiên cứu Học thuật chuyên sâu về Cybersecurity, Bảo vệ ICS & Threat Intelligence.</b>
-</div>
+
+*Hệ thống được phát triển với niềm đam mê sâu sắc dành cho kiến trúc bảo mật Hệ thống Điều khiển Công nghiệp (ICS). Chúc các bạn bảo vệ Đồ án thành công rực rỡ!* 🎖️

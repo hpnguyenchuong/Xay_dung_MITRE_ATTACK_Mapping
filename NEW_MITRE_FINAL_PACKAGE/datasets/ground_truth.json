@@ -1,58 +1,80 @@
 [
   {
     "artifact": "DF_MUTEX_01",
-    "expected": "T1547.001"
+    "expected": "T1547.001",
+    "description": "Mutex artifact indicates persistence mechanism",
+    "source": "Memory Analysis"
   },
   {
     "artifact": "c2.dronefleet.net",
-    "expected": "T1071"
+    "expected": "T1071",
+    "description": "Hardcoded C2 domain in binary",
+    "source": "Static Analysis"
   },
   {
-    "artifact": "encoded_payload",
-    "expected": "T1027"
+    "artifact": "XOR+Base64",
+    "expected": "T1027",
+    "description": "Obfuscated payload encoding",
+    "source": "Static Analysis"
   },
   {
-    "artifact": "FLEET_COMMAND_PUSH",
-    "expected": "T1563"
+    "artifact": "gps_spoof",
+    "expected": "T1565",
+    "description": "GPS coordinates manipulation",
+    "source": "Telemetry Analysis"
   },
   {
-    "artifact": "waypoint_override",
-    "expected": "T1005"
+    "artifact": "imu_drift",
+    "expected": "T1565.002",
+    "description": "IMU sensor manipulation",
+    "source": "Telemetry Analysis"
   },
   {
-    "artifact": "DF_REG_RUN",
-    "expected": "T1547.001"
+    "artifact": "battery_drain",
+    "expected": "T1498",
+    "description": "Battery drain exploitation",
+    "source": "Telemetry Analysis"
   },
   {
-    "artifact": "DF_STARTUP_CFG",
-    "expected": "T1547.001"
+    "artifact": "lidar_jamming",
+    "expected": "T1565",
+    "description": "LiDAR sensor disruption",
+    "source": "Telemetry Analysis"
   },
   {
-    "artifact": "beacon_30s",
-    "expected": "T1071"
-  },
-  {
-    "artifact": "custom_protocol_v1",
-    "expected": "T1090"
-  },
-  {
-    "artifact": "LEADER_NODE_COMPROMISED",
-    "expected": "T1059"
-  },
-  {
-    "artifact": "MEMBER_NODE_CONTROLLED",
-    "expected": "T1563"
-  },
-  {
-    "artifact": "navigation_drift",
-    "expected": "T1005"
-  },
-  {
-    "artifact": "gps_offset_120m",
-    "expected": "T1005"
+    "artifact": "collision",
+    "expected": "T1565",
+    "description": "Collision vector override",
+    "source": "Telemetry Analysis"
   },
   {
     "artifact": "FLEET_SYNC",
-    "expected": "T1563"
+    "expected": "T1489",
+    "description": "Unauthorized fleet synchronization",
+    "source": "Network Analysis"
+  },
+  {
+    "artifact": "drone_agent",
+    "expected": "T1543.003",
+    "description": "Service creation for persistence",
+    "source": "Memory Analysis"
+  },
+  {
+    "artifact": "custom_protocol_v1",
+    "expected": "T1571",
+    "description": "Non-standard protocol usage",
+    "source": "Network Analysis"
+  },
+  {
+    "artifact": "emergency_land",
+    "expected": "T1565",
+    "description": "Forced emergency landing",
+    "source": "Telemetry Analysis"
+  },
+  {
+    "artifact": "FLEET_COMMAND_PUSH",
+    "expected": "T1059",
+    "description": "Rogue command injection",
+    "source": "Network Analysis"
   }
 ]

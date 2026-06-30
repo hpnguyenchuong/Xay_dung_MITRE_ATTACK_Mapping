@@ -1,0 +1,27 @@
+# DroneFleet Malware IOC List
+# =============================
+# Hashes (SHA256)
+d41d8cd98f00b204e9800998ecf8427e  payload_droneflood.bin
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  drone_client.exe
+
+# C2 Domains
+c2.dronefleet.net
+api.dronefleet.net
+update.dronefleet.net
+
+# C2 IPs (simulated)
+192.168.1.100
+10.0.0.1
+
+# Mutex Names
+DF_MUTEX_01
+DF_REG_RUN
+DRONEFLOOD_INSTANCE
+
+# Registry Keys
+Software\Microsoft\Windows\CurrentVersion\Run\DroneAgent
+HKLM\System\CurrentControlSet\Services\DroneService
+
+# File Paths (dropped malware)
+C:\Windows\System32\drone_agent.exe
+/tmp/drone_payload.bin

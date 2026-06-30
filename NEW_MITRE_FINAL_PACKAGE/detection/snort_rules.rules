@@ -1,1 +1,17 @@
-alert tcp any any -> any 5555 (msg:"Drone C2"; sid:100001;)
+# DroneFlood C2 Detection Rules
+# ===============================
+
+# Rule 1: Detect C2 domain in HTTP traffic
+alert tcp $HOME_NET any -> $EXTERNAL_NET 80 (msg:"DRONEFLOOD C2 Domain Detected"; content:"c2.dronefleet.net"; nocase; sid:1000001; rev:1;)
+
+# Rule 2: Detect FLEET_SYNC command in TCP payload
+alert tcp $HOME_NET any -> $EXTERNAL_NET 5555 (msg:"DRONEFLOOD FLEET_SYNC Command"; content:"FLEET_SYNC"; nocase; sid:1000002; rev:1;)
+
+# Rule 3: Detect FLEET_COMMAND_PUSH
+alert tcp $HOME_NET any -> $EXTERNAL_NET 5555 (msg:"DRONEFLOOD FLEET_COMMAND_PUSH"; content:"FLEET_COMMAND_PUSH"; nocase; sid:1000003; rev:1;)
+
+# Rule 4: Detect Non-Standard Port 31337 (Backdoor)
+alert tcp $HOME_NET any -> $EXTERNAL_NET 31337 (msg:"DRONEFLOOD Backdoor Port Detected"; sid:1000004; rev:1;)
+
+# Rule 5: Detect GPS Spoof command
+alert tcp $HOME_NET any -> $EXTERNAL_NET 5555 (msg:"DRONEFLOOD GPS Spoof Command"; content:"gps_spoof"; nocase; sid:1000005; rev:1;)

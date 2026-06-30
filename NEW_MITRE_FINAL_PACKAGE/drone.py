@@ -58,8 +58,54 @@ ICS_MAPPING_RULES = {
         "enterprise_tech": "T1027", "ics_tech": None, "name": "Obfuscated Files or Information", "confidence": 90, "score": 20
     },
     "gps_spoof": {
-        "finding": "GPS Spoofing", "tactic": "TA0106", "tactic_name": "Impair Process Control",
-        "enterprise_tech": "T1005", "ics_tech": "T0831", "name": "Manipulation of Control", "confidence": 95, "score": 40
+        "finding": "GPS Spoofing", 
+        "tactic": "TA0106", 
+        "tactic_name": "Impair Process Control",
+        "enterprise_tech": "T1565",
+        "ics_tech": "T0831", 
+        "name": "Manipulation of Control", 
+        "confidence": 95, 
+        "score": 40
+    },
+    "imu_drift": {
+        "finding": "IMU Drift", 
+        "tactic": "TA0106", 
+        "tactic_name": "Impair Process Control",
+        "enterprise_tech": "T1565.002",
+        "ics_tech": "T0832", 
+        "name": "Manipulation of View", 
+        "confidence": 94, 
+        "score": 35
+    },
+    "lidar_jamming": {
+        "finding": "LiDAR Jamming", 
+        "tactic": "TA0106", 
+        "tactic_name": "Impair Process Control",
+        "enterprise_tech": "T1565",
+        "ics_tech": "T0831", 
+        "name": "Sensor Jamming", 
+        "confidence": 93, 
+        "score": 35
+    },
+    "collision": {
+        "finding": "Collision Vector", 
+        "tactic": "TA0104", 
+        "tactic_name": "Impact",
+        "enterprise_tech": "T1565",
+        "ics_tech": "T0831", 
+        "name": "Kinetic Impact", 
+        "confidence": 96, 
+        "score": 45
+    },
+    "emergency_land": {
+        "finding": "Forced Landing", 
+        "tactic": "TA0104", 
+        "tactic_name": "Impact",
+        "enterprise_tech": "T1565",
+        "ics_tech": "T0831", 
+        "name": "Kinetic Impact", 
+        "confidence": 92, 
+        "score": 40
     },
     "battery_drain": {
         "finding": "Battery Drain Exploitation", "tactic": "TA0105", "tactic_name": "Impact",
@@ -101,9 +147,9 @@ ICS_TRANSLATION_RULES = {
 }
 
 ATTACK_TO_ENTERPRISE = {
-    "gps_spoof": "T0831",
-    "imu_drift": "T0832",
-    "lidar_jamming": "T0831",
+    "gps_spoof": "T1565",
+    "imu_drift": "T1565.002",
+    "lidar_jamming": "T1565",
     "battery_drain": "T1498",
     "beacon": "T1071.001",
     "network_scan": "T1046",
@@ -115,8 +161,8 @@ ENTERPRISE_TO_ICS = {
     "T1046": "T0846",
     "T1105": "T0867",
     "T1498": "T0879",
-    "T0831": "T0831",
-    "T0832": "T0832"
+    "T1565": "T0831",
+    "T1565.002": "T0832"
 }
 
 TRANSLATION_REASON = {
@@ -178,24 +224,24 @@ def enrich_finding(row):
 
     if match_key("gps_spoof"):
         ics = "T0831"
+        enterprise = "T1565"
         if behavior == "Unknown": behavior = "Navigation Manipulation"
-        if not enterprise: enterprise = "T0831"
     elif match_key("battery_drain") or match_key("critical_battery"):
         ics = "T0879"
+        enterprise = "T1498"
         if behavior == "Unknown": behavior = "Battery Drain"
-        if not enterprise: enterprise = "T1498"
     elif match_key("lidar_jamming"):
         ics = "T0831"
+        enterprise = "T1565"
         if behavior == "Unknown": behavior = "Sensor Jamming"
-        if not enterprise: enterprise = "T0831"
     elif match_key("imu_drift") or match_key("imu_drift_injection"):
         ics = "T0832"
+        enterprise = "T1565.002"
         if behavior == "Unknown": behavior = "IMU Manipulation"
-        if not enterprise: enterprise = "T0832"
     elif match_key("collision") or match_key("collision_vector") or match_key("emergency_land") or match_key("forced_landing"):
         ics = "T0831"
+        enterprise = "T1565"
         if behavior == "Unknown": behavior = "Kinetic Impact"
-        if not enterprise: enterprise = "T0831"
     elif match_key("FLEET_SYNC") or match_key("FLEET_COMMAND_PUSH") or match_key("custom_protocol_v1"):
         ics = "T0869" if match_key("FLEET_SYNC") else "T0885"
         if behavior == "Unknown": behavior = "Swarm Takeover"
@@ -528,12 +574,12 @@ def init_forensic_db():
                     ("RULE_003", r"telemetry_exfil", "Network Flow", "Exfiltration", "T1041", "T0811", 85, 80, "MITRE ATT&CK Enterprise/ICS"),
                     ("RULE_004", r"XOR\+Base64|XOR_KEY_.*|encoded_payload", "Config Block", "Evasion", "T1027", "T0832", 95, 95, "MITRE ATT&CK Enterprise"),
                     ("RULE_005", r"drone_agent", "Process List", "Service Execution", "T1569.002", None, 80, 50, "MITRE ATT&CK Enterprise"),
-                    ("RULE_006", r"gps_spoof", "Memory Artifact", "Navigation Manipulation", "T0831", "T0831", 90, 85, "MITRE ATT&CK ICS"),
-                    ("RULE_007", r"imu_drift", "Memory Artifact", "IMU Manipulation", "T0832", "T0832", 85, 80, "MITRE ATT&CK ICS"),
+                    ("RULE_006", r"gps_spoof", "Memory Artifact", "Navigation Manipulation", "T1565", "T0831", 90, 85, "MITRE ATT&CK ICS"),
+                    ("RULE_007", r"imu_drift", "Memory Artifact", "IMU Manipulation", "T1565.002", "T0832", 85, 80, "MITRE ATT&CK ICS"),
                     ("RULE_008", r"battery_drain|critical_battery", "Memory Artifact", "Battery Drain", "T1498", "T0879", 95, 90, "MITRE ATT&CK Enterprise/ICS"),
-                    ("RULE_009", r"lidar_jamming", "Memory Artifact", "Sensor Jamming", "T0831", "T0831", 90, 85, "MITRE ATT&CK ICS"),
-                    ("RULE_010", r"collision", "Memory Artifact", "Kinetic Impact", "T0831", "T0831", 100, 95, "MITRE ATT&CK ICS"),
-                    ("RULE_011", r"emergency_land", "Memory Artifact", "Kinetic Impact", "T0831", "T0831", 100, 95, "MITRE ATT&CK ICS")
+                    ("RULE_009", r"lidar_jamming", "Memory Artifact", "Sensor Jamming", "T1565", "T0831", 90, 85, "MITRE ATT&CK ICS"),
+                    ("RULE_010", r"collision", "Memory Artifact", "Kinetic Impact", "T1565", "T0831", 100, 95, "MITRE ATT&CK ICS"),
+                    ("RULE_011", r"emergency_land", "Memory Artifact", "Kinetic Impact", "T1565", "T0831", 100, 95, "MITRE ATT&CK ICS")
                 ]
                 cursor.executemany("INSERT INTO mapping_rules VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", rules)
 
@@ -554,10 +600,10 @@ def init_forensic_db():
 
             # Fix user reported mappings
             cursor.execute("UPDATE mapping_rules SET ics_technique='T0866' WHERE rule_id='RULE_001'")
-            cursor.execute("UPDATE mapping_rules SET enterprise_technique='T0831', ics_technique='T0831' WHERE rule_id='RULE_006'")
-            cursor.execute("UPDATE mapping_rules SET enterprise_technique='T0832', ics_technique='T0832' WHERE rule_id='RULE_007'")
+            cursor.execute("UPDATE mapping_rules SET enterprise_technique='T1565', ics_technique='T0831' WHERE rule_id='RULE_006'")
+            cursor.execute("UPDATE mapping_rules SET enterprise_technique='T1565.002', ics_technique='T0832' WHERE rule_id='RULE_007'")
             cursor.execute("UPDATE mapping_rules SET enterprise_technique='T1498', ics_technique='T0879' WHERE rule_id='RULE_008'")
-            cursor.execute("UPDATE mapping_rules SET enterprise_technique='T0831', ics_technique='T0831' WHERE rule_id='RULE_009'")
+            cursor.execute("UPDATE mapping_rules SET enterprise_technique='T1565', ics_technique='T0831' WHERE rule_id='RULE_009'")
 
             # Populate Ground Truth
             cursor.execute("SELECT COUNT(*) as count FROM ground_truth_mapping")
@@ -614,12 +660,12 @@ class MITREMappingEngine:
             "DF_MUTEX_01": {"tech": "T1547.001", "ics": "T0866", "tactic": "Persistence", "score": 95},
             "c2.dronefleet.net": {"tech": "T1071", "ics": "T0885", "tactic": "C2", "score": 98},
             "XOR+Base64": {"tech": "T1027", "ics": "T0832", "tactic": "Evasion", "score": 85},
-            "gps_spoof": {"tech": "T0831", "ics": "T0831", "tactic": "Impact", "score": 95},
-            "imu_drift": {"tech": "T0832", "ics": "T0832", "tactic": "Impact", "score": 94},
-            "battery_drain": {"tech": "T0879", "ics": "T0879", "tactic": "Impact", "score": 90},
-            "lidar_jamming": {"tech": "T0831", "ics": "T0831", "tactic": "Impact", "score": 93},
-            "collision": {"tech": "T0831", "ics": "T0831", "tactic": "Impact", "score": 96},
-            "emergency_land": {"tech": "T0831", "ics": "T0831", "tactic": "Impact", "score": 92}
+            "gps_spoof": {"tech": "T1565", "ics": "T0831", "tactic": "Impact", "score": 95},
+            "imu_drift": {"tech": "T1565.002", "ics": "T0832", "tactic": "Impact", "score": 94},
+            "battery_drain": {"tech": "T1498", "ics": "T0879", "tactic": "Impact", "score": 90},
+            "lidar_jamming": {"tech": "T1565", "ics": "T0831", "tactic": "Impact", "score": 93},
+            "collision": {"tech": "T1565", "ics": "T0831", "tactic": "Impact", "score": 96},
+            "emergency_land": {"tech": "T1565", "ics": "T0831", "tactic": "Impact", "score": 92}
         }
         
         rule = mapping_rules.get(artifact, {})
